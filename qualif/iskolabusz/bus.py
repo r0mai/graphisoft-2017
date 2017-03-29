@@ -78,15 +78,14 @@ def solve3(n):
         d *= 2
         s /= 2
 
-    if s == 1 and c:
-        return y
-    else:
-        return p
+    assert(s == 1)
+    v = y if c else p
+    return v, s
 
 
 if __name__ == '__main__':
-    for n in xrange(1, 40):
+    for n in xrange(1, 101):
         y, ys = solve0(n)
-        x = solve3(n)
+        x, s = solve3(n)
         assert(x == y)
-        print('{}: {} {}'.format(n, y, ys))
+        print('{}: {}'.format(n, y))
