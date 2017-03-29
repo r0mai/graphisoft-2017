@@ -1,10 +1,9 @@
 #include <cstdio>
 
 int main() {
-    int n;
+    int i = 1, d = 1, y = 0, p = 1, s, n;
     scanf("%d", &n);
-
-    int i = 1, d = 1, y = 0, p = 1, s = n;
+    s = n;
 
     while (i <= n && s > 1) {
         i += d;
