@@ -63,15 +63,11 @@ def solve3(n):
     i = 1
     d = 1
     s = n
-    c = False
-    y = 0
-    p = 1
+    y = n
 
     while s > 1:
         i += d
-        p = i
         if s % 2 == 1:
-            c = True
             y = i
             i += 2 * d
 
@@ -79,13 +75,12 @@ def solve3(n):
         s /= 2
 
     assert(s == 1)
-    v = y if c else p
-    return v, s
+    return y
 
 
 if __name__ == '__main__':
     for n in xrange(1, 101):
         y, ys = solve0(n)
-        x, s = solve3(n)
+        x = solve3(n)
         assert(x == y)
         print('{}: {}'.format(n, y))
