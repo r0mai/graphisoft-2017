@@ -67,7 +67,7 @@ def solve3(n):
     y = 0
     p = 1
 
-    while i <= n and s > 1:
+    while s > 1:
         i += d
         p = i
         if s % 2 == 1:

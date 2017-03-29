@@ -1,11 +1,10 @@
 #include <cstdio>
 
 int main() {
-    int i = 1, d = 1, y = 0, p = 1, s, n;
-    scanf("%d", &n);
-    s = n;
+    int i = 1, d = 1, y = 0, p = 1, s;
+    scanf("%d", &s);
 
-    while (i <= n && s > 1) {
+    while (s > 1) {
         i += d;
         p = i;
         d *= 2;
