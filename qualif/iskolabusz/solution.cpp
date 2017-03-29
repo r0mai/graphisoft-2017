@@ -9,10 +9,7 @@ int main() {
         i += d;
         p = i;
         d *= 2;
-        if (s % 2) {
-            y = i;
-            i += d;
-        }
+        if (s % 2) y = i, i += d;
         s /= 2;
     }
 
