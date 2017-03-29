@@ -13,5 +13,5 @@ int main() {
         s /= 2;
     }
 
-    printf("%d\n", s == 1 && y ? y : p);
+    printf("%d\n", y ? y : p);
 }
