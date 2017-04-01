@@ -1,5 +1,30 @@
 #include <iostream>
 #include <vector>
+#include <array>
+#include <cassert>
+
+int intCos(int turns) {
+    switch (turns) {
+        case 0: return 1;
+        case 1: return 0;
+        case 2: return -1;
+        case 3: return 0;
+    }
+    assert(false);
+    return 0;
+}
+
+int intSin(int turns) {
+    switch (turns) {
+        case 0: return 0;
+        case 1: return 1;
+        case 2: return 0;
+        case 3: return -1;
+    }
+    assert(false);
+    return 0;
+}
+
 
 struct Point {
     Point() = default;
@@ -9,6 +34,83 @@ struct Point {
     int y;
     int z;
 };
+
+struct Matrix {
+    int a, b, c;
+    int d, e, f;
+    int g, h, i;
+};
+
+int doStuff(const Point& row, const Point& column) {
+    int result = 0;
+    result += row.x * column.x;
+    result += row.y * column.y;
+    result += row.z * column.z;
+    return result;
+}
+
+Matrix multiply(const Matrix& p, const Matrix& v) {
+    Point r1{p.a, p.b, p.c};
+    Point r2{p.d, p.e, p.f};
+    Point r3{p.g, p.h, p.i};
+
+    Point c1{v.a, v.d, v.g};
+    Point c2{v.b, v.e, v.h};
+    Point c3{v.c, v.f, v.i};
+
+    Matrix r;
+
+    r.a = doStuff(r1, c1);
+    r.b = doStuff(r1, c2);
+    r.c = doStuff(r1, c3);
+
+    r.d = doStuff(r2, c1);
+    r.e = doStuff(r2, c2);
+    r.f = doStuff(r2, c3);
+
+    r.g = doStuff(r3, c1);
+    r.h = doStuff(r3, c2);
+    r.i = doStuff(r3, c3);
+
+    return r;
+}
+
+// I know it's the other way around
+Point transform(const Point& p, const Matrix& m) {
+    Point r;
+    r.x = m.a*p.x + m.b*p.y + m.c*p.z;
+    r.y = m.d*p.x + m.e*p.y + m.f*p.z;
+    r.z = m.g*p.x + m.h*p.y + m.i*p.z;
+    return r;
+}
+
+Point translate(const Point& p, const Point& delta) {
+    Point r = p;
+    r.x += delta.x;
+    r.y += delta.y;
+    r.z += delta.z;
+    return r;
+}
+
+Matrix rotationMatrixFor(int rx, int ry, int rz) {
+    Matrix mx {
+                  1,          0,           0,
+                  0,  intCos(rx), -intSin(rx),
+                  0,  intSin(rx),  intCos(rx)
+    };
+    Matrix my {
+         intCos(ry),          0,  intSin(ry),
+                  0,          1,           0,
+        -intSin(ry),          0,  intCos(ry)
+    };
+    Matrix mz {
+         intCos(rz), -intSin(rz),         0,
+         intSin(rz),  intCos(rz),         0,
+                  0,          0,          1,
+    };
+
+    return multiply(mz, multiply(my, mx));
+}
 
 struct Edge {
     Edge() = default;
@@ -86,6 +188,14 @@ Building read(std::istream& in) {
 }
 
 bool isCongruentish(const Building& b1, const Building& b2) {
+    for (int rx = 0; rx < 4; ++rx) {
+        for (int ry = 0; ry < 4; ++ry) {
+            for (int rz = 0; rz < 4; ++rz) {
+                auto rotationMatrix = rotationMatrixFor(rx, ry, rz);
+                // TODO
+            }
+        }
+    }
     return false;
 }
 
