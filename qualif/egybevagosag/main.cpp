@@ -64,8 +64,8 @@ Building read(std::istream& in) {
         in >> face_edge_count;
         face.edge_indicies.resize(face_edge_count);
 
-        for (auto& edge : face.edge_indicies) {
-            in >> edge;
+        for (auto& edge_index : face.edge_indicies) {
+            in >> edge_index;
         }
 
         int hole_count;
@@ -76,8 +76,8 @@ Building read(std::istream& in) {
             int hole_edge_count;
             in >> hole_edge_count;
             hole.edge_indicies.resize(hole_edge_count);
-            for (auto& edge : hole.edge_indicies) {
-                in >> edge;
+            for (auto& edge_index : hole.edge_indicies) {
+                in >> edge_index;
             }
         }
     }
