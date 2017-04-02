@@ -46,6 +46,16 @@ bool operator<(const Point& lhs, const Point& rhs) {
         std::tie(rhs.x, rhs.y, rhs.z);
 }
 
+bool operator==(const Point& lhs, const Point& rhs) {
+    return
+        std::tie(lhs.x, lhs.y, lhs.z) ==
+        std::tie(rhs.x, rhs.y, rhs.z);
+}
+
+bool operator!=(const Point& lhs, const Point& rhs) {
+    return !(lhs == rhs);
+}
+
 struct Matrix {
     int a, b, c;
     int d, e, f;
@@ -244,7 +254,13 @@ bool isSame(const Building& b1, const Building& b2) {
     auto b1_vertex_map = GetSortedVertexMap(b1);
     auto b2_vertex_map = GetSortedVertexMap(b2);
 
-    return false;
+    for (int i = 0; i < int(b1.vertices.size()); ++i) {
+        if (b1.vertices[b1_vertex_map[i]] != b2.vertices[b2_vertex_map[i]]) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 bool isCongruentish(const Building& b1, const Building& b2) {
@@ -284,6 +300,5 @@ int main() {
     auto b1 = read(std::cin);
     auto b2 = read(std::cin);
 
-    isCongruentish(b1, b2);
-    // std::cout << (isCongruentish(b1, b2) ? "TRUE" : "FALSE") << std::endl;
+    std::cout << (isCongruentish(b1, b2) ? "TRUE" : "FALSE") << std::endl;
 }
