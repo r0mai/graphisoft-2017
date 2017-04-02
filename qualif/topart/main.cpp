@@ -33,6 +33,10 @@ public:
 	}
 
 	int getNextDistance() const { return neighbour.second; }
+
+	std::map<std::shared_ptr<Village>, int> getJumps() const {
+		return villages;
+	}
 };
 
 
@@ -45,6 +49,53 @@ std::shared_ptr<Village> findByName(
 		}
 	}
 	return nullptr;
+}
+
+using JumpDescriptor =
+		std::pair<std::shared_ptr<Village>, std::shared_ptr<Village>>;
+
+std::pair<
+		std::vector<JumpDescriptor>,
+		int> getJumps(std::shared_ptr<Village> start, int budget) {
+	if (start == nullptr) {
+		// No more villages to visit.
+		return std::make_pair(std::vector<JumpDescriptor>{}, 0);
+	}
+	const auto& jumpsAvailable = start->getJumps();
+
+	const auto& straightRoute = getJumps(start->getNext(),
+			budget - start->getNextDistance());
+	const auto& straightJumps = straightRoute.first;
+	const auto& straightCost = straightRoute.second + start->getNextDistance();
+
+	// Greedy, if straight is acceptable, or we have no other choice,
+	// we choose it.
+	if (straightCost <= budget || jumpsAvailable.empty()) {
+		return std::make_pair(straightJumps, straightCost);
+	}
+
+	std::vector<std::pair<std::vector<JumpDescriptor>, int>> indirectRoutes;
+	for (const auto& jump: jumpsAvailable) {
+		const auto& destination = jump.first;
+		const auto& jumpCost = jump.second;
+		const auto& route = getJumps(destination, budget - jumpCost);
+		auto routeJumps = route.first;
+		routeJumps.insert(routeJumps.begin(),
+				std::make_pair(start, destination));
+		const auto& routeCost = route.second;
+		indirectRoutes.push_back(
+				std::make_pair(routeJumps, routeCost + jumpCost));
+	}
+
+	std::sort(indirectRoutes.begin(), indirectRoutes.end(),
+			[](const std::pair<std::vector<JumpDescriptor>, int>& l,
+				const std::pair<std::vector<JumpDescriptor>, int>& r) {
+				return l.second < r.second;
+			});
+
+	const auto& route = indirectRoutes[0];
+	return route;
+
 }
 
 
@@ -86,12 +137,12 @@ int main() {
 	int timeBudget;
 	std::cin >> timeBudget;
 
-	std::shared_ptr<Village> current = villages.front();
-	int timeSpent = 0;
-	while (current != villages.back()) {
-		timeSpent += current->getNextDistance();
-		current = current->getNext();
+	const auto& route = getJumps(villages[0], timeBudget);
+	std::cerr << "Total route cost is: " << route.second << std::endl;
+	std::cout << route.first.size() << std::endl;
+	for (const auto& jump: route.first) {
+		const auto& from = jump.first->getName();
+		const auto& to = jump.second->getName();
+		std::cout << from << " " << to << std::endl;
 	}
-	std::cerr << "Going through all villages would take:"
-			<< timeSpent << std::endl;
 }
