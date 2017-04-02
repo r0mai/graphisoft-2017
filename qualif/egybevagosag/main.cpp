@@ -1,7 +1,10 @@
 #include <iostream>
 #include <vector>
 #include <array>
+#include <tuple>
 #include <cassert>
+#include <numeric>
+#include <algorithm>
 
 int intCos(int turns) {
     switch (turns) {
@@ -33,7 +36,15 @@ struct Point {
     int x;
     int y;
     int z;
+
+    int index = -1;
 };
+
+bool operator<(const Point& lhs, const Point& rhs) {
+    return
+        std::tie(lhs.x, lhs.y, lhs.z) <
+        std::tie(rhs.x, rhs.y, rhs.z);
+}
 
 struct Matrix {
     int a, b, c;
@@ -199,12 +210,70 @@ Building read(std::istream& in) {
     return building;
 }
 
+Building transform(const Building& b, const Matrix& m) {
+    auto r = b;
+    for (auto& v : r.vertices) {
+        v = transform(v, m);
+    }
+    return r;
+}
+
+Building translate(const Building& b, const Point& delta) {
+    auto r = b;
+    for (auto& v : r.vertices) {
+        v = translate(v, delta);
+    }
+    return r;
+}
+
+std::vector<int> GetSortedVertexMap(const Building& b) {
+    std::vector<int> vertex_map(b.vertices.size());
+
+    std::iota(vertex_map.begin(), vertex_map.end(), 0);
+
+    std::sort(vertex_map.begin(), vertex_map.end(),
+        [&](int lhs, int rhs) {
+            return b.vertices[lhs] < b.vertices[rhs];
+        }
+    );
+
+    return vertex_map;
+}
+
+bool isSame(const Building& b1, const Building& b2) {
+    auto b1_vertex_map = GetSortedVertexMap(b1);
+    auto b2_vertex_map = GetSortedVertexMap(b2);
+
+    return false;
+}
+
 bool isCongruentish(const Building& b1, const Building& b2) {
+    if (b1.vertices.size() != b2.vertices.size()) {
+        return false;
+    }
+    if (b1.vertices.empty()) {
+        return true;
+    }
+
     for (int rx = 0; rx < 4; ++rx) {
         for (int ry = 0; ry < 4; ++ry) {
             for (int rz = 0; rz < 4; ++rz) {
                 auto rotationMatrix = rotationMatrixFor(rx, ry, rz);
-                std::cout << rotationMatrix << std::endl;
+                std::cerr << rotationMatrix << std::endl;
+
+                auto rotated_b2 = transform(b2, rotationMatrix);
+
+                auto min_vertex_b1 = *std::min_element(
+                    b1.vertices.begin(), b1.vertices.end());
+                auto min_vertex_b2 = *std::min_element(
+                    rotated_b2.vertices.begin(), rotated_b2.vertices.end());
+
+                auto tb1 = translate(b1, min_vertex_b1);
+                auto tb2 = translate(rotated_b2, min_vertex_b2);
+
+                if (isSame(tb1, tb2)) {
+                    return true;
+                }
             }
         }
     }
