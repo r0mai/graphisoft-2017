@@ -41,6 +41,18 @@ struct Matrix {
     int g, h, i;
 };
 
+std::ostream& operator<<(std::ostream& os, const Point& p) {
+    os << "(" << p.x << "," << p.y << "," << p.z << ")";
+    return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const Matrix& m) {
+    os << "((" << m.a << "," << m.b << "," << m.c << "),";
+    os << "(" << m.d << "," << m.e << "," << m.f << "),";
+    os << "(" << m.g << "," << m.h << "," << m.i << "))";
+    return os;
+}
+
 int doStuff(const Point& row, const Point& column) {
     int result = 0;
     result += row.x * column.x;
@@ -192,7 +204,7 @@ bool isCongruentish(const Building& b1, const Building& b2) {
         for (int ry = 0; ry < 4; ++ry) {
             for (int rz = 0; rz < 4; ++rz) {
                 auto rotationMatrix = rotationMatrixFor(rx, ry, rz);
-                // TODO
+                std::cout << rotationMatrix << std::endl;
             }
         }
     }
@@ -203,5 +215,6 @@ int main() {
     auto b1 = read(std::cin);
     auto b2 = read(std::cin);
 
-    std::cout << (isCongruentish(b1, b2) ? "TRUE" : "FALSE") << std::endl;
+    isCongruentish(b1, b2);
+    // std::cout << (isCongruentish(b1, b2) ? "TRUE" : "FALSE") << std::endl;
 }
