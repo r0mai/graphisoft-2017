@@ -1,3 +1,5 @@
+#!/usr/bin/env python2
+
 from __future__ import print_function
 import sys
 import os
@@ -18,7 +20,7 @@ def solve0(n):
 
 
 def compare(n):
-    p = Popen(['a.out'], stdin=PIPE, stdout=PIPE)
+    p = Popen(['./a.out'], stdin=PIPE, stdout=PIPE)
     out, err = p.communicate(input='{}'.format(n))
     v = int(out)
     v0 = solve0(n)
