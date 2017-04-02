@@ -189,7 +189,6 @@ void LoadFont(App& app) {
 int main() {
     App app;
     app.grid.FromStream(std::cin);
-    // while (app.grid.TraceNext());
 
     sf::ContextSettings settings;
     settings.antialiasingLevel = 8;

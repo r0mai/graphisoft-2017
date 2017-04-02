@@ -131,6 +131,7 @@ struct Ray {
 class HexGrid {
 public:
     void FromStream(std::istream& in);
+    void PrintSolution(std::ostream& os) const;
 
     int Cols() const { return cols_; }
     int Rows() const { return rows_; }
@@ -141,7 +142,11 @@ public:
     Ray& GetRay(const Pos& pos);
 
     void InitRays();
-    bool TraceNext();
+    void TraceNext();
+    bool IsFinished() const;
+
+    std::vector<Pos> GetLast() const { return last_; }
+    int Bounces() { return bounces_; }
 
 private:
 
@@ -152,7 +157,8 @@ private:
     std::vector<std::vector<Field>> grid_;
     std::vector<std::vector<Ray>> ray_grid_;
     std::vector<Pos> edge_;
-
+    std::vector<Pos> last_;
+    int bounces_ = 0;
     int cols_ = 0;
     int rows_ = 0;
 };
@@ -238,6 +244,8 @@ std::vector<Pos> HexGrid::GetEdgeVector() const {
 }
 
 void HexGrid::InitRays() {
+    bounces_ = 0;
+    last_.clear();
     edge_.clear();
     ray_grid_.clear();
     ray_grid_.resize(rows_ + 2);
@@ -284,9 +292,12 @@ void HexGrid::InitRays() {
     }
 }
 
-bool HexGrid::TraceNext() {
-    std::vector<Pos> next;
+void HexGrid::TraceNext() {
+    if (IsFinished()) {
+        return;
+    }
 
+    std::vector<Pos> next;
     for (auto pos : edge_) {
         auto& ray = GetRay(pos);
         int bounce = ray.bounce + 1;
@@ -315,24 +326,44 @@ bool HexGrid::TraceNext() {
         }
     }
 
-    std::swap(edge_, next);
-    return !edge_.empty();
+    auto last = next.empty();
+    if (last) {
+        std::swap(edge_, last_);
+        edge_.clear();
+    } else {
+        ++bounces_;
+        std::swap(edge_, next);
+    }
 }
 
+bool HexGrid::IsFinished() const {
+    return edge_.empty();
+}
+
+void HexGrid::PrintSolution(std::ostream& os) const {
+    if (!IsFinished()) {
+        return;
+    }
+
+    os << last_.size() << " " << bounces_ << std::endl;
+    for (auto pos : last_) {
+        // Convert to stupid indexing
+        pos.row += 1;
+        pos.col = (pos.col % 2) * cols_ / 2 + pos.col / 2 + 1;
+        os << pos.row << " " << pos.col << std::endl;
+    }
+}
 
 
 #if !defined(GUI_ENABLED)
 
 int main() {
-    HexGrid map;
-    map.FromStream(std::cin);
-
-    for (int row = -1; row < 10; ++row) {
-        for (int col = -1; col < 15; ++col) {
-            std::cout << map.GetField({row, col});
-        }
-        std::cout << std::endl;
+    HexGrid hg;
+    hg.FromStream(std::cin);
+    while (!hg.IsFinished()) {
+        hg.TraceNext();
     }
+    hg.PrintSolution(std::cout);
 }
 
 #endif

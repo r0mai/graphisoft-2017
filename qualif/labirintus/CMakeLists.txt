@@ -8,9 +8,13 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 find_package(SFML 2 REQUIRED system window graphics)
 
 
-add_executable(lab
+add_executable(glab
     src/gui.cpp
 )
 
-target_include_directories(lab PRIVATE ${SFML_INCLUDE_DIR})
-target_link_libraries(lab ${SFML_LIBRARIES})
+add_executable(lab
+    src/main.cpp
+)
+
+target_include_directories(glab PRIVATE ${SFML_INCLUDE_DIR})
+target_link_libraries(glab ${SFML_LIBRARIES})
