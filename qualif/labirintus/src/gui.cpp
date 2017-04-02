@@ -119,9 +119,7 @@ sf::Text CreateText(const sf::Vector2f& pos, const sf::Font& font,
         const std::string& str)
 {
     sf::Text text(str, font, 48);
-    text.setFillColor(sf::Color(0xff, 0xff, 0xff, 0x80));
-    text.setOutlineColor(sf::Color(0x00, 0x00, 0x00, 0x80));
-    text.setOutlineThickness(1);
+    text.setFillColor(sf::Color(0, 0, 0, 0x60));
 
     auto box = text.getLocalBounds();
     auto scale = 1.0f / 96.0f;
