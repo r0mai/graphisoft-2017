@@ -3,7 +3,9 @@
 #include <thread>
 #include <algorithm>
 #include <cmath>
+#include <sstream>
 #include <SFML/Graphics.hpp>
+// #include <SFML/Font.hpp>
 
 #define GUI_ENABLED 1
 #include "main.cpp"
@@ -11,6 +13,7 @@
 
 struct App {
     sf::RenderWindow window;
+    sf::Font font;
     HexGrid grid;
 };
 
@@ -48,26 +51,8 @@ void HandleEvents(App& app) {
             default:
                 break;
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
     }
-}
-
-
-sf::ConvexShape CreateTile() {
-    sf::Vector2f dx(0.5f, 0);
-    sf::Vector2f dy(0, sqrt(3.0f) / 2.0f);
-    sf::Vector2f cx(1.0f, 0);
-
-    sf::ConvexShape tile;
-    tile.setPointCount(6);
-    tile.setPoint(0, dx - dy);
-    tile.setPoint(1, cx);
-    tile.setPoint(2, dx + dy);
-    tile.setPoint(3, -dx + dy);
-    tile.setPoint(4, -cx);
-    tile.setPoint(5, -dx - dy);
-
-    return tile;
 }
 
 sf::Color TileColor(Field field) {
@@ -79,26 +64,90 @@ sf::Color TileColor(Field field) {
     }
 }
 
+sf::ConvexShape CreateTile(const sf::Vector2f& pos) {
+    sf::Vector2f dx(0.5f, 0);
+    sf::Vector2f dy(0, sqrt(3.0f) / 2.0f);
+    sf::Vector2f cx(1.0f, 0);
+    float s = 0.98;
+
+    dx *= s;
+    dy *= s;
+    cx *= s;
+
+    sf::ConvexShape tile;
+    tile.setPointCount(6);
+    tile.setPoint(0, dx - dy);
+    tile.setPoint(1, cx);
+    tile.setPoint(2, dx + dy);
+    tile.setPoint(3, -dx + dy);
+    tile.setPoint(4, -cx);
+    tile.setPoint(5, -dx - dy);
+    tile.setPosition(pos);
+
+    return tile;
+}
+
+sf::CircleShape CreateDot(const sf::Vector2f& pos, Dir dir) {
+    sf::CircleShape circ;
+    float r = 0.05f;
+
+    circ.setRadius(r);
+    circ.setOrigin(-0.65, r);
+    circ.rotate(-90 + int(dir) * 60);
+    circ.setPosition(pos);
+
+    return circ;
+}
+
+sf::Text CreateText(const sf::Vector2f& pos, const sf::Font& font,
+        const std::string& str)
+{
+    sf::Text text(str, font, 48);
+    text.setFillColor(sf::Color(0xff, 0xff, 0xff, 0x80));
+    text.setOutlineColor(sf::Color(0x00, 0x00, 0x00, 0x80));
+    text.setOutlineThickness(1);
+
+    auto box = text.getLocalBounds();
+    auto scale = 1.0f / 96.0f;
+    text.setPosition(
+        pos.x + -(box.left + box.width) * 0.5f * scale,
+        pos.y + -(12 + box.top + box.height) * 0.5f * scale);
+    text.setScale(scale, scale);
+
+    return text;
+}
+
+std::string ToString(int n) {
+    std::stringstream ss;
+    ss << n;
+    return ss.str();
+}
 
 void Draw(App& app) {
     auto& window = app.window;
     auto size = app.grid.Size();
-    auto tile = CreateTile();
     auto dy = sqrt(3.0f);
-    float s = 1;
-    float ts = s * 0.98;
-
-    tile.setScale(ts, ts);
 
     window.clear();
     for (int row = -1; row <= size.row; ++row) {
         for (int col = -1; col <= size.col; ++col) {
             auto off = col % 2 ? 0.5f : 0.0f;
-            tile.setPosition(
-                col * s * 1.5f,
-                (row + off) * s * dy);
-            tile.setFillColor(TileColor(app.grid.GetField(Pos(row, col))));
+            sf::Vector2f pos(col * 1.5f, (row + off) * dy);
+            auto tile = CreateTile(pos);
+
+            auto field = app.grid.GetField({row, col});
+            auto ray = app.grid.GetRay({row, col});
+            tile.setFillColor(TileColor(field));
             window.draw(tile);
+            if (ray.bounce < 10) {
+                auto text = CreateText(pos, app.font, ToString(ray.bounce));
+                window.draw(text);
+                for (auto dir : ray.GetUnusedVector()) {
+                    auto dot = CreateDot(pos, dir);
+                    dot.setFillColor(sf::Color::Black);
+                    window.draw(dot);
+                }
+            }
         }
     }
 
@@ -113,13 +162,29 @@ void Run(App& app) {
     }
 }
 
+void LoadFont(App& app) {
+    std::vector<uint8_t> data({
+        #include "font/trebuchet_ms_ttf.h"
+    });
+    app.font.loadFromMemory(data.data(), data.size());
+}
 
 
 int main() {
     App app;
     app.grid.FromStream(std::cin);
-    app.window.create(sf::VideoMode(1600, 1000), "Labirintus");
+    while (app.grid.TraceNext());
 
+    sf::ContextSettings settings;
+    settings.antialiasingLevel = 8;
+
+    app.window.create(
+        sf::VideoMode(1600, 1000), "Labirintus",
+        sf::Style::Default,
+        settings
+    );
+
+    LoadFont(app);
     AdjustView(app);
     Run(app);
 
