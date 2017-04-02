@@ -36,6 +36,19 @@ void AdjustView(App& app) {
     app.window.setView(sf::View(sf::FloatRect(-2.5f, -1.5f * q, w, h)));
 }
 
+void HandleKeypress(App& app, const sf::Event::KeyEvent& ev) {
+    switch (ev.code) {
+        case sf::Keyboard::R:
+            app.grid.InitRays();
+            break;
+        case sf::Keyboard::Space:
+            app.grid.TraceNext();
+            break;
+        default:
+            break;
+    }
+}
+
 
 void HandleEvents(App& app) {
     sf::Event event;
@@ -43,6 +56,9 @@ void HandleEvents(App& app) {
         switch (event.type) {
             case sf::Event::Closed:
                 app.window.close();
+                break;
+            case sf::Event::KeyPressed:
+                HandleKeypress(app, event.key);
                 break;
             case sf::Event::Resized: {
                 AdjustView(app);
@@ -139,7 +155,7 @@ void Draw(App& app) {
             auto ray = app.grid.GetRay({row, col});
             tile.setFillColor(TileColor(field));
             window.draw(tile);
-            if (ray.bounce < 10) {
+            if (ray.bounce != Ray::kUnreached) {
                 auto text = CreateText(pos, app.font, ToString(ray.bounce));
                 window.draw(text);
                 for (auto dir : ray.GetUnusedVector()) {
@@ -173,7 +189,7 @@ void LoadFont(App& app) {
 int main() {
     App app;
     app.grid.FromStream(std::cin);
-    while (app.grid.TraceNext());
+    // while (app.grid.TraceNext());
 
     sf::ContextSettings settings;
     settings.antialiasingLevel = 8;

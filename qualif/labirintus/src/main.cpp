@@ -92,7 +92,10 @@ Pos Neighbor(const Pos& pos, Dir dir) {
 
 
 struct Ray {
-    int bounce = std::numeric_limits<int>::max();
+    Ray() = default;
+
+    static const int kUnreached = std::numeric_limits<int>::max();
+    int bounce = kUnreached;
     uint8_t used = 0;
 
     bool IsUsed(Dir dir) const {
@@ -235,6 +238,7 @@ std::vector<Pos> HexGrid::GetEdgeVector() const {
 }
 
 void HexGrid::InitRays() {
+    edge_.clear();
     ray_grid_.clear();
     ray_grid_.resize(rows_ + 2);
 
