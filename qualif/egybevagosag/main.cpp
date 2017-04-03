@@ -297,8 +297,23 @@ bool isCongruentish(const Building& b1, const Building& b2) {
 }
 
 int main() {
-    auto b1 = read(std::cin);
-    auto b2 = read(std::cin);
+    int building_count;
+    std::cin >> building_count;
+    std::vector<Building> buildings(building_count);
 
-    std::cout << (isCongruentish(b1, b2) ? "TRUE" : "FALSE") << std::endl;
+    for (auto& building : buildings) {
+        building = read(std::cin);
+    }
+
+    std::vector<int> good_indexes;
+    for (int i = 1; i < buildings.size(); ++i) {
+        if (isCongruentish(buildings[0], buildings[i])) {
+            good_indexes.push_back(i);
+        }
+    }
+
+    for (auto i : good_indexes) {
+        std::cout << i << " ";
+    }
+    std::cout << std::endl;
 }
