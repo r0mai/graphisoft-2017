@@ -346,10 +346,19 @@ void HexGrid::PrintSolution(std::ostream& os) const {
     }
 
     os << last_.size() << " " << bounces_ << std::endl;
-    for (auto pos : last_) {
+
+    auto vec = last_;
+    for (auto& pos : vec) {
         // Convert to stupid indexing
         pos.row += 1;
         pos.col = (pos.col % 2) * cols_ / 2 + pos.col / 2 + 1;
+    }
+
+    std::sort(vec.begin(), vec.end(), [](const Pos& lhs, const Pos& rhs) {
+        return std::tie(lhs.row, lhs.col) < std::tie(rhs.row, rhs.col);
+    });
+
+    for (const auto& pos : vec) {
         os << pos.row << " " << pos.col << std::endl;
     }
 }
