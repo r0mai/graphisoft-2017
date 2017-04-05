@@ -335,7 +335,7 @@ int main() {
     }
 
     for (auto i : good_indexes) {
-        std::cout << i << " ";
+        std::cout << i+1 << " ";
     }
     std::cout << std::endl;
 }
