@@ -38,6 +38,14 @@ struct Point {
     int z;
 
     int index = -1;
+
+    Point negate() const {
+        auto p = *this;
+        p.x *= -1;
+        p.y *= -1;
+        p.z *= -1;
+        return p;
+    }
 };
 
 bool operator<(const Point& lhs, const Point& rhs) {
@@ -298,8 +306,8 @@ bool isCongruentish(const Building& b1, const Building& b2) {
                 auto min_vertex_b2 = *std::min_element(
                     rotated_b2.vertices.begin(), rotated_b2.vertices.end());
 
-                auto tb1 = translate(b1, min_vertex_b1);
-                auto tb2 = translate(rotated_b2, min_vertex_b2);
+                auto tb1 = translate(b1, min_vertex_b1.negate());
+                auto tb2 = translate(rotated_b2, min_vertex_b2.negate());
 
                 if (isSame(tb1, tb2)) {
                     return true;
