@@ -366,12 +366,79 @@ bool isEdgesSame(const Building& b1, const Building& b2) {
 }
 
 void SetupFaceIndicies(Building& b) {
-    // setup hole indicies
+    // setup hole and face edge indicies
     for (auto& face : b.faces) {
+        face.sorted_edge_indicies = GetSortedEdgeMap(b, face.edge_indicies);
         for (auto& hole : face.holes) {
-
+            hole.sorted_edge_indicies = GetSortedEdgeMap(b, hole.edge_indicies);
         }
     }
+
+    // setup hole indicies
+    for (auto& face : b.faces) {
+        face.sorted_hole_indicies.resize(face.holes.size());
+
+        std::iota(face.sorted_hole_indicies.begin(), face.sorted_hole_indicies.end(), 0);
+
+        std::sort(face.sorted_hole_indicies.begin(), face.sorted_hole_indicies.end(),
+            [&](int lhs, int rhs) {
+                auto& lh = face.holes[lhs];
+                auto& rh = face.holes[rhs];
+
+                if (lh.sorted_edge_indicies.size() != rh.sorted_edge_indicies.size()) {
+                    return lh.sorted_edge_indicies.size() < rh.sorted_edge_indicies.size();
+                }
+
+                for (int i = 0; i < lh.sorted_edge_indicies.size(); ++i) {
+                    auto& le = b.edges[lh.edge_indicies[lh.sorted_edge_indicies[i]]];
+                    auto& re = b.edges[rh.edge_indicies[rh.sorted_edge_indicies[i]]];
+
+                    auto lt = std::tie(b.vertices[le.start_index], b.vertices[le.end_index]);
+                    auto rt = std::tie(b.vertices[re.start_index], b.vertices[re.end_index]);
+
+                    if (lt != rt) {
+                        return lt < rt;
+                    }
+                }
+                return false; // equal
+            }
+        );
+
+        auto last = std::unique(
+            face.sorted_hole_indicies.begin(),
+            face.sorted_hole_indicies.end(),
+            [&](int lhs, int rhs) {
+                auto& lh = face.holes[lhs];
+                auto& rh = face.holes[rhs];
+
+                if (lh.sorted_edge_indicies.size() != rh.sorted_edge_indicies.size()) {
+                    return false;
+                }
+
+                for (int i = 0; i < lh.sorted_edge_indicies.size(); ++i) {
+                    auto& le = b.edges[lh.edge_indicies[lh.sorted_edge_indicies[i]]];
+                    auto& re = b.edges[rh.edge_indicies[rh.sorted_edge_indicies[i]]];
+
+                    auto lt = std::tie(b.vertices[le.start_index], b.vertices[le.end_index]);
+                    auto rt = std::tie(b.vertices[re.start_index], b.vertices[re.end_index]);
+
+                    if (lt != rt) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        );
+
+        face.sorted_hole_indicies.erase(last, face.sorted_hole_indicies.end());
+    }
+}
+
+bool isFacesSame(Building& b1, Building& b2) {
+    SetupFaceIndicies(b1);
+    SetupFaceIndicies(b2);
+
+    return true;
 }
 
 bool isSame(Building b1, Building b2) {
@@ -381,9 +448,10 @@ bool isSame(Building b1, Building b2) {
     if (!isEdgesSame(b1, b2)) {
         return false;
     }
+    if (!isFacesSame(b1, b2)) {
+        return false;
+    }
 
-    SetupFaceIndicies(b1);
-    SetupFaceIndicies(b2);
     return true;
 }
 
