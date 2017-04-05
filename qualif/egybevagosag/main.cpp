@@ -54,6 +54,10 @@ bool operator<(const Point& lhs, const Point& rhs) {
         std::tie(rhs.x, rhs.y, rhs.z);
 }
 
+bool operator>(const Point& lhs, const Point& rhs) {
+    return rhs < lhs;
+}
+
 bool operator==(const Point& lhs, const Point& rhs) {
     return
         std::tie(lhs.x, lhs.y, lhs.z) ==
@@ -244,6 +248,14 @@ Building translate(const Building& b, const Point& delta) {
     return r;
 }
 
+void OrderEdges(Building& b) {
+    for (auto& e : b.edges) {
+        if (b.vertices[e.start_index] > b.vertices[e.end_index]) {
+            std::swap(e.start_index, e.end_index);
+        }
+    }
+}
+
 std::vector<int> GetSortedVertexMap(const Building& b) {
     std::vector<int> vertex_map(b.vertices.size());
 
@@ -308,6 +320,9 @@ bool isCongruentish(const Building& b1, const Building& b2) {
 
                 auto tb1 = translate(b1, min_vertex_b1.negate());
                 auto tb2 = translate(rotated_b2, min_vertex_b2.negate());
+
+                OrderEdges(tb1);
+                OrderEdges(tb2);
 
                 if (isSame(tb1, tb2)) {
                     return true;
