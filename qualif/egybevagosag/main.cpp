@@ -267,34 +267,96 @@ std::vector<int> GetSortedVertexMap(const Building& b) {
         }
     );
 
-    return vertex_map;
-}
-
-void UniqueVertices(std::vector<int>& vertex_map, const Building& b) {
     auto last = std::unique(vertex_map.begin(), vertex_map.end(),
         [&](int lhs, int rhs) {
             return b.vertices[lhs] == b.vertices[rhs];
         }
     );
     vertex_map.erase(last, vertex_map.end());
+
+    return vertex_map;
+}
+
+std::vector<int> GetSortedEdgeMap(const Building& b) {
+    std::vector<int> edge_map(b.edges.size());
+
+    std::iota(edge_map.begin(), edge_map.end(), 0);
+
+    std::sort(edge_map.begin(), edge_map.end(),
+        [&](int lhs, int rhs) {
+            return
+                std::tie(
+                    b.vertices[b.edges[lhs].start_index],
+                    b.vertices[b.edges[lhs].end_index]
+                ) <
+                std::tie(
+                    b.vertices[b.edges[rhs].start_index],
+                    b.vertices[b.edges[rhs].end_index]
+                );
+        }
+    );
+
+    auto last = std::unique(edge_map.begin(), edge_map.end(),
+        [&](int lhs, int rhs) {
+            return
+                std::tie(
+                    b.vertices[b.edges[lhs].start_index],
+                    b.vertices[b.edges[lhs].end_index]
+                ) ==
+                std::tie(
+                    b.vertices[b.edges[rhs].start_index],
+                    b.vertices[b.edges[rhs].end_index]
+                );
+        }
+    );
+    edge_map.erase(last, edge_map.end());
+
+    return edge_map;
 }
 
 bool isSame(const Building& b1, const Building& b2) {
-    auto b1_vertex_map = GetSortedVertexMap(b1);
-    auto b2_vertex_map = GetSortedVertexMap(b2);
-
-    UniqueVertices(b1_vertex_map, b1);
-    UniqueVertices(b2_vertex_map, b2);
-
-    // if we have different set of vertices, they can't be izomo
-    if (!std::equal(
-        b1_vertex_map.begin(), b1_vertex_map.end(),
-        b2_vertex_map.begin(), b2_vertex_map.end(),
-        [&](int lhs, int rhs) {
-            return b1.vertices[lhs] == b2.vertices[rhs];
-        }))
+    // compare vertices
     {
-        return false;
+        auto b1_vertex_map = GetSortedVertexMap(b1);
+        auto b2_vertex_map = GetSortedVertexMap(b2);
+
+        // if we have different set of vertices, they can't be izomo
+        if (!std::equal(
+            b1_vertex_map.begin(), b1_vertex_map.end(),
+            b2_vertex_map.begin(), b2_vertex_map.end(),
+            [&](int lhs, int rhs) {
+                return b1.vertices[lhs] == b2.vertices[rhs];
+            }))
+        {
+            std::cerr << "Failed vertex comparison test" << std::endl;
+            return false;
+        }
+    }
+
+    // compare edges
+    {
+        auto b1_edge_map = GetSortedEdgeMap(b1);
+        auto b2_edge_map = GetSortedEdgeMap(b2);
+
+        // if we have different set of edges, they can't be izomo
+        if (!std::equal(
+            b1_edge_map.begin(), b1_edge_map.end(),
+            b2_edge_map.begin(), b2_edge_map.end(),
+            [&](int lhs, int rhs) {
+                return
+                    std::tie(
+                        b1.vertices[b1.edges[lhs].start_index],
+                        b1.vertices[b1.edges[lhs].end_index]
+                    ) ==
+                    std::tie(
+                        b2.vertices[b2.edges[rhs].start_index],
+                        b2.vertices[b2.edges[rhs].end_index]
+                    );
+            }))
+        {
+            std::cerr << "Failed edge comparison test" << std::endl;
+            return false;
+        }
     }
 
     return true;
@@ -344,6 +406,7 @@ int main() {
 
     std::vector<int> good_indexes;
     for (int i = 1; i < buildings.size(); ++i) {
+        std::cerr << "-------- Comparing " << 0 << " and " << i << std::endl;
         if (isCongruentish(buildings[0], buildings[i])) {
             good_indexes.push_back(i);
         }
