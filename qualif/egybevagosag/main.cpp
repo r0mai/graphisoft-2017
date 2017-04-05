@@ -250,23 +250,37 @@ std::vector<int> GetSortedVertexMap(const Building& b) {
     return vertex_map;
 }
 
+void UniqueVertices(std::vector<int>& vertex_map, const Building& b) {
+    auto last = std::unique(vertex_map.begin(), vertex_map.end(),
+        [&](int lhs, int rhs) {
+            return b.vertices[lhs] < b.vertices[rhs];
+        }
+    );
+    vertex_map.erase(last, vertex_map.end());
+}
+
 bool isSame(const Building& b1, const Building& b2) {
     auto b1_vertex_map = GetSortedVertexMap(b1);
     auto b2_vertex_map = GetSortedVertexMap(b2);
 
-    for (int i = 0; i < int(b1.vertices.size()); ++i) {
-        if (b1.vertices[b1_vertex_map[i]] != b2.vertices[b2_vertex_map[i]]) {
-            return false;
-        }
+    UniqueVertices(b1_vertex_map, b1);
+    UniqueVertices(b2_vertex_map, b2);
+
+    // if we have different set of vertices, they can't be izomo
+    if (!std::equal(
+        b1_vertex_map.begin(), b1_vertex_map.end(),
+        b2_vertex_map.begin(), b2_vertex_map.end(),
+        [&](int lhs, int rhs) {
+            return b1.vertices[lhs] == b2.vertices[rhs];
+        }))
+    {
+        return false;
     }
 
     return true;
 }
 
 bool isCongruentish(const Building& b1, const Building& b2) {
-    if (b1.vertices.size() != b2.vertices.size()) {
-        return false;
-    }
     if (b1.vertices.empty()) {
         return true;
     }
