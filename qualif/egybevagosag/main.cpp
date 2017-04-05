@@ -170,11 +170,18 @@ struct Edge {
 
 struct Hole {
     std::vector<int> edge_indicies;
+
+    // non-state
+    std::vector<int> sorted_edge_indicies;
 };
 
 struct Face {
     std::vector<int> edge_indicies;
     std::vector<Hole> holes;
+
+    // non-state
+    std::vector<int> sorted_edge_indicies;
+    std::vector<int> sorted_hole_indicies;
 };
 
 struct Building {
@@ -277,88 +284,106 @@ std::vector<int> GetSortedVertexMap(const Building& b) {
     return vertex_map;
 }
 
-std::vector<int> GetSortedEdgeMap(const Building& b) {
+std::vector<int> GetSortedEdgeMap(
+    const Building& b,
+    const std::vector<int>& edge_map)
+{
+    std::vector<int> sorted_edge_map = edge_map;
+
+    std::sort(sorted_edge_map.begin(), sorted_edge_map.end(),
+        [&](int lhs, int rhs) {
+            return
+                std::tie(
+                    b.vertices[b.edges[edge_map[lhs]].start_index],
+                    b.vertices[b.edges[edge_map[lhs]].end_index]
+                ) <
+                std::tie(
+                    b.vertices[b.edges[edge_map[rhs]].start_index],
+                    b.vertices[b.edges[edge_map[rhs]].end_index]
+                );
+        }
+    );
+
+    auto last = std::unique(sorted_edge_map.begin(), sorted_edge_map.end(),
+        [&](int lhs, int rhs) {
+            return
+                std::tie(
+                    b.vertices[b.edges[edge_map[lhs]].start_index],
+                    b.vertices[b.edges[edge_map[lhs]].end_index]
+                ) ==
+                std::tie(
+                    b.vertices[b.edges[edge_map[rhs]].start_index],
+                    b.vertices[b.edges[edge_map[rhs]].end_index]
+                );
+        }
+    );
+    sorted_edge_map.erase(last, sorted_edge_map.end());
+
+    return sorted_edge_map;
+}
+
+std::vector<int> GetSortedEdgeMapForBuilding(const Building& b) {
     std::vector<int> edge_map(b.edges.size());
 
     std::iota(edge_map.begin(), edge_map.end(), 0);
 
-    std::sort(edge_map.begin(), edge_map.end(),
-        [&](int lhs, int rhs) {
-            return
-                std::tie(
-                    b.vertices[b.edges[lhs].start_index],
-                    b.vertices[b.edges[lhs].end_index]
-                ) <
-                std::tie(
-                    b.vertices[b.edges[rhs].start_index],
-                    b.vertices[b.edges[rhs].end_index]
-                );
-        }
-    );
-
-    auto last = std::unique(edge_map.begin(), edge_map.end(),
-        [&](int lhs, int rhs) {
-            return
-                std::tie(
-                    b.vertices[b.edges[lhs].start_index],
-                    b.vertices[b.edges[lhs].end_index]
-                ) ==
-                std::tie(
-                    b.vertices[b.edges[rhs].start_index],
-                    b.vertices[b.edges[rhs].end_index]
-                );
-        }
-    );
-    edge_map.erase(last, edge_map.end());
-
-    return edge_map;
+    return GetSortedEdgeMap(b, edge_map);
 }
 
-bool isSame(const Building& b1, const Building& b2) {
-    // compare vertices
-    {
-        auto b1_vertex_map = GetSortedVertexMap(b1);
-        auto b2_vertex_map = GetSortedVertexMap(b2);
 
-        // if we have different set of vertices, they can't be izomo
-        if (!std::equal(
-            b1_vertex_map.begin(), b1_vertex_map.end(),
-            b2_vertex_map.begin(), b2_vertex_map.end(),
-            [&](int lhs, int rhs) {
-                return b1.vertices[lhs] == b2.vertices[rhs];
-            }))
-        {
-            std::cerr << "Failed vertex comparison test" << std::endl;
-            return false;
+bool isVerticesSame(const Building& b1, const Building& b2) {
+    auto b1_vertex_map = GetSortedVertexMap(b1);
+    auto b2_vertex_map = GetSortedVertexMap(b2);
+
+    // if we have different set of vertices, they can't be izomo
+    return std::equal(
+        b1_vertex_map.begin(), b1_vertex_map.end(),
+        b2_vertex_map.begin(), b2_vertex_map.end(),
+        [&](int lhs, int rhs) {
+            return b1.vertices[lhs] == b2.vertices[rhs];
+        });
+}
+
+bool isEdgesSame(const Building& b1, const Building& b2) {
+    auto b1_edge_map = GetSortedEdgeMapForBuilding(b1);
+    auto b2_edge_map = GetSortedEdgeMapForBuilding(b2);
+
+    // if we have different set of edges, they can't be izomo
+    return std::equal(
+        b1_edge_map.begin(), b1_edge_map.end(),
+        b2_edge_map.begin(), b2_edge_map.end(),
+        [&](int lhs, int rhs) {
+            return
+                std::tie(
+                    b1.vertices[b1.edges[lhs].start_index],
+                    b1.vertices[b1.edges[lhs].end_index]
+                ) ==
+                std::tie(
+                    b2.vertices[b2.edges[rhs].start_index],
+                    b2.vertices[b2.edges[rhs].end_index]
+                );
+        });
+}
+
+void SetupFaceIndicies(Building& b) {
+    // setup hole indicies
+    for (auto& face : b.faces) {
+        for (auto& hole : face.holes) {
+
         }
     }
+}
 
-    // compare edges
-    {
-        auto b1_edge_map = GetSortedEdgeMap(b1);
-        auto b2_edge_map = GetSortedEdgeMap(b2);
-
-        // if we have different set of edges, they can't be izomo
-        if (!std::equal(
-            b1_edge_map.begin(), b1_edge_map.end(),
-            b2_edge_map.begin(), b2_edge_map.end(),
-            [&](int lhs, int rhs) {
-                return
-                    std::tie(
-                        b1.vertices[b1.edges[lhs].start_index],
-                        b1.vertices[b1.edges[lhs].end_index]
-                    ) ==
-                    std::tie(
-                        b2.vertices[b2.edges[rhs].start_index],
-                        b2.vertices[b2.edges[rhs].end_index]
-                    );
-            }))
-        {
-            std::cerr << "Failed edge comparison test" << std::endl;
-            return false;
-        }
+bool isSame(Building b1, Building b2) {
+    if (!isVerticesSame(b1, b2)) {
+        return false;
+    }
+    if (!isEdgesSame(b1, b2)) {
+        return false;
     }
 
+    SetupFaceIndicies(b1);
+    SetupFaceIndicies(b2);
     return true;
 }
 
