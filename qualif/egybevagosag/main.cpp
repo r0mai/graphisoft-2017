@@ -261,7 +261,7 @@ std::vector<int> GetSortedVertexMap(const Building& b) {
 void UniqueVertices(std::vector<int>& vertex_map, const Building& b) {
     auto last = std::unique(vertex_map.begin(), vertex_map.end(),
         [&](int lhs, int rhs) {
-            return b.vertices[lhs] < b.vertices[rhs];
+            return b.vertices[lhs] == b.vertices[rhs];
         }
     );
     vertex_map.erase(last, vertex_map.end());
