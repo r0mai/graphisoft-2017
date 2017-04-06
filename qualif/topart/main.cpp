@@ -54,48 +54,59 @@ std::shared_ptr<Village> findByName(
 using JumpDescriptor =
 		std::pair<std::shared_ptr<Village>, std::shared_ptr<Village>>;
 
-std::pair<
+std::tuple<
 		std::vector<JumpDescriptor>,
-		int> getJumps(std::shared_ptr<Village> start, int budget) {
+		int, int> getJumps(std::shared_ptr<Village> start, int budget) {
 	if (start == nullptr) {
 		// No more villages to visit.
-		return std::make_pair(std::vector<JumpDescriptor>{}, 0);
+		return std::make_tuple(std::vector<JumpDescriptor>{}, 0, 0);
 	}
 	const auto& jumpsAvailable = start->getJumps();
 
 	const auto& straightRoute = getJumps(start->getNext(),
 			budget - start->getNextDistance());
-	const auto& straightJumps = straightRoute.first;
-	const auto& straightCost = straightRoute.second + start->getNextDistance();
+	const auto& straightJumps = std::get<0>(straightRoute);
+	const auto& straightCost = std::get<1>(straightRoute)+ start->getNextDistance();
+	const auto& straightCycleTime = std::get<2>(straightRoute) + start->getNextDistance();
 
 	// Greedy, if straight is acceptable, or we have no other choice,
 	// we choose it.
 	if (straightCost <= budget || jumpsAvailable.empty()) {
-		return std::make_pair(straightJumps, straightCost);
+		return std::make_tuple(straightJumps, straightCost, straightCycleTime);
 	}
 
-	std::vector<std::pair<std::vector<JumpDescriptor>, int>> indirectRoutes;
+	std::vector<std::tuple<std::vector<JumpDescriptor>, int, int>> indirectRoutes;
 	for (const auto& jump: jumpsAvailable) {
 		const auto& destination = jump.first;
 		const auto& jumpCost = jump.second;
 		const auto& route = getJumps(destination, budget - jumpCost);
-		auto routeJumps = route.first;
+		auto routeJumps = std::get<0>(route);
 		routeJumps.insert(routeJumps.begin(),
 				std::make_pair(start, destination));
-		const auto& routeCost = route.second;
+		const auto& routeCost = std::get<1>(route);
+		const auto& routeCycleTime = std::get<2>(route);
 		indirectRoutes.push_back(
-				std::make_pair(routeJumps, routeCost + jumpCost));
+				std::make_tuple(routeJumps, routeCost + jumpCost, routeCycleTime));
 	}
 
-	std::sort(indirectRoutes.begin(), indirectRoutes.end(),
-			[](const std::pair<std::vector<JumpDescriptor>, int>& l,
-				const std::pair<std::vector<JumpDescriptor>, int>& r) {
-				return l.second < r.second;
-			});
+	std::vector<std::tuple<std::vector<JumpDescriptor>, int, int>> permissibleRoutes;
+	std::copy_if(indirectRoutes.rbegin(), indirectRoutes.rend(),
+			std::back_inserter(permissibleRoutes),
+			[&budget](const std::tuple<std::vector<JumpDescriptor>, int, int>& route) {
+					return std::get<1>(route) <= budget; });
 
-	const auto& route = indirectRoutes[0];
-	return route;
 
+	if (permissibleRoutes.empty()) {
+		return indirectRoutes[0];
+	}
+
+	const auto& it =
+			std::max_element(permissibleRoutes.begin(), permissibleRoutes.end(),
+			[](const std::tuple<std::vector<JumpDescriptor>, int, int>& l,
+				const std::tuple<std::vector<JumpDescriptor>, int, int>& r) {
+					return std::get<2>(l) < std::get<2>(r); });
+
+	return *it;
 }
 
 
@@ -138,9 +149,10 @@ int main() {
 	std::cin >> timeBudget;
 
 	const auto& route = getJumps(villages[0], timeBudget);
-	std::cerr << "Total route cost is: " << route.second << std::endl;
-	std::cout << route.first.size() << std::endl;
-	for (const auto& jump: route.first) {
+	std::cerr << "Total route cost is: " << std::get<1>(route) << std::endl;
+	std::cerr << "Total time on bike is: " << std::get<2>(route) << std::endl;
+	std::cout << std::get<0>(route).size() << std::endl;
+	for (const auto& jump: std::get<0>(route)) {
 		const auto& from = jump.first->getName();
 		const auto& to = jump.second->getName();
 		std::cout << from << " " << to << std::endl;
