@@ -5,6 +5,7 @@
 #include <cassert>
 #include <numeric>
 #include <algorithm>
+#include <sstream>
 
 int intCos(int turns) {
     switch (turns) {
@@ -464,7 +465,6 @@ bool isCongruentish(const Building& b1, const Building& b2) {
         for (int ry = 0; ry < 4; ++ry) {
             for (int rz = 0; rz < 4; ++rz) {
                 auto rotationMatrix = rotationMatrixFor(rx, ry, rz);
-                std::cerr << rotationMatrix << std::endl;
 
                 auto rotated_b2 = transform(b2, rotationMatrix);
 
@@ -489,17 +489,24 @@ bool isCongruentish(const Building& b1, const Building& b2) {
 }
 
 int main() {
+    std::cerr << "------- STARTING --------" << std::endl;
+    std::stringstream ss;
+    std::string line;
+    while (std::getline(std::cin, line)) {
+        ss << line << "\n";
+        std::cerr << line << "\n";
+    }
+
     int building_count;
-    std::cin >> building_count;
+    ss >> building_count;
     std::vector<Building> buildings(building_count);
 
     for (auto& building : buildings) {
-        building = read(std::cin);
+        building = read(ss);
     }
 
     std::vector<int> good_indexes;
     for (int i = 1; i < buildings.size(); ++i) {
-        std::cerr << "-------- Comparing " << 0 << " and " << i << std::endl;
         if (isCongruentish(buildings[0], buildings[i])) {
             good_indexes.push_back(i);
         }
