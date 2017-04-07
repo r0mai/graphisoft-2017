@@ -1,5 +1,7 @@
 #include <iostream>
 #include <vector>
+#include <tuple>
+#include <algorithm>
 #include <cassert>
 #include <limits>
 
