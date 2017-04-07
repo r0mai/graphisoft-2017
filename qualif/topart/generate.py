@@ -3,28 +3,15 @@ from __future__ import print_function
 from random import randint
 
 
-# (1 <= N <= 10000, 1 <= M <= 10000,
-#    1 <= idopontok ket telepules kozott <= 1000, 1 <= T <= 10000000)
-
-# 5
-# Graphivaros
-# Graphit
-# Graphihaza
-# Graphipark
-# Graphiujfalu
-# 30 15 60 45 60
-# 1
-# Graphihaza Graphiujfalu 30
-# 180
-
-
 def city_name(k):
-    return 'G_{}'.format(k)
+    return 'G{}'.format(k)
 
 
 def random_edge(n):
-    x = randint(1, n * (n - 1) / 2)
-    d = n - 1
+    x = randint(1, n * (n + 1) / 2 - 1)
+    if x >= n:
+        x += 1  # filter 0 -> n
+    d = n
     p = 0
     while x > d:
         p += 1
@@ -34,16 +21,53 @@ def random_edge(n):
     return (p, p + x)
 
 
+def add_edge(edges, p, q, d):
+    edges[p] = edges.get(p, {})
+    edges[p][q] = min(edges[p].get(q, d), d)
+
+
+def minimum_t(n, ds, es):
+    edges = {}
+    for p, q, d in es:
+        add_edge(edges, p, q, d)
+
+    for i, d in enumerate(ds):
+        add_edge(edges, i, i + 1, d)
+
+    ws = [ 0 for i in range(n + 1) ]
+    ps = set([0])
+    qs = set(range(1, n+1))
+
+    while qs:
+        cs = []
+        for p in ps:
+            if p not in edges:
+                continue
+            for q, d in edges[p].iteritems():
+                if q not in qs:
+                    continue
+                cs.append((ws[p] + d, q))
+        w, q = min(cs)
+        ws[q] = w
+        ps.add(q)
+        qs.remove(q)
+
+    return ws[n]
+
+
 if __name__ == '__main__':
     max_n = 10
     max_m = 10
     max_d = 100
-    max_t = max_d * max_n
 
     n = randint(2, max_n)   # single city is invalid
-    m = randint(1, max_m)   #
+    m = randint(1, max_m)
     ds = [randint(1, max_d) for i in range(n)]
-    t = randint(1, max_t)
+    es = [random_edge(n) + (randint(1, max_d),) for i in range(m)]
+
+    min_t = minimum_t(n, ds, es)
+
+    t = randint(min_t, sum(ds))
 
     print(n)
     for i in range(n):
@@ -51,7 +75,7 @@ if __name__ == '__main__':
     print(' '.join(map(str, ds)))
     print(m)
 
-    for i in range(m):
-        p, q = random_edge(n)
-        print(city_name(p), city_name(q), randint(1, max_d))
+    for p, q, d in es:
+        print(city_name(p), city_name(q % n), d)
+
     print(t)
