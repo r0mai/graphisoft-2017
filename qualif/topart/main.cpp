@@ -61,6 +61,13 @@ std::tuple<
 		// No more villages to visit.
 		return std::make_tuple(std::vector<JumpDescriptor>{}, 0, 0);
 	}
+	static std::map<std::shared_ptr<Village>,
+			std::tuple<std::vector<JumpDescriptor>, int, int>> memo;
+	auto memoIt = memo.find(start);
+	if (memoIt != memo.end()) {
+		return memoIt->second;
+	}
+
 	const auto& jumpsAvailable = start->getJumps();
 
 	const auto& straightRoute = getJumps(start->getNext(),
@@ -72,7 +79,9 @@ std::tuple<
 	// Greedy, if straight is acceptable, or we have no other choice,
 	// we choose it.
 	if (straightCost <= budget || jumpsAvailable.empty()) {
-		return std::make_tuple(straightJumps, straightCost, straightCycleTime);
+		const auto result = std::make_tuple(straightJumps, straightCost, straightCycleTime);
+		memo[start] = result;
+		return result;
 	}
 
 	std::vector<std::tuple<std::vector<JumpDescriptor>, int, int>> indirectRoutes;
@@ -97,7 +106,9 @@ std::tuple<
 
 
 	if (permissibleRoutes.empty()) {
-		return indirectRoutes[0];
+		const auto result = indirectRoutes[0];
+		memo[start] = result;
+		return result;
 	}
 
 	const auto& it =
@@ -106,6 +117,7 @@ std::tuple<
 				const std::tuple<std::vector<JumpDescriptor>, int, int>& r) {
 					return std::get<2>(l) < std::get<2>(r); });
 
+	memo[start] = *it;
 	return *it;
 }
 
