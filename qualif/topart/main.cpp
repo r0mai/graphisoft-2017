@@ -39,6 +39,7 @@ public:
 	}
 };
 
+template class std::vector<std::shared_ptr<Village>>;
 
 std::shared_ptr<Village> findByName(
 		const std::vector<std::shared_ptr<Village>>& villages,
@@ -153,6 +154,10 @@ int main() {
 		auto fromVillage = findByName(villages, from);
 		auto toVillage = findByName(villages, to);
 		assert(fromVillage && toVillage && "One of the villages was not found");
+		if (toVillage == villages.front()) {
+			// Jumps only go forward
+			toVillage = villages.back();
+		}
 
 		fromVillage->addJump(toVillage, distance);
 	}
