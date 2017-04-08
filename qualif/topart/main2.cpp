@@ -14,6 +14,9 @@ public:
 	std::map<std::pair<int, int>, std::map<int, int>>
 			getConflictingFerries() const;
 
+	int getRoadLength() const;
+	int getTimeBudget() const;
+
 private:
 	std::vector<std::string> names_;
 	std::vector<int> road_;
@@ -103,6 +106,16 @@ Lake::getConflictingFerries() const {
 }
 
 
+int Lake::getRoadLength() const {
+	return std::accumulate(road_.begin(), road_.end(), 0);
+}
+
+
+int Lake::getTimeBudget() const {
+	return time_;
+}
+
+
 void conflictingFerriesToStream(std::ostream& os,
 		const std::map<std::pair<int, int>, std::map<int, int>>& conflicts) {
 	for (const auto& conflict: conflicts) {
@@ -122,5 +135,10 @@ int main() {
 	lake.fromStream(std::cin);
 	const auto& conflicts = lake.getConflictingFerries();
 	conflictingFerriesToStream(std::cerr, conflicts);
+	const auto& roadLength = lake.getRoadLength();
+	const auto& budget = lake.getTimeBudget();
+	auto excessTime = std::max(roadLength - budget, 0);
+	std::cerr << "Road length is: " << roadLength << ", budget: " << budget
+			<< ", time we need to save: " << excessTime << std::endl;
 
 }
