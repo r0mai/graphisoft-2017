@@ -24,22 +24,25 @@ std::ostream& operator<<(std::ostream& stream, const Ferry& ff) {
 	return stream;
 }
 
+using Indices = std::vector<int>;
 
 class Lake {
 public:
 	void fromStream(std::istream& in);
 	void ferriesToStream(std::ostream& out);
 	void allowedToStream(std::ostream& out);
+	void solve();
 
 	int getOvertime() const { return overtime_; }
 
 private:
 	void calculateAllowed();
+	void recurse(const Indices& used, const Indices& remain, int saved);
 
 	std::vector<std::string> names_;
 	std::vector<int> road_;
 	std::vector<Ferry> ferry_;
-	std::vector<std::vector<int>> allowed_;
+	std::vector<Indices> allowed_;
 
 	int time_ = 0;
 	int overtime_ = 0;
@@ -141,8 +144,10 @@ void Lake::calculateAllowed() {
 
 
 void Lake::ferriesToStream(std::ostream& out) {
+	int i = 0;
 	for (const auto& x : ferry_) {
-		out << x << std::endl;
+		out << i << ": " << x << std::endl;
+		++i;
 	}
 
 	out << "Time we need to save = " <<  overtime_ << std::endl;
@@ -164,11 +169,48 @@ void Lake::allowedToStream(std::ostream& os) {
 }
 
 
+void Lake::recurse(const Indices& used, const Indices& remain, int saved) {
+	if (saved >= overtime_) {
+		std::cerr << "Saved " << saved << ", Indices:";
+		for (auto x : used) {
+			std::cerr << " " << x;
+		}
+		std::cerr << std::endl;
+		return;
+	}
+
+	Indices next_used = used;
+	next_used.push_back(-1);	// placeholder
+
+	for (auto i : remain) {
+		Indices next_remain;
+		std::set_intersection(
+			remain.begin(), remain.end(),
+			allowed_[i].begin(), allowed_[i].end(),
+			std::back_inserter(next_remain));
+
+		next_used.back() = i;
+		recurse(
+			next_used,
+			next_remain,
+			ferry_[i].saving + saved);
+	}
+}
+
+
+void Lake::solve() {
+	Indices remain(ferry_.size());
+	std::iota(remain.begin(), remain.end(), 0);
+	recurse({}, remain, 0);
+}
+
+
 int main() {
 	Lake lake;
 	lake.fromStream(std::cin);
 	lake.ferriesToStream(std::cerr);
 	lake.allowedToStream(std::cerr);
 
+	lake.solve();
 	return 0;
 }
