@@ -29,6 +29,7 @@ class Lake {
 public:
 	void fromStream(std::istream& in);
 	void ferriesToStream(std::ostream& out);
+	void allowedToStream(std::ostream& out);
 
 	int getOvertime() const { return overtime_; }
 
@@ -112,13 +113,28 @@ void Lake::calculateAllowed() {
 	auto fs = ferry_.size();
 	allowed_.resize(fs);
 
-	for (int i = 0; i < fs; ++i) {
+	for (std::size_t i = 0; i < fs; ++i) {
 		auto& vec = allowed_[i];
+		int src = ferry_[i].src;
 		int dst = ferry_[i].dst;
-		for (int j = i + 1; j < fs; ++j) {
-			if (ferry_[j].src >= dst) {
+
+		for (std::size_t j = 0; j < i; ++j) {
+			const auto& ferry = ferry_[j];
+			if (ferry.dst <= src) {
 				vec.push_back(j);
 			}
+		}
+
+		// Index of ferries departing later than dst
+		std::size_t dstIndex = i;
+		for (; dstIndex < fs; ++dstIndex) {
+			if (ferry_[dstIndex].src >= dst) {
+				break;
+			}
+		}
+
+		for (std::size_t j = dstIndex; j < fs; ++j) {
+			vec.push_back(j);
 		}
 	}
 }
@@ -133,10 +149,26 @@ void Lake::ferriesToStream(std::ostream& out) {
 }
 
 
+void Lake::allowedToStream(std::ostream& os) {
+	for (std::size_t i = 0; i < ferry_.size(); ++i) {
+		const auto& ferry = ferry_[i];
+		const auto& allowedFerries = allowed_[i];
+		os << ferry.src << "->" << ferry.dst << " {\n";
+		for (const auto& allowedFerryIndex: allowedFerries) {
+			const auto& allowedFerry = ferry_[allowedFerryIndex];
+			os << "    " << allowedFerry.src << "->"
+					<< allowedFerry.dst << "\n";
+		}
+		os << "}\n";
+	}
+}
+
+
 int main() {
 	Lake lake;
 	lake.fromStream(std::cin);
 	lake.ferriesToStream(std::cerr);
+	lake.allowedToStream(std::cerr);
 
 	return 0;
 }
