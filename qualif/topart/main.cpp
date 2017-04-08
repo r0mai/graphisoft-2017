@@ -42,16 +42,14 @@ public:
 template class std::vector<std::shared_ptr<Village>>;
 
 std::shared_ptr<Village> findByName(
-		const std::vector<std::shared_ptr<Village>>& villages,
+		const std::map<std::string, std::shared_ptr<Village>>& villagesByName,
 		const std::string& name) {
-	for (const auto& village: villages) {
-		if (village->getName() == name) {
-			return village;
-		}
+	auto it = villagesByName.find(name);
+	if (it == villagesByName.end()) {
+		return nullptr;
 	}
-	return nullptr;
+	return it->second;
 }
-
 using JumpDescriptor =
 		std::pair<std::shared_ptr<Village>, std::shared_ptr<Village>>;
 
@@ -125,13 +123,16 @@ std::tuple<
 
 int main() {
 	std::vector<std::shared_ptr<Village>> villages;
+	std::map<std::string, std::shared_ptr<Village>> villagesByName;
 	int n;
 	std::cin >> n;
 
 	for (int i=0; i<n; ++i) {
 		std::string cityName;
 		std::cin >> cityName;
-		villages.push_back(std::make_shared<Village>(cityName));
+		auto village = std::make_shared<Village>(cityName);
+		villages.push_back(village);
+		villagesByName[cityName] = village;
 	}
 
 	// Instead of creating a cycle, let's add a deep copy of the first village
@@ -151,8 +152,8 @@ int main() {
 		std::string to;
 		int distance;
 		std::cin >> from >> to >> distance;
-		auto fromVillage = findByName(villages, from);
-		auto toVillage = findByName(villages, to);
+		auto fromVillage = findByName(villagesByName, from);
+		auto toVillage = findByName(villagesByName, to);
 		if (toVillage == nullptr || fromVillage == nullptr) {
 			std::cerr << "Could not find cities for jump between: "
 					<< from << " " << to << std::endl;
