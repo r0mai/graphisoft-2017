@@ -32,6 +32,7 @@ public:
 	void ferriesToStream(std::ostream& out);
 	void allowedToStream(std::ostream& out);
 	void solve();
+	void solutionToStream(std::ostream& out);
 
 	int getOvertime() const { return overtime_; }
 
@@ -43,6 +44,8 @@ private:
 	std::vector<int> road_;
 	std::vector<Ferry> ferry_;
 	std::vector<Indices> allowed_;
+
+	Indices solution_;
 
 	int time_ = 0;
 	int overtime_ = 0;
@@ -154,17 +157,17 @@ void Lake::ferriesToStream(std::ostream& out) {
 }
 
 
-void Lake::allowedToStream(std::ostream& os) {
+void Lake::allowedToStream(std::ostream& out) {
 	for (std::size_t i = 0; i < ferry_.size(); ++i) {
 		const auto& ferry = ferry_[i];
 		const auto& allowedFerries = allowed_[i];
-		os << ferry.src << "->" << ferry.dst << " {\n";
+		out << ferry.src << "->" << ferry.dst << " {\n";
 		for (const auto& allowedFerryIndex: allowedFerries) {
 			const auto& allowedFerry = ferry_[allowedFerryIndex];
-			os << "    " << allowedFerry.src << "->"
+			out << "    " << allowedFerry.src << "->"
 					<< allowedFerry.dst << "\n";
 		}
-		os << "}\n";
+		out << "}\n";
 	}
 }
 
@@ -176,6 +179,7 @@ void Lake::recurse(const Indices& used, const Indices& remain, int saved) {
 			std::cerr << " " << x;
 		}
 		std::cerr << std::endl;
+		solution_ = used;
 		return;
 	}
 
@@ -205,6 +209,20 @@ void Lake::solve() {
 }
 
 
+void Lake::solutionToStream(std::ostream& out) {
+	out << solution_.size() << '\n';
+
+	for (const auto& ferryIndex: solution_) {
+		const auto& ferry = ferry_[ferryIndex];
+		const auto& src = ferry.src;
+		const auto& dst = ferry.dst;
+		const auto& srcName = names_[src];
+		const auto& dstName = names_[dst];
+		out << srcName << " " << dstName << '\n';
+	}
+}
+
+
 int main() {
 	Lake lake;
 	lake.fromStream(std::cin);
@@ -212,5 +230,6 @@ int main() {
 	lake.allowedToStream(std::cerr);
 
 	lake.solve();
+	lake.solutionToStream(std::cout);
 	return 0;
 }
