@@ -483,8 +483,17 @@ std::vector<Matrix> rotationMatrices() {
 }
 
 bool isCongruentish(const Building& b1, const Building& b2) {
+    if (b1.vertices.size() != b2.vertices.size()) {
+        return false;
+    }
     if (b1.vertices.empty()) {
         return true;
+    }
+    if (b1.edges.size() != b2.edges.size()) {
+        return false;
+    }
+    if (b1.faces.size() != b2.faces.size()) {
+        return false;
     }
 
     for (const Matrix& rotationMatrix : rotationMatrices()) {
