@@ -75,7 +75,9 @@ Dir Opposite(Dir dir) {
         case Dir::kSouth: return Dir::kNorth;
         case Dir::kSouthWest: return Dir::kNorthEast;
         case Dir::kNorthWest: return Dir::kSouthEast;
+        default: assert(false);
     }
+    return Dir::kNorth;
 }
 
 Pos Neighbor(const Pos& pos, Dir dir) {
@@ -89,7 +91,10 @@ Pos Neighbor(const Pos& pos, Dir dir) {
         case Dir::kNorthWest: return Pos(pos.row - even, pos.col - 1);
         case Dir::kSouthEast: return Pos(pos.row + odd, pos.col + 1);
         case Dir::kSouthWest: return Pos(pos.row + odd, pos.col - 1);
+        default: assert(false);
     }
+
+    return pos;
 }
 
 
@@ -375,6 +380,7 @@ int main() {
         hg.TraceNext();
     }
     hg.PrintSolution(std::cout);
+    return 0;
 }
 
 #endif
