@@ -6,6 +6,7 @@
 #include <numeric>
 #include <algorithm>
 #include <sstream>
+#include <set>
 
 int intCos(int turns) {
     switch (turns) {
@@ -74,6 +75,12 @@ struct Matrix {
     int d, e, f;
     int g, h, i;
 };
+
+bool operator<(const Matrix& a, const Matrix& b) {
+    return
+        std::tie(a.a, a.b, a.c, a.d, a.e, a.f, a.g, a.h, a.i) <
+        std::tie(b.a, b.b, b.c, b.d, b.e, b.f, b.g, b.h, b.i);
+}
 
 std::ostream& operator<<(std::ostream& os, const Point& p) {
     os << "(" << p.x << "," << p.y << "," << p.z << ")";
@@ -463,35 +470,40 @@ bool isSame(Building b1, Building b2) {
     return true;
 }
 
+std::vector<Matrix> rotationMatrices() {
+    std::set<Matrix> ms;
+    for (int rx = 0; rx < 4; ++rx) {
+        for (int ry = 0; ry < 4; ++ry) {
+            for (int rz = 0; rz < 4; ++rz) {
+                ms.insert(rotationMatrixFor(rx, ry, rz));
+            }
+        }
+    }
+    return {ms.begin(), ms.end()};
+}
+
 bool isCongruentish(const Building& b1, const Building& b2) {
     if (b1.vertices.empty()) {
         return true;
     }
 
-    for (int rx = 0; rx < 4; ++rx) {
-        for (int ry = 0; ry < 4; ++ry) {
-            for (int rz = 0; rz < 4; ++rz) {
-                auto rotationMatrix = rotationMatrixFor(rx, ry, rz);
-                std::cout << "Matrix = " << rotationMatrix << std::endl;
+    for (const Matrix& rotationMatrix : rotationMatrices()) {
+       auto rotated_b2 = transform(b2, rotationMatrix);
 
-                auto rotated_b2 = transform(b2, rotationMatrix);
+       auto min_vertex_b1 = *std::min_element(
+           b1.vertices.begin(), b1.vertices.end());
+       auto min_vertex_b2 = *std::min_element(
+           rotated_b2.vertices.begin(), rotated_b2.vertices.end());
 
-                auto min_vertex_b1 = *std::min_element(
-                    b1.vertices.begin(), b1.vertices.end());
-                auto min_vertex_b2 = *std::min_element(
-                    rotated_b2.vertices.begin(), rotated_b2.vertices.end());
+       auto tb1 = translate(b1, min_vertex_b1.negate());
+       auto tb2 = translate(rotated_b2, min_vertex_b2.negate());
 
-                auto tb1 = translate(b1, min_vertex_b1.negate());
-                auto tb2 = translate(rotated_b2, min_vertex_b2.negate());
+       OrderEdges(tb1);
+       OrderEdges(tb2);
 
-                OrderEdges(tb1);
-                OrderEdges(tb2);
-
-                if (isSame(tb1, tb2)) {
-                    return true;
-                }
-            }
-        }
+       if (isSame(tb1, tb2)) {
+           return true;
+       }
     }
     return false;
 }
