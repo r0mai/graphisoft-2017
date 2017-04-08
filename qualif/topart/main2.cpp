@@ -22,7 +22,6 @@ struct Ferry {
 class Lake {
 public:
 	void fromStream(std::istream& in);
-	std::vector<std::set
 
 	// // If we use first, then we can't use any of second
 	// std::map<std::pair<int, int>, std::map<int, int>>
