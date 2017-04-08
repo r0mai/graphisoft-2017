@@ -153,7 +153,11 @@ int main() {
 		std::cin >> from >> to >> distance;
 		auto fromVillage = findByName(villages, from);
 		auto toVillage = findByName(villages, to);
-		assert(fromVillage && toVillage && "One of the villages was not found");
+		if (toVillage == nullptr || fromVillage == nullptr) {
+			std::cerr << "Could not find cities for jump between: "
+					<< from << " " << to << std::endl;
+			continue;
+		}
 		if (toVillage == villages.front()) {
 			// Jumps only go forward
 			toVillage = villages.back();
