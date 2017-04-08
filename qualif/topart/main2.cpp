@@ -1,8 +1,10 @@
 #include <iostream>
 #include <map>
+#include <set>
 #include <vector>
 #include <algorithm>
 #include <numeric>
+#include <tuple>
 
 
 struct Ferry {
@@ -20,6 +22,7 @@ struct Ferry {
 class Lake {
 public:
 	void fromStream(std::istream& in);
+	std::vector<std::set
 
 	// // If we use first, then we can't use any of second
 	// std::map<std::pair<int, int>, std::map<int, int>>
@@ -69,7 +72,7 @@ void Lake::fromStream(std::istream& in) {
 		std::string src, dst;
 		in >> src >> dst >> d;
 		if (name_map.find(src) == name_map.end() ||
-				name_map.find(dst) == name_map.end())
+			name_map.find(dst) == name_map.end())
 		{
 			// bad input
 			continue;
@@ -81,16 +84,28 @@ void Lake::fromStream(std::istream& in) {
 			q = n;
 		}
 
-		ferry_.emplace_back(p, q, sums[q] - sums[p] - d);
+		int saving = sums[q] - sums[p] - d;
+		if (saving > 0) {
+			// dont care about stupid ferries
+			ferry_.emplace_back(p, q, saving);
+		}
 	}
 
+	std::sort(ferry_.begin(), ferry_.end(),
+		[](const Ferry& lhs, const Ferry& rhs) {
+			return std::tie(lhs.src, lhs.dst) < std::tie(rhs.src, rhs.dst);
+		});
+
+	in >> time_;
+	overtime_ = std::max(sums[n] - time_, 0);
+
+#if 1
 	for (const auto& x : ferry_) {
 		std::cerr << x.src << " " << x.dst << " " << x.saving << std::endl;
 	}
 
-	in >> time_;
-	overtime_ = std::max(sums[n] - time_, 0);
 	std::cerr << overtime_ << std::endl;
+#endif
 }
 
 
