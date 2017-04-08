@@ -19,21 +19,27 @@ struct Ferry {
 };
 
 
+std::ostream& operator<<(std::ostream& stream, const Ferry& ff) {
+	stream << "(" << ff.src << " -> " << ff.dst << ") " << ff.saving;
+	return stream;
+}
+
+
 class Lake {
 public:
 	void fromStream(std::istream& in);
+	void ferriesToStream(std::ostream& out);
 
-	// // If we use first, then we can't use any of second
-	// std::map<std::pair<int, int>, std::map<int, int>>
-	// 		getConflictingFerries() const;
-
-	// int getRoadLength() const;
-	// int getTimeBudget() const;
+	int getOvertime() const { return overtime_; }
 
 private:
+	void calculateAllowed();
+
 	std::vector<std::string> names_;
 	std::vector<int> road_;
 	std::vector<Ferry> ferry_;
+	std::vector<std::vector<int>> allowed_;
+
 	int time_ = 0;
 	int overtime_ = 0;
 };
@@ -98,86 +104,39 @@ void Lake::fromStream(std::istream& in) {
 	in >> time_;
 	overtime_ = std::max(sums[n] - time_, 0);
 
-#if 1
-	for (const auto& x : ferry_) {
-		std::cerr << x.src << " " << x.dst << " " << x.saving << std::endl;
-	}
-
-	std::cerr << overtime_ << std::endl;
-#endif
+	calculateAllowed();
 }
 
 
-// std::map<std::pair<int, int>, std::map<int, int>>
-// Lake::getConflictingFerries() const {
-// 	std::map<std::pair<int, int>, std::map<int, int>> result;
-// 	for (auto it = ferry_.begin(); it != ferry_.end(); ++it) {
-// 		const auto& villageFerries = *it;
-// 		const auto& src = villageFerries.first;
-// 		const auto& availableFerries = villageFerries.second;
-// 		for (const auto& selectedFerry: availableFerries) {
-// 			const auto& dst = selectedFerry.first;
-// 			auto selectedResult = std::map<int, int>{};
+void Lake::calculateAllowed() {
+	auto fs = ferry_.size();
+	allowed_.resize(fs);
 
-// 			// Filter ferries starting before src, but finishing before dst
-// 			for (auto it_ = ferry_.begin(); it_ != it; ++it_) {
-// 				for (const auto& possibleFerry: it->second) {
-// 					if (possibleFerry.first <= dst) {
-// 						selectedResult[it_->first] = possibleFerry.first;
-// 					}
-// 				}
-// 			}
-
-// 			// Filter ferries starting after src, but before dst
-// 			const auto firstFerryAfterRoute = ferry_.upper_bound(dst);
-// 			for (auto it_ = it; it_ != firstFerryAfterRoute; ++it_) {
-// 				for(const auto& possibleFerry: it_->second) {
-// 					selectedResult[it_->first] = possibleFerry.first;
-// 				}
-// 			}
-
-// 			result[std::make_pair(src, dst)] = std::move(selectedResult);
-
-// 		}
-// 	}
-// 	return result;
-// }
+	for (int i = 0; i < fs; ++i) {
+		auto& vec = allowed_[i];
+		int dst = ferry_[i].dst;
+		for (int j = i + 1; j < fs; ++j) {
+			if (ferry_[j].src >= dst) {
+				vec.push_back(j);
+			}
+		}
+	}
+}
 
 
-// int Lake::getRoadLength() const {
-// 	return std::accumulate(road_.begin(), road_.end(), 0);
-// }
+void Lake::ferriesToStream(std::ostream& out) {
+	for (const auto& x : ferry_) {
+		out << x << std::endl;
+	}
 
-
-// int Lake::getTimeBudget() const {
-// 	return time_;
-// }
-
-
-// void conflictingFerriesToStream(std::ostream& os,
-// 		const std::map<std::pair<int, int>, std::map<int, int>>& conflicts) {
-// 	for (const auto& conflict: conflicts) {
-// 		const auto& ferry = conflict.first;
-// 		os << ferry.first << "->" << ferry.second << "\n{\n";
-// 		for (const auto& conflictingFerry: conflict.second) {
-// 			os << "    " << conflictingFerry.first << "->"
-// 					<< conflictingFerry.second << "\n";
-// 		}
-// 		os << "}\n";
-// 	}
-// }
+	out << "Time we need to save = " <<  overtime_ << std::endl;
+}
 
 
 int main() {
 	Lake lake;
 	lake.fromStream(std::cin);
-	// const auto& conflicts = lake.getConflictingFerries();
-	// conflictingFerriesToStream(std::cerr, conflicts);
+	lake.ferriesToStream(std::cerr);
 
-	// const auto& roadLength = lake.getRoadLength();
-	// const auto& budget = lake.getTimeBudget();
-	// auto excessTime = std::max(roadLength - budget, 0);
-	// std::cerr << "Road length is: " << roadLength << ", budget: " << budget
-	// 		<< ", time we need to save: " << excessTime << std::endl;
-
+	return 0;
 }
