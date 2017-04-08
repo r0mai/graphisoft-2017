@@ -15,10 +15,10 @@ def generate(vertex_count, edge_count, face_count):
 
     print face_count
     for x in range(0, face_count):
-        face_edge_count = random.randint(1, edge_count-1)
+        face_edge_count = min(random.randint(1, edge_count-1), 20)
         print face_edge_count
-        for y in range(0, min(face_edge_count, 20)):
-            sys.stdout.write(str(random.randint(0, edge_count-1)) + " ")
+        for y in range(0, face_edge_count):
+            print random.randint(0, edge_count-1)
         print
 
         print 0 # hole count
