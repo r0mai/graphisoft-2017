@@ -96,6 +96,11 @@ void Lake::fromStream(std::istream& in) {
 			q = n;
 		}
 
+		if (p > q) {
+			// going backwards, bad input
+			continue;
+		}
+
 		int saving = sums[q] - sums[p] - d;
 		if (saving > 0) {
 			// dont care about stupid ferries
@@ -206,6 +211,7 @@ void Lake::solve() {
 	Indices remain(ferry_.size());
 	std::iota(remain.begin(), remain.end(), 0);
 	recurse({}, remain, 0);
+	std::sort(solution_.begin(), solution_.end());
 }
 
 
