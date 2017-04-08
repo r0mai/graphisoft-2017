@@ -458,10 +458,10 @@ bool isSame(Building b1, Building b2) {
     if (!isVerticesSame(b1, b2)) {
         return false;
     }
-#if 0
     if (!isEdgesSame(b1, b2)) {
         return false;
     }
+#if 0
     if (!isFacesSame(b1, b2)) {
         return false;
     }
