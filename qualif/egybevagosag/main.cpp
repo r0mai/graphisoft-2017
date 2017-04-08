@@ -274,13 +274,14 @@ std::vector<int> GetSortedVertexMap(const Building& b) {
             return b.vertices[lhs] < b.vertices[rhs];
         }
     );
-
+#if 0
     auto last = std::unique(vertex_map.begin(), vertex_map.end(),
         [&](int lhs, int rhs) {
             return b.vertices[lhs] == b.vertices[rhs];
         }
     );
     vertex_map.erase(last, vertex_map.end());
+#endif
 
     return vertex_map;
 }
@@ -305,6 +306,7 @@ std::vector<int> GetSortedEdgeMap(
         }
     );
 
+#if 0
     auto last = std::unique(sorted_edge_map.begin(), sorted_edge_map.end(),
         [&](int lhs, int rhs) {
             return
@@ -319,6 +321,7 @@ std::vector<int> GetSortedEdgeMap(
         }
     );
     sorted_edge_map.erase(last, sorted_edge_map.end());
+#endif
 
     return sorted_edge_map;
 }
@@ -405,6 +408,7 @@ void SetupFaceIndicies(Building& b) {
             }
         );
 
+#if 0
         auto last = std::unique(
             face.sorted_hole_indicies.begin(),
             face.sorted_hole_indicies.end(),
@@ -432,6 +436,7 @@ void SetupFaceIndicies(Building& b) {
         );
 
         face.sorted_hole_indicies.erase(last, face.sorted_hole_indicies.end());
+#endif
     }
 }
 
@@ -446,12 +451,14 @@ bool isSame(Building b1, Building b2) {
     if (!isVerticesSame(b1, b2)) {
         return false;
     }
+#if 0
     if (!isEdgesSame(b1, b2)) {
         return false;
     }
     if (!isFacesSame(b1, b2)) {
         return false;
     }
+#endif
 
     return true;
 }
@@ -465,6 +472,7 @@ bool isCongruentish(const Building& b1, const Building& b2) {
         for (int ry = 0; ry < 4; ++ry) {
             for (int rz = 0; rz < 4; ++rz) {
                 auto rotationMatrix = rotationMatrixFor(rx, ry, rz);
+                std::cout << "Matrix = " << rotationMatrix << std::endl;
 
                 auto rotated_b2 = transform(b2, rotationMatrix);
 
@@ -494,7 +502,7 @@ int main() {
     std::string line;
     while (std::getline(std::cin, line)) {
         ss << line << "\n";
-        std::cerr << line << "\n";
+        // std::cerr << line << "\n";
     }
 
     int building_count;
@@ -505,6 +513,7 @@ int main() {
         building = read(ss);
     }
 
+    std::cerr << "------- PARSING DONE -------" << std::endl;
     std::vector<int> good_indexes;
     for (int i = 1; i < buildings.size(); ++i) {
         if (isCongruentish(buildings[0], buildings[i])) {
