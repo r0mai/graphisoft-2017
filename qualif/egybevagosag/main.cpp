@@ -506,23 +506,26 @@ bool isCongruentish(const Building& b1, const Building& b2) {
         return false;
     }
 
+    // preprocess b1
+    auto min_vertex_b1 = *std::min_element(
+        b1.vertices.begin(), b1.vertices.end());
+
+    auto tb1 = translate(b1, min_vertex_b1.negate());
+    OrderEdges(tb1);
+
     for (const Matrix& rotationMatrix : rotationMatrices()) {
-       auto rotated_b2 = transform(b2, rotationMatrix);
+        auto rotated_b2 = transform(b2, rotationMatrix);
 
-       auto min_vertex_b1 = *std::min_element(
-           b1.vertices.begin(), b1.vertices.end());
-       auto min_vertex_b2 = *std::min_element(
-           rotated_b2.vertices.begin(), rotated_b2.vertices.end());
+        auto min_vertex_b2 = *std::min_element(
+            rotated_b2.vertices.begin(), rotated_b2.vertices.end());
 
-       auto tb1 = translate(b1, min_vertex_b1.negate());
-       auto tb2 = translate(rotated_b2, min_vertex_b2.negate());
+        auto tb2 = translate(rotated_b2, min_vertex_b2.negate());
 
-       OrderEdges(tb1);
-       OrderEdges(tb2);
+        OrderEdges(tb2);
 
-       if (isSame(tb1, tb2)) {
-           return true;
-       }
+        if (isSame(tb1, tb2)) {
+            return true;
+        }
     }
     return false;
 }
