@@ -31,6 +31,7 @@ public:
 	void fromStream(std::istream& in);
 	void ferriesToStream(std::ostream& out);
 	void allowedToStream(std::ostream& out);
+	void statsToStream(std::ostream& out);
 	void solve();
 	void solutionToStream(std::ostream& out);
 
@@ -194,7 +195,7 @@ bool Lake::recurse(const Indices& used, const Indices& remain, int saved) {
 		}
 		++solve_count_;
 
-		return (optimize_count_ >= 50 || solve_count_ > 100);
+		return (solve_count_ > 1000000);
 	}
 
 	Indices next_used = used;
@@ -224,6 +225,14 @@ void Lake::solve() {
 }
 
 
+void Lake::statsToStream(std::ostream& out) {
+	out << "Need: " << overtime_ << std::endl;
+	out << "Best: " << best_ << std::endl;
+	out << "Optimized: " << optimize_count_ << std::endl;
+	out << "Solved: " << solve_count_ << std::endl;
+}
+
+
 void Lake::solutionToStream(std::ostream& out) {
 	out << solution_.size() << '\n';
 
@@ -245,6 +254,8 @@ int main() {
 	// lake.allowedToStream(std::cerr);
 
 	lake.solve();
+	// lake.statsToStream(std::cerr);
+
 	lake.solutionToStream(std::cout);
 	return 0;
 }
