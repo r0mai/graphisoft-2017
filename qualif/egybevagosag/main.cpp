@@ -1,3 +1,6 @@
+#pragma GCC push_options
+#pragma GCC optimize("O3")
+
 #include <iostream>
 #include <vector>
 #include <array>
@@ -564,3 +567,4 @@ int main() {
     }
     std::cout << std::endl;
 }
+#pragma GCC pop_options
