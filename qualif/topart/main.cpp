@@ -163,6 +163,10 @@ int main() {
 			// Jumps only go forward
 			toVillage = villages.back();
 		}
+		if (std::find(villages.begin(), villages.end(), fromVillage) >=
+				std::find(villages.begin(), villages.end(), toVillage)) {
+			continue;
+		}
 
 		fromVillage->addJump(toVillage, distance);
 	}
