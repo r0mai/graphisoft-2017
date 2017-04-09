@@ -7,6 +7,9 @@
 #include <algorithm>
 #include <sstream>
 #include <set>
+#include <chrono>
+
+using Clock = std::chrono::steady_clock;
 
 int intCos(int turns) {
     switch (turns) {
@@ -525,29 +528,33 @@ bool isCongruentish(const Building& b1, const Building& b2) {
 }
 
 int main() {
+    auto start = Clock::now();
     std::cerr << "------- STARTING --------" << std::endl;
-    std::stringstream ss;
-    std::string line;
-    while (std::getline(std::cin, line)) {
-        ss << line << "\n";
-        // std::cerr << line << "\n";
-    }
 
     int building_count;
-    ss >> building_count;
+    std::cin >> building_count;
     std::vector<Building> buildings(building_count);
 
     for (auto& building : buildings) {
-        building = read(ss);
+        building = read(std::cin);
     }
+    auto read_end = Clock::now();
 
-    std::cerr << "------- PARSING DONE -------" << std::endl;
+    std::cerr << "Reading time: " <<
+        std::chrono::duration_cast<std::chrono::milliseconds>(read_end - start).count()
+        << std::endl;
+
     std::vector<int> good_indexes;
     for (std::size_t i = 1; i < buildings.size(); ++i) {
         if (isCongruentish(buildings[0], buildings[i])) {
             good_indexes.push_back(i);
         }
     }
+
+    auto calculate_end = Clock::now();
+    std::cerr << "Calculating time: " <<
+        std::chrono::duration_cast<std::chrono::milliseconds>(calculate_end - read_end).count()
+        << std::endl;
 
     for (auto i : good_indexes) {
         std::cout << i+1 << " ";
