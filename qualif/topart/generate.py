@@ -34,7 +34,7 @@ def minimum_t(n, ds, es):
     for i, d in enumerate(ds):
         add_edge(edges, i, i + 1, d)
 
-    ws = [ 0 for i in range(n + 1) ]
+    ws = [0 for i in range(n + 1)]
     ps = set([0])
     qs = set(range(1, n+1))
 
@@ -56,9 +56,12 @@ def minimum_t(n, ds, es):
 
 
 if __name__ == '__main__':
-    max_n = 10
-    max_m = 10
-    max_d = 100
+    # N, M: 1-10000, D: 1-1000
+
+    max_n = 10000
+    max_m = 10000
+
+    max_d = 1000
 
     n = randint(2, max_n)   # single city is invalid
     m = randint(1, max_m)

@@ -6,6 +6,7 @@
 #include <numeric>
 #include <tuple>
 #include <chrono>
+#include <boost/dynamic_bitset.hpp>
 
 
 struct Ferry {
@@ -25,8 +26,13 @@ std::ostream& operator<<(std::ostream& stream, const Ferry& ff) {
 	return stream;
 }
 
+#define USE_BITSET 1
+#if USE_BITSET
+	using Indices = boost::dynamic_bitset<>;
+#else
+	using Indices = std::vector<int>;
+#endif
 
-using Indices = std::vector<int>;
 using Clock = std::chrono::steady_clock;
 using Duration = std::chrono::duration<double>;
 
@@ -55,6 +61,7 @@ private:
 	int best_ = 0;
 	int optimize_count_ = 0;
 	int solve_count_ = 0;
+	int recurse_count_ = 0;
 
 	int time_ = 0;
 	int overtime_ = 0;
@@ -137,19 +144,32 @@ void Lake::fromStream(std::istream& in) {
 }
 
 
+void addIndex(Indices& indices, int i) {
+#if USE_BITSET
+	indices.set(i);
+#else
+	indices.push_back(i);
+#endif
+}
+
+
 void Lake::calculateAllowed() {
 	auto fs = ferry_.size();
 	allowed_.resize(fs);
 
 	for (std::size_t i = 0; i < fs; ++i) {
-		auto& vec = allowed_[i];
+		auto& indices = allowed_[i];
 		int src = ferry_[i].src;
 		int dst = ferry_[i].dst;
+
+		#if USE_BITSET
+			indices.resize(fs);
+		#endif
 
 		for (std::size_t j = 0; j < i; ++j) {
 			const auto& ferry = ferry_[j];
 			if (ferry.dst <= src) {
-				vec.push_back(j);
+				addIndex(indices, j);
 			}
 		}
 
@@ -162,7 +182,7 @@ void Lake::calculateAllowed() {
 		}
 
 		for (std::size_t j = dstIndex; j < fs; ++j) {
-			vec.push_back(j);
+			addIndex(indices, j);
 		}
 	}
 }
@@ -180,6 +200,7 @@ void Lake::ferriesToStream(std::ostream& out) {
 
 
 void Lake::allowedToStream(std::ostream& out) {
+#if !USE_BITSET
 	for (std::size_t i = 0; i < ferry_.size(); ++i) {
 		const auto& ferry = ferry_[i];
 		const auto& allowedFerries = allowed_[i];
@@ -191,10 +212,12 @@ void Lake::allowedToStream(std::ostream& out) {
 		}
 		out << "}\n";
 	}
+#endif
 }
 
 
 bool Lake::recurse(const Indices& used, const Indices& remain, int saved) {
+	++recurse_count_;
 	if (--loop_ < 0) {
 		loop_ = 10000;
 		auto current_time = Clock::now();
@@ -226,9 +249,17 @@ bool Lake::recurse(const Indices& used, const Indices& remain, int saved) {
 	}
 
 	int saveable = 0;
+#if USE_BITSET
+	for (size_t i = 0, ie = remain.size(); i < ie; ++i) {
+		if (remain.test(i)) {
+			saveable += ferry_[i].saving;
+		}
+	}
+#else
 	for (auto i : remain) {
 		saveable += ferry_[i].saving;
 	}
+#endif
 
 	if (saveable + saved < overtime_) {
 		return false;
@@ -240,9 +271,26 @@ bool Lake::recurse(const Indices& used, const Indices& remain, int saved) {
 	// 	<< " " << best_
 	// 	<< std::endl;
 
+#if USE_BITSET
 	Indices next_used = used;
-	next_used.push_back(-1);	// placeholder
+	for (size_t i = 0, ie = remain.size(); i < ie; ++i) {
+		if (!remain.test(i)) {
+			continue;
+		}
 
+		Indices next_remain;
+		next_remain = remain & allowed_[i];
+		next_used.set(i);
+
+		if (recurse(next_used, next_remain, ferry_[i].saving + saved)) {
+			return true;
+		}
+
+		next_used.reset(i);
+	}
+#else
+	Indices next_used = used;
+	next_used.push_back(-1); // placeholder
 	for (auto i : remain) {
 		Indices next_remain;
 		std::set_intersection(
@@ -255,15 +303,27 @@ bool Lake::recurse(const Indices& used, const Indices& remain, int saved) {
 			return true;
 		}
 	}
+#endif
+
 	return false;
 }
 
 
 void Lake::solve() {
+	Indices used;
 	Indices remain(ferry_.size());
-	std::iota(remain.begin(), remain.end(), 0);
-	recurse({}, remain, 0);
-	std::sort(solution_.begin(), solution_.end());
+
+	#if USE_BITSET
+		used.resize(ferry_.size());
+		remain.set();
+	#else
+		std::iota(remain.begin(), remain.end(), 0);
+	#endif
+
+	recurse(used, remain, 0);
+	#if !USE_BITSET
+		std::sort(solution_.begin(), solution_.end());
+	#endif
 }
 
 
@@ -272,20 +332,31 @@ void Lake::statsToStream(std::ostream& out) {
 	out << "Best: " << best_ << std::endl;
 	out << "Optimized: " << optimize_count_ << std::endl;
 	out << "Solved: " << solve_count_ << std::endl;
+	out << "Recurse: " << recurse_count_ << std::endl;
 }
 
 
 void Lake::solutionToStream(std::ostream& out) {
-	out << solution_.size() << '\n';
-
+#if USE_BITSET
+	out << solution_.count() << std::endl;
+	for (size_t i = 0, ie = solution_.size(); i < ie; ++i) {
+		if (solution_.test(i)) {
+			const auto& src = names_[ferry_[i].src];
+			const auto& dst = names_[ferry_[i].dst];
+			out << src << " " << dst << std::endl;
+		}
+	}
+#else
+	out << solution_.size() << std::endl;
 	for (const auto& ferryIndex: solution_) {
 		const auto& ferry = ferry_[ferryIndex];
 		const auto& src = ferry.src;
 		const auto& dst = ferry.dst;
 		const auto& srcName = names_[src];
 		const auto& dstName = names_[dst];
-		out << srcName << " " << dstName << '\n';
+		out << srcName << " " << dstName << std::endl;
 	}
+#endif
 }
 
 
