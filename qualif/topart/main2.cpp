@@ -81,6 +81,8 @@ void Lake::fromStream(std::istream& in) {
 		name_map[name] = i;
 	}
 
+	names_.push_back(names_[0]);
+
 	sum = 0;
 	sums.push_back(sum);
 	for (int i = 0; i < n; ++i) {
@@ -193,7 +195,7 @@ void Lake::allowedToStream(std::ostream& out) {
 
 
 bool Lake::recurse(const Indices& used, const Indices& remain, int saved) {
-	if (loop_ == 0) {
+	if (--loop_ < 0) {
 		loop_ = 10000;
 		auto current_time = Clock::now();
 		auto delta = std::chrono::duration_cast<Duration>(current_time - start_time_);
@@ -209,7 +211,6 @@ bool Lake::recurse(const Indices& used, const Indices& remain, int saved) {
 		}
 	}
 
-	--loop_;
 	if (saved >= overtime_) {
 		if (best_ < overtime_ || saved - overtime_ < best_ - overtime_) {
 			solution_ = used;
@@ -217,7 +218,7 @@ bool Lake::recurse(const Indices& used, const Indices& remain, int saved) {
 			++optimize_count_;
 		}
 		++solve_count_;
-		return false;
+		return saved == overtime_;	// stop if it wont be any better
 	}
 
 	if (remain.empty()) {
