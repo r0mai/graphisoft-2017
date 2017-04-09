@@ -195,7 +195,7 @@ bool Lake::recurse(const Indices& used, const Indices& remain, int saved) {
 		}
 		++solve_count_;
 
-		return (solve_count_ > 1000000);
+		return (solve_count_ > 100000);
 	}
 
 	Indices next_used = used;
