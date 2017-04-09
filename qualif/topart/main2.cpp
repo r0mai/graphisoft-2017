@@ -327,7 +327,6 @@ void Lake::calculateWorst() {
 	for (auto x : fs) {
 		addIndex(solution_, x);
 		worst += ferry_[x].saving;
-		const auto& f = ferry_[x];
 	}
 	best_ = worst;
 }
@@ -348,7 +347,7 @@ void Lake::solve() {
 
 void Lake::statsToStream(std::ostream& out) {
 	int ferry_time = 0;
-	for (int i = 0; i < solution_.size(); ++i) {
+	for (size_t i = 0; i < solution_.size(); ++i) {
 		if (solution_.test(i)) { ferry_time += ferry_[i].duration; }
 	}
 
