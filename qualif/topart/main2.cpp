@@ -11,13 +11,14 @@
 
 struct Ferry {
 	Ferry() = default;
-	Ferry(int src, int dst, int saving)
-		: src(src), dst(dst), saving(saving)
+	Ferry(int src, int dst, int saving, int duration)
+		: src(src), dst(dst), saving(saving), duration(duration)
 	{}
 
 	int src = 0;
 	int dst = 0;
 	int saving = 0;
+	int duration = 0;
 };
 
 
@@ -46,9 +47,8 @@ public:
 	void solve();
 	void solutionToStream(std::ostream& out);
 
-	int getOvertime() const { return overtime_; }
-
 private:
+	void calculateWorst();
 	void calculateAllowed();
 	bool recurse(const Indices& used, const Indices& remain, int saved);
 
@@ -128,7 +128,7 @@ void Lake::fromStream(std::istream& in) {
 		int saving = sums[q] - sums[p] - d;
 		if (saving > 0) {
 			// dont care about stupid ferries
-			ferry_.emplace_back(p, q, saving);
+			ferry_.emplace_back(p, q, saving, d);
 		}
 	}
 
@@ -248,7 +248,7 @@ bool Lake::recurse(const Indices& used, const Indices& remain, int saved) {
 		return false;
 	}
 
-	int saveable = 0;
+	long int saveable = 0;
 #if USE_BITSET
 	for (size_t i = 0, ie = remain.size(); i < ie; ++i) {
 		if (remain.test(i)) {
@@ -262,6 +262,11 @@ bool Lake::recurse(const Indices& used, const Indices& remain, int saved) {
 #endif
 
 	if (saveable + saved < overtime_) {
+		// std::cerr
+		// 	<< "X " << saveable
+		// 	<< " " << saved
+		// 	<< " " << overtime_
+		// 	<< std::endl;
 		return false;
 	}
 
@@ -308,8 +313,83 @@ bool Lake::recurse(const Indices& used, const Indices& remain, int saved) {
 	return false;
 }
 
+void Lake::calculateWorst() {
+	// Dijkstra
+	using RouteInfo = std::pair<int, int>; // duration, ferry_index
+	using PrevInfo = std::pair<int, int>; // prev_city_index, ferry_index
+	using WeightInfo = std::pair<int, int>; // weight, city_index
+
+	std::map<int, std::map<int, RouteInfo>> route;
+
+	int vertices = road_.size() + 1;
+	std::vector<int> min_distance(vertices, std::numeric_limits<int>::max());
+	std::vector<PrevInfo> previous(vertices, {-1, -1});
+	std::set<WeightInfo> vertex_queue;
+
+	int i = 0;
+	for (auto d : road_) {
+		route[i][i + 1] = {d, -1};
+		++i;
+	}
+
+	i = 0;
+	for (const auto& f : ferry_) {
+		route[f.src][f.dst] = {f.duration, i};
+		++i;
+	}
+
+	int p = 0;
+	min_distance[p] = 0;
+	vertex_queue.insert({min_distance[p], p});
+
+	while (!vertex_queue.empty()) {
+		int dist_u, u;
+		std::tie(dist_u, u) = *vertex_queue.begin();
+		vertex_queue.erase(vertex_queue.begin());
+
+		// Visit each edge exiting u
+		for (const auto& info : route[u]) {
+			int v = info.first;
+			int dist_v = info.second.first + dist_u;
+			int ferry_index = info.second.second;
+
+			if (dist_v < min_distance[v]) {
+				vertex_queue.erase({min_distance[v], v});
+				min_distance[v] = dist_v;
+				previous[v] = {u, ferry_index};
+				vertex_queue.insert({min_distance[v], v});
+			}
+		}
+	}
+
+	p = vertices - 1;
+	std::set<int> fs;
+	while (p > 0) {
+		fs.insert(previous[p].second);
+		p = previous[p].first;
+	}
+	fs.erase(-1);
+
+	int worst = 0;
+
+#if USE_BITSET
+	solution_.resize(ferry_.size());
+	solution_.reset();
+#else
+	solution_.clear();
+#endif
+	for (auto x : fs) {
+		addIndex(solution_, x);
+		worst += ferry_[x].saving;
+		const auto& f = ferry_[x];
+	}
+	best_ = worst;
+}
+
 
 void Lake::solve() {
+	calculateWorst();
+
 	Indices used;
 	Indices remain(ferry_.size());
 
@@ -328,6 +408,22 @@ void Lake::solve() {
 
 
 void Lake::statsToStream(std::ostream& out) {
+	int ferry_time = 0;
+	#if USE_BITSET
+		for (int i = 0; i < solution_.size(); ++i) {
+			if (solution_.test(i)) { ferry_time += ferry_[i].duration; }
+		}
+	#else
+		for (auto i : solution_) {
+			ferry_time += ferry_[i].duration;
+		}
+	#endif
+
+	int total = time_ + overtime_ - best_;
+	int biked = total - ferry_time;
+
+	out << "Total: " << total << std::endl;
+	out << "Biked: " << biked << std::endl;
 	out << "Need: " << overtime_ << std::endl;
 	out << "Best: " << best_ << std::endl;
 	out << "Optimized: " << optimize_count_ << std::endl;

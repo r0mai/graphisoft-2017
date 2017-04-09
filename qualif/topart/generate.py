@@ -65,12 +65,17 @@ if __name__ == '__main__':
 
     n = randint(2, max_n)   # single city is invalid
     m = randint(1, max_m)
+
+    # n = max_n
+    # m = max_m
+
     ds = [randint(1, max_d) for i in range(n)]
     es = [random_edge(n) + (randint(1, max_d),) for i in range(m)]
 
     min_t = minimum_t(n, ds, es)
-
     t = randint(min_t, sum(ds))
+
+    # t = min_t
 
     print(n)
     for i in range(n):
