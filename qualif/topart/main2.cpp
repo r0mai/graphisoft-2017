@@ -11,14 +11,16 @@
 
 struct Ferry {
 	Ferry() = default;
-	Ferry(int src, int dst, int saving, int duration)
+	Ferry(int src, int dst, int saving, int duration, int replacing)
 		: src(src), dst(dst), saving(saving), duration(duration)
+		, replacing(replacing)
 	{}
 
 	int src = 0;
 	int dst = 0;
 	int saving = 0;
 	int duration = 0;
+	int replacing = 0;
 };
 
 
@@ -45,7 +47,7 @@ public:
 private:
 	void calculateWorst();
 	void calculateAllowed();
-	bool recurse(const Indices& used, const Indices& remain, int saved);
+	bool recurse(const Indices& used, const Indices& remain, int saved, int replaced);
 
 	std::vector<std::string> names_;
 	std::vector<int> road_;
@@ -60,6 +62,7 @@ private:
 
 	int time_ = 0;
 	int overtime_ = 0;
+	int road_sum_ = 0;
 	int loop_ = 0;
 
 	Clock::time_point start_time_;
@@ -123,7 +126,7 @@ void Lake::fromStream(std::istream& in) {
 		int saving = sums[q] - sums[p] - d;
 		if (saving > 0) {
 			// dont care about stupid ferries
-			ferry_.emplace_back(p, q, saving, d);
+			ferry_.emplace_back(p, q, saving, d, sums[q] - sums[p]);
 		}
 	}
 
@@ -134,6 +137,7 @@ void Lake::fromStream(std::istream& in) {
 
 	in >> time_;
 	overtime_ = std::max(sums[n] - time_, 0);
+	road_sum_ = sums[n];
 
 	calculateAllowed();
 }
@@ -205,7 +209,7 @@ void Lake::allowedToStream(std::ostream& out) {
 }
 
 
-bool Lake::recurse(const Indices& used, const Indices& remain, int saved) {
+bool Lake::recurse(const Indices& used, const Indices& remain, int saved, int replaced) {
 	++recurse_count_;
 	if (--loop_ < 0) {
 		loop_ = 10000;
@@ -218,13 +222,14 @@ bool Lake::recurse(const Indices& used, const Indices& remain, int saved) {
 	}
 
 	if (saved >= overtime_) {
-		if (best_ < overtime_ || saved - overtime_ < best_ - overtime_) {
+		int current = road_sum_ - replaced;
+		if (current > best_) {
 			solution_ = used;
-			best_ = saved;
+			best_ = current;
 			++optimize_count_;
 		}
 		++solve_count_;
-		return saved == overtime_;	// stop if it wont be any better
+		return best_ == road_sum_;	// stop if it wont be any better
 	}
 
 	if (remain.empty()) {
@@ -252,7 +257,9 @@ bool Lake::recurse(const Indices& used, const Indices& remain, int saved) {
 		next_remain = remain & allowed_[i];
 		next_used.set(i);
 
-		if (recurse(next_used, next_remain, ferry_[i].saving + saved)) {
+		if (recurse(next_used, next_remain,
+				ferry_[i].saving + saved,
+				ferry_[i].replacing + replaced)) {
 			return true;
 		}
 
@@ -319,16 +326,19 @@ void Lake::calculateWorst() {
 	}
 	fs.erase(-1);
 
-	int worst = 0;
+	int replaced = 0;
+	int duration = 0;
 
 	solution_.clear();
 	solution_.resize(ferry_.size());
 
 	for (auto x : fs) {
 		addIndex(solution_, x);
-		worst += ferry_[x].saving;
+		replaced += ferry_[x].replacing;
+		duration += ferry_[x].duration;
 	}
-	best_ = worst;
+	best_ = road_sum_ - replaced;
+	// std::cerr << "Dijkstra: " << best_ << " " << duration << std::endl;
 }
 
 
@@ -341,7 +351,7 @@ void Lake::solve() {
 	used.resize(ferry_.size());
 	remain.set();
 
-	recurse(used, remain, 0);
+	recurse(used, remain, 0, 0);
 }
 
 
@@ -351,13 +361,11 @@ void Lake::statsToStream(std::ostream& out) {
 		if (solution_.test(i)) { ferry_time += ferry_[i].duration; }
 	}
 
-	int total = time_ + overtime_ - best_;
-	int biked = total - ferry_time;
+	int total = best_ + ferry_time;
 
+	out << "Limit: " << time_ << std::endl;
 	out << "Total: " << total << std::endl;
-	out << "Biked: " << biked << std::endl;
-	out << "Need: " << overtime_ << std::endl;
-	out << "Best: " << best_ << std::endl;
+	out << "Biked: " << best_ << std::endl;
 	out << "Optimized: " << optimize_count_ << std::endl;
 	out << "Solved: " << solve_count_ << std::endl;
 	out << "Recurse: " << recurse_count_ << std::endl;
@@ -383,7 +391,7 @@ int main() {
 	// lake.allowedToStream(std::cerr);
 
 	lake.solve();
-	// lake.statsToStream(std::cerr);
+	lake.statsToStream(std::cerr);
 
 	lake.solutionToStream(std::cout);
 	return 0;

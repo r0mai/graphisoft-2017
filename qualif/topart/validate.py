@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+from __future__ import print_function
 import sys
 import argparse
 
@@ -69,6 +69,7 @@ def calculateRouteCost(input, output):
     currentVillage = input.villages[0]
     currentIndex = 0
     routeCost = 0
+    bikeCost = 0
     while True:
         def _findJump():
             for jump in output.jumps:
@@ -78,6 +79,7 @@ def calculateRouteCost(input, output):
 
         jump = _findJump()
         if jump is None:
+            bikeCost += input.distances[currentIndex]
             routeCost += input.distances[currentIndex]
             currentIndex += 1
             currentVillage = input.villages[currentIndex % N]
@@ -87,7 +89,7 @@ def calculateRouteCost(input, output):
             currentIndex = input.villages.index(currentVillage)
 
         if currentVillage == input.villages[0]:
-            return routeCost
+            return routeCost, bikeCost
 
 
 def main():
@@ -103,8 +105,10 @@ def main():
     parsedOutput = parseOutput(args.output)
 
     checkAllJumpsAreValid(parsedOutput.jumps, parsedInput.jumps)
-    routeCost = calculateRouteCost(parsedInput, parsedOutput)
+    routeCost, bikeCost = calculateRouteCost(parsedInput, parsedOutput)
     assert routeCost <= parsedInput.timeBudget, routeCost
+    print('Total: {}'.format(routeCost))
+    print('Biked: {}'.format(bikeCost))
 
 
 if __name__ == "__main__":
