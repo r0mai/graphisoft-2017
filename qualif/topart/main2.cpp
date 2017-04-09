@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <numeric>
 #include <tuple>
+#include <chrono>
 
 
 struct Ferry {
@@ -24,10 +25,14 @@ std::ostream& operator<<(std::ostream& stream, const Ferry& ff) {
 	return stream;
 }
 
+
 using Indices = std::vector<int>;
+using Clock = std::chrono::steady_clock;
+using Duration = std::chrono::duration<double>;
 
 class Lake {
 public:
+	Lake();
 	void fromStream(std::istream& in);
 	void ferriesToStream(std::ostream& out);
 	void allowedToStream(std::ostream& out);
@@ -53,8 +58,14 @@ private:
 
 	int time_ = 0;
 	int overtime_ = 0;
+	int loop_ = 0;
+
+	Clock::time_point start_time_;
 };
 
+Lake::Lake() {
+	start_time_ = Clock::now();
+}
 
 void Lake::fromStream(std::istream& in) {
 	std::map<std::string, int> name_map;
@@ -182,21 +193,51 @@ void Lake::allowedToStream(std::ostream& out) {
 
 
 bool Lake::recurse(const Indices& used, const Indices& remain, int saved) {
+	if (loop_ == 0) {
+		loop_ = 10000;
+		auto current_time = Clock::now();
+		auto delta = std::chrono::duration_cast<Duration>(current_time - start_time_);
+
+		// std::cerr << delta.count()
+		// 	<< " " << solve_count_
+		// 	<< " " << optimize_count_
+		// 	<< " " << best_
+		//  	<< std::endl;
+
+		if (delta > Duration(9.0)) {
+			return true;
+		}
+	}
+
+	--loop_;
 	if (saved >= overtime_) {
-		// std::cerr << "Saved " << saved << ", Indices:";
-		// for (auto x : used) {
-		// 	std::cerr << " " << x;
-		// }
-		// std::cerr << std::endl;
 		if (best_ < overtime_ || saved - overtime_ < best_ - overtime_) {
 			solution_ = used;
 			best_ = saved;
 			++optimize_count_;
 		}
 		++solve_count_;
-
-		return (solve_count_ > 100000);
+		return false;
 	}
+
+	if (remain.empty()) {
+		return false;
+	}
+
+	int saveable = 0;
+	for (auto i : remain) {
+		saveable += ferry_[i].saving;
+	}
+
+	if (saveable + saved < overtime_) {
+		return false;
+	}
+
+	// std::cerr << saveable+saved << " > " << overtime_
+	// 	<< " " << solve_count_
+	// 	<< " " << optimize_count_
+	// 	<< " " << best_
+	// 	<< std::endl;
 
 	Indices next_used = used;
 	next_used.push_back(-1);	// placeholder
