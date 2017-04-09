@@ -27,12 +27,7 @@ std::ostream& operator<<(std::ostream& stream, const Ferry& ff) {
 	return stream;
 }
 
-#define USE_BITSET 1
-#if USE_BITSET
-	using Indices = boost::dynamic_bitset<>;
-#else
-	using Indices = std::vector<int>;
-#endif
+using Indices = boost::dynamic_bitset<>;
 
 using Clock = std::chrono::steady_clock;
 using Duration = std::chrono::duration<double>;
@@ -145,11 +140,7 @@ void Lake::fromStream(std::istream& in) {
 
 
 void addIndex(Indices& indices, int i) {
-#if USE_BITSET
 	indices.set(i);
-#else
-	indices.push_back(i);
-#endif
 }
 
 
@@ -162,9 +153,7 @@ void Lake::calculateAllowed() {
 		int src = ferry_[i].src;
 		int dst = ferry_[i].dst;
 
-		#if USE_BITSET
-			indices.resize(fs);
-		#endif
+		indices.resize(fs);
 
 		for (std::size_t j = 0; j < i; ++j) {
 			const auto& ferry = ferry_[j];
@@ -200,19 +189,19 @@ void Lake::ferriesToStream(std::ostream& out) {
 
 
 void Lake::allowedToStream(std::ostream& out) {
-#if !USE_BITSET
 	for (std::size_t i = 0; i < ferry_.size(); ++i) {
 		const auto& ferry = ferry_[i];
 		const auto& allowedFerries = allowed_[i];
 		out << ferry.src << "->" << ferry.dst << " {\n";
-		for (const auto& allowedFerryIndex: allowedFerries) {
-			const auto& allowedFerry = ferry_[allowedFerryIndex];
-			out << "    " << allowedFerry.src << "->"
-					<< allowedFerry.dst << "\n";
+		for (int j = 0, je = allowedFerries.size(); j < je; ++j) {
+			if (allowedFerries.test(j)) {
+				const auto& allowedFerry = ferry_[j];
+				out << "    " << allowedFerry.src << "->"
+						<< allowedFerry.dst << "\n";
+			}
 		}
 		out << "}\n";
 	}
-#endif
 }
 
 
@@ -222,12 +211,6 @@ bool Lake::recurse(const Indices& used, const Indices& remain, int saved) {
 		loop_ = 10000;
 		auto current_time = Clock::now();
 		auto delta = std::chrono::duration_cast<Duration>(current_time - start_time_);
-
-		// std::cerr << delta.count()
-		// 	<< " " << solve_count_
-		// 	<< " " << optimize_count_
-		// 	<< " " << best_
-		//  	<< std::endl;
 
 		if (delta > Duration(9.0)) {
 			return true;
@@ -249,34 +232,16 @@ bool Lake::recurse(const Indices& used, const Indices& remain, int saved) {
 	}
 
 	long int saveable = 0;
-#if USE_BITSET
 	for (size_t i = 0, ie = remain.size(); i < ie; ++i) {
 		if (remain.test(i)) {
 			saveable += ferry_[i].saving;
 		}
 	}
-#else
-	for (auto i : remain) {
-		saveable += ferry_[i].saving;
-	}
-#endif
 
 	if (saveable + saved < overtime_) {
-		// std::cerr
-		// 	<< "X " << saveable
-		// 	<< " " << saved
-		// 	<< " " << overtime_
-		// 	<< std::endl;
 		return false;
 	}
 
-	// std::cerr << saveable+saved << " > " << overtime_
-	// 	<< " " << solve_count_
-	// 	<< " " << optimize_count_
-	// 	<< " " << best_
-	// 	<< std::endl;
-
-#if USE_BITSET
 	Indices next_used = used;
 	for (size_t i = 0, ie = remain.size(); i < ie; ++i) {
 		if (!remain.test(i)) {
@@ -293,22 +258,6 @@ bool Lake::recurse(const Indices& used, const Indices& remain, int saved) {
 
 		next_used.reset(i);
 	}
-#else
-	Indices next_used = used;
-	next_used.push_back(-1); // placeholder
-	for (auto i : remain) {
-		Indices next_remain;
-		std::set_intersection(
-			remain.begin(), remain.end(),
-			allowed_[i].begin(), allowed_[i].end(),
-			std::back_inserter(next_remain));
-
-		next_used.back() = i;
-		if (recurse(next_used, next_remain, ferry_[i].saving + saved)) {
-			return true;
-		}
-	}
-#endif
 
 	return false;
 }
@@ -372,12 +321,9 @@ void Lake::calculateWorst() {
 
 	int worst = 0;
 
-#if USE_BITSET
-	solution_.resize(ferry_.size());
-	solution_.reset();
-#else
 	solution_.clear();
-#endif
+	solution_.resize(ferry_.size());
+
 	for (auto x : fs) {
 		addIndex(solution_, x);
 		worst += ferry_[x].saving;
@@ -393,31 +339,18 @@ void Lake::solve() {
 	Indices used;
 	Indices remain(ferry_.size());
 
-	#if USE_BITSET
-		used.resize(ferry_.size());
-		remain.set();
-	#else
-		std::iota(remain.begin(), remain.end(), 0);
-	#endif
+	used.resize(ferry_.size());
+	remain.set();
 
 	recurse(used, remain, 0);
-	#if !USE_BITSET
-		std::sort(solution_.begin(), solution_.end());
-	#endif
 }
 
 
 void Lake::statsToStream(std::ostream& out) {
 	int ferry_time = 0;
-	#if USE_BITSET
-		for (int i = 0; i < solution_.size(); ++i) {
-			if (solution_.test(i)) { ferry_time += ferry_[i].duration; }
-		}
-	#else
-		for (auto i : solution_) {
-			ferry_time += ferry_[i].duration;
-		}
-	#endif
+	for (int i = 0; i < solution_.size(); ++i) {
+		if (solution_.test(i)) { ferry_time += ferry_[i].duration; }
+	}
 
 	int total = time_ + overtime_ - best_;
 	int biked = total - ferry_time;
@@ -433,7 +366,6 @@ void Lake::statsToStream(std::ostream& out) {
 
 
 void Lake::solutionToStream(std::ostream& out) {
-#if USE_BITSET
 	out << solution_.count() << std::endl;
 	for (size_t i = 0, ie = solution_.size(); i < ie; ++i) {
 		if (solution_.test(i)) {
@@ -442,17 +374,6 @@ void Lake::solutionToStream(std::ostream& out) {
 			out << src << " " << dst << std::endl;
 		}
 	}
-#else
-	out << solution_.size() << std::endl;
-	for (const auto& ferryIndex: solution_) {
-		const auto& ferry = ferry_[ferryIndex];
-		const auto& src = ferry.src;
-		const auto& dst = ferry.dst;
-		const auto& srcName = names_[src];
-		const auto& dstName = names_[dst];
-		out << srcName << " " << dstName << std::endl;
-	}
-#endif
 }
 
 
