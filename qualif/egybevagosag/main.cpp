@@ -400,7 +400,7 @@ void SetupFaceIndicies(Building& b) {
                     return lh.sorted_edge_indicies.size() < rh.sorted_edge_indicies.size();
                 }
 
-                for (int i = 0; i < lh.sorted_edge_indicies.size(); ++i) {
+                for (std::size_t i = 0; i < lh.sorted_edge_indicies.size(); ++i) {
                     auto& le = b.edges[lh.edge_indicies[lh.sorted_edge_indicies[i]]];
                     auto& re = b.edges[rh.edge_indicies[rh.sorted_edge_indicies[i]]];
 
@@ -543,7 +543,7 @@ int main() {
 
     std::cerr << "------- PARSING DONE -------" << std::endl;
     std::vector<int> good_indexes;
-    for (int i = 1; i < buildings.size(); ++i) {
+    for (std::size_t i = 1; i < buildings.size(); ++i) {
         if (isCongruentish(buildings[0], buildings[i])) {
             good_indexes.push_back(i);
         }
