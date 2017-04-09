@@ -38,7 +38,7 @@ public:
 
 private:
 	void calculateAllowed();
-	void recurse(const Indices& used, const Indices& remain, int saved);
+	bool recurse(const Indices& used, const Indices& remain, int saved);
 
 	std::vector<std::string> names_;
 	std::vector<int> road_;
@@ -46,6 +46,9 @@ private:
 	std::vector<Indices> allowed_;
 
 	Indices solution_;
+	int best_ = 0;
+	int optimize_count_ = 0;
+	int solve_count_ = 0;
 
 	int time_ = 0;
 	int overtime_ = 0;
@@ -177,15 +180,21 @@ void Lake::allowedToStream(std::ostream& out) {
 }
 
 
-void Lake::recurse(const Indices& used, const Indices& remain, int saved) {
+bool Lake::recurse(const Indices& used, const Indices& remain, int saved) {
 	if (saved >= overtime_) {
-		std::cerr << "Saved " << saved << ", Indices:";
-		for (auto x : used) {
-			std::cerr << " " << x;
+		// std::cerr << "Saved " << saved << ", Indices:";
+		// for (auto x : used) {
+		// 	std::cerr << " " << x;
+		// }
+		// std::cerr << std::endl;
+		if (best_ < overtime_ || saved - overtime_ < best_ - overtime_) {
+			solution_ = used;
+			best_ = saved;
+			++optimize_count_;
 		}
-		std::cerr << std::endl;
-		solution_ = used;
-		return;
+		++solve_count_;
+
+		return (optimize_count_ >= 50 || solve_count_ > 100);
 	}
 
 	Indices next_used = used;
@@ -199,11 +208,11 @@ void Lake::recurse(const Indices& used, const Indices& remain, int saved) {
 			std::back_inserter(next_remain));
 
 		next_used.back() = i;
-		recurse(
-			next_used,
-			next_remain,
-			ferry_[i].saving + saved);
+		if (recurse(next_used, next_remain, ferry_[i].saving + saved)) {
+			return true;
+		}
 	}
+	return false;
 }
 
 
@@ -232,8 +241,8 @@ void Lake::solutionToStream(std::ostream& out) {
 int main() {
 	Lake lake;
 	lake.fromStream(std::cin);
-	lake.ferriesToStream(std::cerr);
-	lake.allowedToStream(std::cerr);
+	// lake.ferriesToStream(std::cerr);
+	// lake.allowedToStream(std::cerr);
 
 	lake.solve();
 	lake.solutionToStream(std::cout);
