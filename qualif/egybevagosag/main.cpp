@@ -471,15 +471,22 @@ bool isSame(Building b1, Building b2) {
 }
 
 std::vector<Matrix> rotationMatrices() {
-    std::set<Matrix> ms;
-    for (int rx = 0; rx < 4; ++rx) {
-        for (int ry = 0; ry < 4; ++ry) {
-            for (int rz = 0; rz < 4; ++rz) {
-                ms.insert(rotationMatrixFor(rx, ry, rz));
-            }
+    std::vector<Matrix> result;
+    for (int ry = 0; ry < 4; ++ry) {
+        for (int rz = 0; rz < 4; ++rz) {
+            result.push_back(rotationMatrixFor(0, ry, rz));
         }
     }
-    return {ms.begin(), ms.end()};
+    for (int rz = 0; rz < 4; ++rz) {
+        result.push_back(rotationMatrixFor(1, 0, rz));
+    }
+
+    for (int rz = 0; rz < 4; ++rz) {
+        result.push_back(rotationMatrixFor(1, 2, rz));
+    }
+
+    assert(result.size() == 24);
+    return result;
 }
 
 bool isCongruentish(const Building& b1, const Building& b2) {
