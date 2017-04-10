@@ -3,5 +3,5 @@
 main() {
     int n;
     scanf("%d", &n);
-    printf("%d", 2*n - pow(2, ilogb(n)));
+    printf("%d",(n*=2,n-=1<<ilogb(n-1)));
 }
