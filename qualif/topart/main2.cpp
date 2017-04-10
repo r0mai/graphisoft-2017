@@ -368,13 +368,19 @@ void Lake::statsToStream(std::ostream& out) {
 
 
 void Lake::solutionToStream(std::ostream& out) {
-	out << solution_.count() << std::endl;
+	std::set<std::pair<int, int>> result;
+
 	for (size_t i = 0, ie = solution_.size(); i < ie; ++i) {
 		if (solution_.test(i)) {
-			const auto& src = names_[ferry_[i].src];
-			const auto& dst = names_[ferry_[i].dst];
-			out << src << " " << dst << std::endl;
+			result.insert(std::make_pair(ferry_[i].src, ferry_[i].dst));
 		}
+	}
+
+	out << result.size() << std::endl;
+	for (const auto& x : result) {
+		const auto& src = names_[x.first];
+		const auto& dst = names_[x.second];
+		out << src << " " << dst << std::endl;
 	}
 }
 
