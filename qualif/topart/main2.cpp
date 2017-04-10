@@ -133,9 +133,11 @@ void Lake::fromStream(std::istream& in) {
 
 	std::sort(ferry_.begin(), ferry_.end(),
 		[](const Ferry& lhs, const Ferry& rhs) {
+			int lx = -lhs.saving;
+			int rx = -rhs.saving;
 			return
-				std::tie(lhs.duration, lhs.src, lhs.dst) <
-				std::tie(rhs.duration, rhs.src, rhs.dst);
+				std::tie(lx, lhs.src, lhs.dst) <
+				std::tie(rx, rhs.src, rhs.dst);
 		});
 
 	in >> time_;
@@ -162,23 +164,11 @@ void Lake::calculateAllowed() {
 
 		indices.resize(fs);
 
-		for (std::size_t j = 0; j < i; ++j) {
+		for (std::size_t j = 0; j < fs; ++j) {
 			const auto& ferry = ferry_[j];
-			if (ferry.dst <= src) {
+			if (i != j && (ferry.dst <= src || ferry.src >= dst)) {
 				addIndex(indices, j);
 			}
-		}
-
-		// Index of ferries departing later than dst
-		std::size_t dstIndex = i;
-		for (; dstIndex < fs; ++dstIndex) {
-			if (ferry_[dstIndex].src >= dst) {
-				break;
-			}
-		}
-
-		for (std::size_t j = dstIndex; j < fs; ++j) {
-			addIndex(indices, j);
 		}
 	}
 }
