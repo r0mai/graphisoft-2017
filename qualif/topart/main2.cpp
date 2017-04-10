@@ -59,6 +59,7 @@ private:
 	int optimize_count_ = 0;
 	int solve_count_ = 0;
 	int recurse_count_ = 0;
+	int last_optimized_ = 0;
 
 	int time_ = 0;
 	int overtime_ = 0;
@@ -132,7 +133,9 @@ void Lake::fromStream(std::istream& in) {
 
 	std::sort(ferry_.begin(), ferry_.end(),
 		[](const Ferry& lhs, const Ferry& rhs) {
-			return std::tie(lhs.src, lhs.dst) < std::tie(rhs.src, rhs.dst);
+			return
+				std::tie(lhs.duration, lhs.src, lhs.dst) <
+				std::tie(rhs.duration, rhs.src, rhs.dst);
 		});
 
 	in >> time_;
@@ -227,6 +230,7 @@ bool Lake::recurse(const Indices& used, const Indices& remain, int saved, int re
 			solution_ = used;
 			best_ = current;
 			++optimize_count_;
+			last_optimized_ = solve_count_ + 1;
 		}
 		++solve_count_;
 		return best_ == road_sum_;	// stop if it wont be any better
@@ -367,8 +371,9 @@ void Lake::statsToStream(std::ostream& out) {
 	out << "Total: " << total << std::endl;
 	out << "Biked: " << best_ << std::endl;
 	out << "Optimized: " << optimize_count_ << std::endl;
-	out << "Solved: " << solve_count_ << std::endl;
-	out << "Recurse: " << recurse_count_ << std::endl;
+	out << "Last opt:  " << last_optimized_ << std::endl;
+	out << "Solved:    " << solve_count_ << std::endl;
+	out << "Recurse:   " << recurse_count_ << std::endl;
 }
 
 
