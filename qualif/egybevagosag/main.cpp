@@ -12,6 +12,7 @@
 #include <set>
 #include <chrono>
 
+#include <boost/lexical_cast.hpp>
 #include <boost/functional/hash.hpp>
 
 using Clock = std::chrono::steady_clock;
@@ -59,6 +60,10 @@ struct Point {
 };
 
 struct Separator {};
+
+std::ostream& operator<<(std::ostream& os, const Separator&) {
+    return os << " | ";
+}
 
 std::size_t hash_value(const Point& p) {
     size_t seed = p.x;
@@ -417,24 +422,35 @@ void SetupFaceIndicies(Building& b) {
     }
 }
 
-std::vector<std::size_t> HashFaces(const Building& b) {
-    std::vector<std::size_t> face_hashes;
+template<typename U>
+void Serialize(std::size_t& seed, const U& v) {
+    boost::hash_combine(seed, v);
+}
+
+template<typename U>
+void Serialize(std::string& seed, const U& v) {
+    seed += boost::lexical_cast<std::string>(v);
+}
+
+template<typename T>
+std::vector<T> HashFaces(const Building& b) {
+    std::vector<T> face_hashes;
     face_hashes.reserve(b.faces.size());
 
     for (auto& face : b.faces) {
-        std::size_t seed = 0;
+        T seed{};
         for (int ei : face.sorted_edge_indicies) {
-            boost::hash_combine(seed, b.vertices[b.edges[face.edge_indicies[ei]].start_index]);
-            boost::hash_combine(seed, b.vertices[b.edges[face.edge_indicies[ei]].end_index]);
+            Serialize(seed, b.vertices[b.edges[face.edge_indicies[ei]].start_index]);
+            Serialize(seed, b.vertices[b.edges[face.edge_indicies[ei]].end_index]);
         }
-        boost::hash_combine(seed, Separator{});
+        Serialize(seed, Separator{});
         for (int hi : face.sorted_hole_indicies) {
             auto& hole = face.holes[hi];
             for (int ei : hole.sorted_edge_indicies) {
-                boost::hash_combine(seed, b.vertices[b.edges[hole.edge_indicies[ei]].start_index]);
-                boost::hash_combine(seed, b.vertices[b.edges[hole.edge_indicies[ei]].end_index]);
+                Serialize(seed, b.vertices[b.edges[hole.edge_indicies[ei]].start_index]);
+                Serialize(seed, b.vertices[b.edges[hole.edge_indicies[ei]].end_index]);
             }
-            boost::hash_combine(seed, Separator{});
+            Serialize(seed, Separator{});
         }
         face_hashes.push_back(seed);
     }
@@ -445,8 +461,19 @@ bool isFacesSame(Building& b1, Building& b2) {
     SetupFaceIndicies(b1);
     SetupFaceIndicies(b2);
 
-    auto hashes_b1 = HashFaces(b1);
-    auto hashes_b2 = HashFaces(b2);
+#if 1
+    auto hashes_b1 = HashFaces<std::size_t>(b1);
+    auto hashes_b2 = HashFaces<std::size_t>(b2);
+#else
+    auto hashes_b1 = HashFaces<std::string>(b1);
+    auto hashes_b2 = HashFaces<std::string>(b2);
+
+    for (int i = 0; i < hashes_b1.size(); ++i) {
+        std::cerr << "Hash(1): " << hashes_b1[i] << std::endl;
+        std::cerr << "Hash(2): " << hashes_b2[i] << std::endl;
+    }
+
+#endif
 
     std::sort(hashes_b1.begin(), hashes_b1.end());
     std::sort(hashes_b2.begin(), hashes_b2.end());
