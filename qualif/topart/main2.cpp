@@ -25,7 +25,7 @@ struct Ferry {
 
 
 std::ostream& operator<<(std::ostream& stream, const Ferry& ff) {
-	stream << "(" << ff.src << " -> " << ff.dst << ") " << ff.saving;
+	stream << "#" << ff.src << " #" << ff.dst << " " << ff.duration;
 	return stream;
 }
 
@@ -133,8 +133,8 @@ void Lake::fromStream(std::istream& in) {
 
 	std::sort(ferry_.begin(), ferry_.end(),
 		[](const Ferry& lhs, const Ferry& rhs) {
-			int lx = -lhs.saving;
-			int rx = -rhs.saving;
+			auto lx = double(lhs.duration) / std::max(lhs.replacing, 1);
+			auto rx = double(rhs.duration) / std::max(rhs.replacing, 1);
 			return
 				std::tie(lx, lhs.src, lhs.dst) <
 				std::tie(rx, rhs.src, rhs.dst);
@@ -214,15 +214,16 @@ bool Lake::recurse(const Indices& used, const Indices& remain, int saved, int re
 		}
 	}
 
+	int current = road_sum_ - replaced;
+	if (current <= best_) {
+		return false;
+	}
+
 	if (saved >= overtime_) {
-		int current = road_sum_ - replaced;
-		if (current > best_) {
-			solution_ = used;
-			best_ = current;
-			++optimize_count_;
-			last_optimized_ = solve_count_ + 1;
-		}
-		++solve_count_;
+		solution_ = used;
+		best_ = current;
+		// std::cerr << road_sum_ << " " << saved << " " << current << std::endl;
+		++optimize_count_;
 		return best_ == road_sum_;	// stop if it wont be any better
 	}
 
@@ -352,7 +353,9 @@ void Lake::solve() {
 void Lake::statsToStream(std::ostream& out) {
 	int ferry_time = 0;
 	for (size_t i = 0; i < solution_.size(); ++i) {
-		if (solution_.test(i)) { ferry_time += ferry_[i].duration; }
+		if (solution_.test(i)) {
+			ferry_time += ferry_[i].duration;
+		}
 	}
 
 	int total = best_ + ferry_time;
@@ -360,9 +363,8 @@ void Lake::statsToStream(std::ostream& out) {
 	out << "Limit: " << time_ << std::endl;
 	out << "Total: " << total << std::endl;
 	out << "Biked: " << best_ << std::endl;
+	out << "Ferry: " << ferry_time << std::endl;
 	out << "Optimized: " << optimize_count_ << std::endl;
-	out << "Last opt:  " << last_optimized_ << std::endl;
-	out << "Solved:    " << solve_count_ << std::endl;
 	out << "Recurse:   " << recurse_count_ << std::endl;
 }
 

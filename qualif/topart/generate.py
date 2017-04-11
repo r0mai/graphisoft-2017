@@ -7,7 +7,7 @@ def city_name(k):
     return 'G{}'.format(k)
 
 
-def random_edge(n):
+def random_edge1(n):
     x = randint(1, n * (n + 1) / 2 - 1)
     if x >= n:
         x += 1  # filter 0 -> n
@@ -19,6 +19,12 @@ def random_edge(n):
         d -= 1
 
     return (p, p + x)
+
+
+def random_edge(n):
+    p = randint(0, n - 1)
+    q = randint(p + 1, min(p + 40, n))
+    return (p, q)
 
 
 def add_edge(edges, p, q, d):
@@ -58,13 +64,16 @@ def minimum_t(n, ds, es):
 if __name__ == '__main__':
     # N, M: 1-10000, D: 1-1000
 
-    max_n = 10000
-    max_m = 10000
+    max_n = 1000
+    max_m = 1000
 
     max_d = 1000
 
     n = randint(2, max_n)   # single city is invalid
     m = randint(1, max_m)
+
+    n = 3000
+    m = 5000
 
     # n = max_n
     # m = max_m
