@@ -411,8 +411,8 @@ void SetupFaceIndicies(Building& b) {
                 }
 
                 for (std::size_t i = 0; i < lh.sorted_edge_indicies.size(); ++i) {
-                    auto& le = b.edges[lh.edge_indicies[lh.sorted_edge_indicies[i]]];
-                    auto& re = b.edges[rh.edge_indicies[rh.sorted_edge_indicies[i]]];
+                    auto& le = b.edges[lh.sorted_edge_indicies[i]];
+                    auto& re = b.edges[rh.sorted_edge_indicies[i]];
 
                     auto lt = std::tie(b.vertices[le.start_index], b.vertices[le.end_index]);
                     auto rt = std::tie(b.vertices[re.start_index], b.vertices[re.end_index]);
