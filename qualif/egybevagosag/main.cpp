@@ -121,6 +121,14 @@ std::ostream& operator<<(std::ostream& os, const Matrix& m) {
     return os;
 }
 
+template<typename T>
+std::ostream& operator<<(std::ostream& os, const std::vector<T>& v) {
+    for (const T& t : v) {
+        os << t << " ";
+    }
+    return os;
+}
+
 int doStuff(const Point& row, const Point& column) {
     int result = 0;
     result += row.x * column.x;
