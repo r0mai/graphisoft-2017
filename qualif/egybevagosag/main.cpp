@@ -326,12 +326,12 @@ std::vector<int> GetSortedEdgeMap(
         [&](int lhs, int rhs) {
             return
                 std::tie(
-                    b.vertices[b.edges[edge_map[lhs]].start_index],
-                    b.vertices[b.edges[edge_map[lhs]].end_index]
+                    b.vertices[b.edges[lhs].start_index],
+                    b.vertices[b.edges[lhs].end_index]
                 ) <
                 std::tie(
-                    b.vertices[b.edges[edge_map[rhs]].start_index],
-                    b.vertices[b.edges[edge_map[rhs]].end_index]
+                    b.vertices[b.edges[rhs].start_index],
+                    b.vertices[b.edges[rhs].end_index]
                 );
         }
     );
@@ -440,15 +440,15 @@ std::vector<T> HashFaces(const Building& b) {
     for (auto& face : b.faces) {
         T seed{};
         for (int ei : face.sorted_edge_indicies) {
-            Serialize(seed, b.vertices[b.edges[face.edge_indicies[ei]].start_index]);
-            Serialize(seed, b.vertices[b.edges[face.edge_indicies[ei]].end_index]);
+            Serialize(seed, b.vertices[b.edges[ei].start_index]);
+            Serialize(seed, b.vertices[b.edges[ei].end_index]);
         }
         Serialize(seed, Separator{});
         for (int hi : face.sorted_hole_indicies) {
             auto& hole = face.holes[hi];
             for (int ei : hole.sorted_edge_indicies) {
-                Serialize(seed, b.vertices[b.edges[hole.edge_indicies[ei]].start_index]);
-                Serialize(seed, b.vertices[b.edges[hole.edge_indicies[ei]].end_index]);
+                Serialize(seed, b.vertices[b.edges[ei].start_index]);
+                Serialize(seed, b.vertices[b.edges[ei].end_index]);
             }
             Serialize(seed, Separator{});
         }
