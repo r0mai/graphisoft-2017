@@ -291,14 +291,6 @@ std::vector<int> GetSortedVertexMap(const Building& b) {
             return b.vertices[lhs] < b.vertices[rhs];
         }
     );
-#if 0
-    auto last = std::unique(vertex_map.begin(), vertex_map.end(),
-        [&](int lhs, int rhs) {
-            return b.vertices[lhs] == b.vertices[rhs];
-        }
-    );
-    vertex_map.erase(last, vertex_map.end());
-#endif
 
     return vertex_map;
 }
@@ -322,24 +314,6 @@ std::vector<int> GetSortedEdgeMap(
                 );
         }
     );
-
-#if 0
-    auto last = std::unique(sorted_edge_map.begin(), sorted_edge_map.end(),
-        [&](int lhs, int rhs) {
-            return
-                std::tie(
-                    b.vertices[b.edges[edge_map[lhs]].start_index],
-                    b.vertices[b.edges[edge_map[lhs]].end_index]
-                ) ==
-                std::tie(
-                    b.vertices[b.edges[edge_map[rhs]].start_index],
-                    b.vertices[b.edges[edge_map[rhs]].end_index]
-                );
-        }
-    );
-    sorted_edge_map.erase(last, sorted_edge_map.end());
-#endif
-
     return sorted_edge_map;
 }
 
