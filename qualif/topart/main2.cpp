@@ -133,11 +133,9 @@ void Lake::fromStream(std::istream& in) {
 
 	std::sort(ferry_.begin(), ferry_.end(),
 		[](const Ferry& lhs, const Ferry& rhs) {
-			auto lx = -lhs.replacing + 6 * lhs.duration;
-			auto rx = -rhs.replacing + 6 * rhs.duration;
-			return
-				std::tie(lx, lhs.src, lhs.dst) <
-				std::tie(rx, rhs.src, rhs.dst);
+			auto lx = std::make_tuple(-lhs.dst + lhs.src, -lhs.saving, lhs.src, lhs.dst);
+			auto rx = std::make_tuple(-rhs.dst + rhs.src, -rhs.saving, rhs.src, rhs.dst);
+			return lx < rx;
 		});
 
 	in >> time_;
@@ -209,7 +207,7 @@ bool Lake::recurse(const Indices& used, const Indices& remain, int saved, int re
 		auto current_time = Clock::now();
 		auto delta = std::chrono::duration_cast<Duration>(current_time - start_time_);
 
-		if (delta > Duration(9.0)) {
+		if (delta > Duration(5.0)) {
 			return true;
 		}
 	}
