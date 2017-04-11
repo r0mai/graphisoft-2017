@@ -133,8 +133,8 @@ void Lake::fromStream(std::istream& in) {
 
 	std::sort(ferry_.begin(), ferry_.end(),
 		[](const Ferry& lhs, const Ferry& rhs) {
-			auto lx = -lhs.replacing + 5 * lhs.duration;
-			auto rx = -rhs.replacing + 5 * rhs.duration;
+			auto lx = -lhs.replacing + 6 * lhs.duration;
+			auto rx = -rhs.replacing + 6 * rhs.duration;
 			return
 				std::tie(lx, lhs.src, lhs.dst) <
 				std::tie(rx, rhs.src, rhs.dst);
