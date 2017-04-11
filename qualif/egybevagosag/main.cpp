@@ -12,6 +12,8 @@
 #include <set>
 #include <chrono>
 
+#include <boost/functional/hash.hpp>
+
 using Clock = std::chrono::steady_clock;
 
 int intCos(int turns) {
@@ -55,6 +57,20 @@ struct Point {
         return p;
     }
 };
+
+struct Separator {};
+
+std::size_t hash_value(const Point& p) {
+    size_t seed = p.x;
+    boost::hash_combine(seed, p.y);
+    boost::hash_combine(seed, p.z);
+    return seed;
+}
+
+std::size_t hash_value(Separator) {
+    static const int sok = 10'000'000;
+    return hash_value(Point{sok, sok, sok});
+}
 
 bool operator<(const Point& lhs, const Point& rhs) {
     return
@@ -398,58 +414,59 @@ void SetupFaceIndicies(Building& b) {
                 return false; // equal
             }
         );
-
-#if 0
-        auto last = std::unique(
-            face.sorted_hole_indicies.begin(),
-            face.sorted_hole_indicies.end(),
-            [&](int lhs, int rhs) {
-                auto& lh = face.holes[lhs];
-                auto& rh = face.holes[rhs];
-
-                if (lh.sorted_edge_indicies.size() != rh.sorted_edge_indicies.size()) {
-                    return false;
-                }
-
-                for (int i = 0; i < lh.sorted_edge_indicies.size(); ++i) {
-                    auto& le = b.edges[lh.edge_indicies[lh.sorted_edge_indicies[i]]];
-                    auto& re = b.edges[rh.edge_indicies[rh.sorted_edge_indicies[i]]];
-
-                    auto lt = std::tie(b.vertices[le.start_index], b.vertices[le.end_index]);
-                    auto rt = std::tie(b.vertices[re.start_index], b.vertices[re.end_index]);
-
-                    if (lt != rt) {
-                        return false;
-                    }
-                }
-                return true;
-            }
-        );
-
-        face.sorted_hole_indicies.erase(last, face.sorted_hole_indicies.end());
-#endif
     }
+}
+
+std::vector<std::size_t> HashFaces(const Building& b) {
+    std::vector<std::size_t> face_hashes;
+    face_hashes.reserve(b.faces.size());
+
+    for (auto& face : b.faces) {
+        std::size_t seed = 0;
+        for (int ei : face.sorted_edge_indicies) {
+            boost::hash_combine(seed, b.vertices[b.edges[face.edge_indicies[ei]].start_index]);
+            boost::hash_combine(seed, b.vertices[b.edges[face.edge_indicies[ei]].end_index]);
+        }
+        boost::hash_combine(seed, Separator{});
+        for (int hi : face.sorted_hole_indicies) {
+            auto& hole = face.holes[hi];
+            for (int ei : hole.sorted_edge_indicies) {
+                boost::hash_combine(seed, b.vertices[b.edges[hole.edge_indicies[ei]].start_index]);
+                boost::hash_combine(seed, b.vertices[b.edges[hole.edge_indicies[ei]].end_index]);
+            }
+            boost::hash_combine(seed, Separator{});
+        }
+        face_hashes.push_back(seed);
+    }
+    return face_hashes;
 }
 
 bool isFacesSame(Building& b1, Building& b2) {
     SetupFaceIndicies(b1);
     SetupFaceIndicies(b2);
 
-    return true;
+    auto hashes_b1 = HashFaces(b1);
+    auto hashes_b2 = HashFaces(b2);
+
+    std::sort(hashes_b1.begin(), hashes_b1.end());
+    std::sort(hashes_b2.begin(), hashes_b2.end());
+
+    return hashes_b1 == hashes_b2;
 }
 
 bool isSame(Building b1, Building b2) {
     if (!isVerticesSame(b1, b2)) {
+        std::cerr << "Vertex check failed" << std::endl;
         return false;
     }
     if (!isEdgesSame(b1, b2)) {
+        std::cerr << "Edge check failed" << std::endl;
         return false;
     }
-#if 0
     if (!isFacesSame(b1, b2)) {
+        std::cerr << "Face check failed" << std::endl;
         return false;
     }
-#endif
 
     return true;
 }
