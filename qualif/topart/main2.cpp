@@ -134,7 +134,7 @@ void Lake::fromStream(std::istream& in) {
 
 	auto fitness = [](const Ferry& f) {
 		return std::make_tuple(
-			-f.replacing + 5 * f.duration, f.src, f.dst);
+			-f.dst + f.src, -f.saving, f.src, f.dst);
 	};
 
 	std::sort(ferry_.begin(), ferry_.end(),
@@ -211,7 +211,7 @@ bool Lake::recurse(const Indices& used, const Indices& remain, int saved, int re
 		auto current_time = Clock::now();
 		auto delta = std::chrono::duration_cast<Duration>(current_time - start_time_);
 
-		if (delta > Duration(5.0)) {
+		if (delta > Duration(9.5)) {
 			return true;
 		}
 	}
