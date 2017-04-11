@@ -131,11 +131,15 @@ void Lake::fromStream(std::istream& in) {
 		}
 	}
 
+
+	auto fitness = [](const Ferry& f) {
+		return std::make_tuple(
+			-f.replacing + 5 * f.duration, f.src, f.dst);
+	};
+
 	std::sort(ferry_.begin(), ferry_.end(),
-		[](const Ferry& lhs, const Ferry& rhs) {
-			auto lx = std::make_tuple(-lhs.dst + lhs.src, -lhs.saving, lhs.src, lhs.dst);
-			auto rx = std::make_tuple(-rhs.dst + rhs.src, -rhs.saving, rhs.src, rhs.dst);
-			return lx < rx;
+		[&](const Ferry& lhs, const Ferry& rhs) {
+			return fitness(lhs) < fitness(rhs);
 		});
 
 	in >> time_;
