@@ -596,7 +596,7 @@ int main() {
     std::set<int> good_indexes;
     std::set<int> candidates;
     for (size_t i = 1; i < buildings.size(); ++i) {
-        if (isSameSize(buildings[0], buildings[1])) {
+        if (isSameSize(buildings[0], buildings[i])) {
             candidates.insert(i);
             alignBuilding(buildings[i]);
         }
