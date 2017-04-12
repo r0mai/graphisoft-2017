@@ -415,7 +415,7 @@ bool isEdgesSame(const Building& b1, const Building& b2) {
     // find duplicated vertices
     for (const auto& p : b1.vertices) {
         if (!ps.insert(p).second) {
-            cmap[p] = {};
+            cmap[p];
         }
     }
 
