@@ -499,6 +499,10 @@ bool isFacesSame(Building& b1, Building& b2) {
 }
 
 bool isSame(Building b1, Building b2) {
+    if (b1.vertices.size() == 0 && b2.vertices.size() == 0) {
+        return true;
+    }
+
     if (!isVerticesSame(b1, b2)) {
         std::cerr << "Vertex check failed" << std::endl;
         return false;
@@ -537,18 +541,7 @@ std::vector<Matrix> rotationMatrices() {
 bool isCongruentish(const std::vector<Building>& bs, const Building& b2) {
     {
         const Building& b1 = bs[0];
-        if (b1.vertices.size() != b2.vertices.size()) {
-            return false;
-        }
-        if (b1.vertices.empty()) {
-            return true;
-        }
-        if (b1.edges.size() != b2.edges.size()) {
-            return false;
-        }
-        if (b1.faces.size() != b2.faces.size()) {
-            return false;
-        }
+
     }
 
     for (const auto& b1 : bs) {
@@ -559,22 +552,22 @@ bool isCongruentish(const std::vector<Building>& bs, const Building& b2) {
     return false;
 }
 
-std::vector<Building> createAllAlignments(const Building& building) {
-    std::vector<Building> result;
-
-    for (const Matrix& rotationMatrix : rotationMatrices()) {
-        auto aligned = building;
-
-        transformInPlace(aligned, rotationMatrix);
-        auto min_vertex = *std::min_element(
-            aligned.vertices.begin(), aligned.vertices.end());
-
-        translateInPlace(aligned, min_vertex.negate());
-        OrderEdges(aligned);
-        result.push_back(std::move(aligned));
+bool isSameSize(const Building& b1, const Building& b2) {
+    if (b1.vertices.size() != b2.vertices.size()) {
+        return false;
     }
-    return result;
+
+    if (b1.edges.size() != b2.edges.size()) {
+        return false;
+    }
+
+    if (b1.faces.size() != b2.faces.size()) {
+        return false;
+    }
+
+    return true;
 }
+
 
 void alignBuilding(Building& building) {
     auto min_vertex = *std::min_element(
@@ -600,13 +593,39 @@ int main() {
         std::chrono::duration_cast<std::chrono::milliseconds>(read_end - start).count()
         << std::endl;
 
-    std::vector<int> good_indexes;
-    std::vector<Building> aligned = createAllAlignments(buildings[0]);
+    std::set<int> good_indexes;
+    std::set<int> candidates;
+    for (size_t i = 1; i < buildings.size(); ++i) {
+        if (isSameSize(buildings[0], buildings[1])) {
+            candidates.insert(i);
+            alignBuilding(buildings[i]);
+        }
+    }
 
-    for (std::size_t i = 1; i < buildings.size(); ++i) {
-        alignBuilding(buildings[i]);
-        if (isCongruentish(aligned, buildings[i])) {
-            good_indexes.push_back(i);
+    for (const Matrix& rotationMatrix : rotationMatrices()) {
+        if (candidates.empty()) {
+            break;
+        }
+
+        auto aligned = buildings[0];
+
+        transformInPlace(aligned, rotationMatrix);
+        auto min_vertex = *std::min_element(
+            aligned.vertices.begin(), aligned.vertices.end());
+
+        translateInPlace(aligned, min_vertex.negate());
+        OrderEdges(aligned);
+
+        int found = -1;
+        for (auto i : candidates) {
+            if (isSame(aligned, buildings[i])) {
+                found = i;
+                break;
+            }
+        }
+        if (found != -1) {
+            good_indexes.insert(found);
+            candidates.erase(found);
         }
     }
 
