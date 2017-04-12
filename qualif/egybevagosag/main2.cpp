@@ -363,7 +363,6 @@ std::vector<int> GetSortedEdgeMapForBuilding(const Building& b) {
     return GetSortedEdgeMap(b, edge_map);
 }
 
-
 bool isVerticesSame(const Building& b1, const Building& b2) {
     auto b1_vertex_map = GetSortedVertexMap(b1);
     auto b2_vertex_map = GetSortedVertexMap(b2);
@@ -382,7 +381,7 @@ bool isEdgesSame(const Building& b1, const Building& b2) {
     auto b2_edge_map = GetSortedEdgeMapForBuilding(b2);
 
     // if we have different set of edges, they can't be izomo
-    return std::equal(
+    auto is_equal = std::equal(
         b1_edge_map.begin(), b1_edge_map.end(),
         b2_edge_map.begin(), b2_edge_map.end(),
         [&](int lhs, int rhs) {
@@ -396,6 +395,80 @@ bool isEdgesSame(const Building& b1, const Building& b2) {
                     b2.vertices[b2.edges[rhs].end_index]
                 );
         });
+
+    if (!is_equal) {
+        return false;
+    }
+
+
+    // further checks
+
+    using PointVec = std::vector<Point>;
+    using PointVecMap = std::map<int, std::vector<Point>>;
+    using ConnectedMap = std::map<Point, std::pair<PointVecMap, PointVecMap>>;
+    using PointVecVec = std::vector<std::vector<Point>>;
+    using PointSet = std::set<Point>;
+
+    ConnectedMap cmap;
+    PointSet ps;
+
+    // find duplicated vertices
+    for (const auto& p : b1.vertices) {
+        if (!ps.insert(p).second) {
+            cmap[p] = {};
+        }
+    }
+
+    if (cmap.empty()) {
+        return true;
+    }
+
+    size_t edges = b1.edges.size();
+    for (size_t i = 0; i < edges; ++i) {
+        const auto& edge1 = b1.edges[i];
+        const auto& edge2 = b2.edges[i];
+        const auto& sp1 = b1.vertices[edge1.start_index];
+        const auto& ep1 = b1.vertices[edge1.end_index];
+        const auto& sp2 = b2.vertices[edge2.start_index];
+        const auto& ep2 = b2.vertices[edge2.end_index];
+
+        ConnectedMap::iterator it;
+
+        // first building
+        if ((it = cmap.find(sp1)) != cmap.end()) {
+            it->second.first[i].push_back(ep1);
+        }
+        if ((it = cmap.find(ep1)) != cmap.end()) {
+            it->second.first[i].push_back(sp1);
+        }
+
+        // second building
+        if ((it = cmap.find(sp2)) != cmap.end()) {
+            it->second.second[i].push_back(ep2);
+        }
+        if ((it = cmap.find(ep2)) != cmap.end()) {
+            it->second.second[i].push_back(sp2);
+        }
+    }
+
+    for (auto& cc : cmap) {
+        PointVecVec vec1, vec2;
+        for (auto& vm : cc.second.first) {
+            std::sort(vm.second.begin(), vm.second.end());
+            vec1.push_back(std::move(vm.second));
+        }
+        for (auto& vm : cc.second.second) {
+            std::sort(vm.second.begin(), vm.second.end());
+            vec2.push_back(std::move(vm.second));
+        }
+        std::sort(vec1.begin(), vec1.end());
+        std::sort(vec2.begin(), vec2.end());
+        if (vec1 != vec2) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 void SetupFaceIndicies(Building& b) {
@@ -553,7 +626,6 @@ bool isSameSize(const Building& b1, const Building& b2) {
 
     return true;
 }
-
 
 void alignBuilding(Building& building) {
     auto min_vertex = *std::min_element(
