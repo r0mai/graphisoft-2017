@@ -211,7 +211,7 @@ bool Lake::recurse(const Indices& used, const Indices& remain, int saved, int re
 		auto current_time = Clock::now();
 		auto delta = std::chrono::duration_cast<Duration>(current_time - start_time_);
 
-		if (delta > Duration(9.5)) {
+		if (delta > Duration(9.8)) {
 			return true;
 		}
 	}
