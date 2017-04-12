@@ -211,7 +211,7 @@ bool Lake::recurse(const Indices& used, const Indices& remain, int saved, int re
 		auto current_time = Clock::now();
 		auto delta = std::chrono::duration_cast<Duration>(current_time - start_time_);
 
-		if (delta > Duration(9.8)) {
+		if (delta > Duration(9.85)) {
 			return true;
 		}
 	}
@@ -380,11 +380,11 @@ void Lake::solutionToStream(std::ostream& out) {
 		}
 	}
 
-	out << result.size() << std::endl;
+	out << result.size() << "\n";
 	for (const auto& x : result) {
 		const auto& src = names_[x.first];
 		const auto& dst = names_[x.second];
-		out << src << " " << dst << std::endl;
+		out << src << " " << dst << "\n";
 	}
 }
 
@@ -396,7 +396,7 @@ int main() {
 	// lake.allowedToStream(std::cerr);
 
 	lake.solve();
-	lake.statsToStream(std::cerr);
+	// lake.statsToStream(std::cerr);
 
 	lake.solutionToStream(std::cout);
 	return 0;
