@@ -33,6 +33,8 @@ using Indices = boost::dynamic_bitset<>;
 
 using Clock = std::chrono::steady_clock;
 using Duration = std::chrono::duration<double>;
+using RouteInfo = std::pair<int, int>; // duration, ferry_index
+using RouteMap = std::map<int, std::map<int, RouteInfo>>;
 
 class Lake {
 public:
@@ -45,6 +47,8 @@ public:
 	void solutionToStream(std::ostream& out);
 
 private:
+	RouteMap createRouteMap();
+	void filterFerries();
 	void calculateWorst();
 	void calculateAllowed();
 	bool recurse(const Indices& used, const Indices& remain, int saved, int replaced);
@@ -233,6 +237,7 @@ bool Lake::recurse(const Indices& used, const Indices& remain, int saved, int re
 		return false;
 	}
 
+#if 0
 	long int saveable = 0;
 	for (size_t i = 0, ie = remain.size(); i < ie; ++i) {
 		if (remain.test(i)) {
@@ -243,6 +248,7 @@ bool Lake::recurse(const Indices& used, const Indices& remain, int saved, int re
 	if (saveable + saved < overtime_) {
 		return false;
 	}
+#endif
 
 	Indices next_used = used;
 	for (size_t i = 0, ie = remain.size(); i < ie; ++i) {
@@ -250,8 +256,8 @@ bool Lake::recurse(const Indices& used, const Indices& remain, int saved, int re
 			continue;
 		}
 
-		Indices next_remain;
-		next_remain = remain & allowed_[i];
+		Indices next_remain = remain;
+		next_remain &= allowed_[i];
 		next_used.set(i);
 
 		if (recurse(next_used, next_remain,
@@ -266,18 +272,9 @@ bool Lake::recurse(const Indices& used, const Indices& remain, int saved, int re
 	return false;
 }
 
-void Lake::calculateWorst() {
-	// Dijkstra
-	using RouteInfo = std::pair<int, int>; // duration, ferry_index
-	using PrevInfo = std::pair<int, int>; // prev_city_index, ferry_index
-	using WeightInfo = std::pair<int, int>; // weight, city_index
 
-	std::map<int, std::map<int, RouteInfo>> route;
-
-	int vertices = road_.size() + 1;
-	std::vector<int> min_distance(vertices, std::numeric_limits<int>::max());
-	std::vector<PrevInfo> previous(vertices, {-1, -1});
-	std::set<WeightInfo> vertex_queue;
+RouteMap Lake::createRouteMap() {
+	RouteMap route;
 
 	int i = 0;
 	for (auto d : road_) {
@@ -290,6 +287,81 @@ void Lake::calculateWorst() {
 		route[f.src][f.dst] = {f.duration, i};
 		++i;
 	}
+
+	return route;
+}
+
+
+void Lake::filterFerries() {
+	// Dijkstra
+	using PrevInfo = std::pair<int, int>; // prev_city_index, ferry_index
+	using WeightInfo = std::pair<int, int>; // weight, city_index
+	auto route = createRouteMap();
+
+	auto fs = ferry_.size();
+
+	int used = 0;
+	int unused = 0;
+
+	for (size_t i = 0; i < fs; ++i) {
+		auto src = ferry_[i].src;
+		auto dst = ferry_[i].dst;
+
+		int vertices = dst - src + 1;
+		std::vector<int> min_distance(vertices, std::numeric_limits<int>::max());
+		std::vector<PrevInfo> previous(vertices, {-1, -1});
+		std::set<WeightInfo> vertex_queue;
+
+		int p = 0;
+		min_distance[p] = 0;
+		vertex_queue.insert({min_distance[p], p});
+
+		while (!vertex_queue.empty()) {
+			int dist_u, u;
+			std::tie(dist_u, u) = *vertex_queue.begin();
+			vertex_queue.erase(vertex_queue.begin());
+
+			// Visit each edge exiting u
+			for (const auto& info : route[u + src]) {
+				int v = info.first;
+				if (v > dst) {
+					continue;
+				}
+				v -= src;
+				int dist_v = info.second.first + dist_u;
+				int ferry_index = info.second.second;
+
+				if (dist_v < min_distance[v]) {
+					vertex_queue.erase({min_distance[v], v});
+					min_distance[v] = dist_v;
+					previous[v] = {u, ferry_index};
+					vertex_queue.insert({min_distance[v], v});
+				}
+			}
+		}
+
+		if (previous[vertices - 1].second == i) {
+			++used;
+		} else {
+			++unused;
+		}
+	}
+	std::cerr << used << std::endl;
+	std::cerr << unused << std::endl;
+}
+
+
+void Lake::calculateWorst() {
+	// Dijkstra
+	using PrevInfo = std::pair<int, int>; // prev_city_index, ferry_index
+	using WeightInfo = std::pair<int, int>; // weight, city_index
+
+	auto route = createRouteMap();
+
+	int vertices = road_.size() + 1;
+	std::vector<int> min_distance(vertices, std::numeric_limits<int>::max());
+	std::vector<PrevInfo> previous(vertices, {-1, -1});
+	std::set<WeightInfo> vertex_queue;
 
 	int p = 0;
 	min_distance[p] = 0;
@@ -396,7 +468,7 @@ int main() {
 	// lake.allowedToStream(std::cerr);
 
 	lake.solve();
-	// lake.statsToStream(std::cerr);
+	lake.statsToStream(std::cerr);
 
 	lake.solutionToStream(std::cout);
 	return 0;
