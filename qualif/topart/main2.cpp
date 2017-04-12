@@ -237,7 +237,7 @@ bool Lake::recurse(const Indices& used, const Indices& remain, int saved, int re
 		return false;
 	}
 
-#if 0
+#if 1
 	long int saveable = 0;
 	for (size_t i = 0, ie = remain.size(); i < ie; ++i) {
 		if (remain.test(i)) {
@@ -293,6 +293,7 @@ RouteMap Lake::createRouteMap() {
 
 
 void Lake::filterFerries() {
+#if 0
 	// Dijkstra
 	using PrevInfo = std::pair<int, int>; // prev_city_index, ferry_index
 	using WeightInfo = std::pair<int, int>; // weight, city_index
@@ -348,6 +349,7 @@ void Lake::filterFerries() {
 	}
 	std::cerr << used << std::endl;
 	std::cerr << unused << std::endl;
+#endif
 }
 
 
