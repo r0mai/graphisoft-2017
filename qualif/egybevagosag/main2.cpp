@@ -498,7 +498,7 @@ bool isFacesSame(Building& b1, Building& b2) {
     return hashes_b1 == hashes_b2;
 }
 
-bool isSame(Building b1, Building b2) {
+bool isSame(Building& b1, Building& b2) {
     if (b1.vertices.size() == 0 && b2.vertices.size() == 0) {
         return true;
     }
@@ -536,20 +536,6 @@ std::vector<Matrix> rotationMatrices() {
 
     assert(result.size() == 24);
     return result;
-}
-
-bool isCongruentish(const std::vector<Building>& bs, const Building& b2) {
-    {
-        const Building& b1 = bs[0];
-
-    }
-
-    for (const auto& b1 : bs) {
-        if (isSame(b1, b2)) {
-            return true;
-        }
-    }
-    return false;
 }
 
 bool isSameSize(const Building& b1, const Building& b2) {
