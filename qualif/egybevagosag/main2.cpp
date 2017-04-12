@@ -299,6 +299,18 @@ Building translate(const Building& b, const Point& delta) {
     return r;
 }
 
+void transformInPlace(Building& r, const Matrix& m) {
+    for (auto& v : r.vertices) {
+        v = transform(v, m);
+    }
+}
+
+void translateInPlace(Building& r, const Point& delta) {
+    for (auto& v : r.vertices) {
+        v = translate(v, delta);
+    }
+}
+
 void OrderEdges(Building& b) {
     for (auto& e : b.edges) {
         if (b.vertices[e.start_index] > b.vertices[e.end_index]) {
@@ -539,12 +551,8 @@ bool isCongruentish(const std::vector<Building>& bs, const Building& b2) {
         }
     }
 
-    auto min_vertex = *std::min_element(b2.vertices.begin(), b2.vertices.end());
-    auto tb2 = translate(b2, min_vertex.negate());
-    OrderEdges(tb2);
-
     for (const auto& b1 : bs) {
-        if (isSame(b1, tb2)) {
+        if (isSame(b1, b2)) {
             return true;
         }
     }
@@ -555,17 +563,24 @@ std::vector<Building> createAllAlignments(const Building& building) {
     std::vector<Building> result;
 
     for (const Matrix& rotationMatrix : rotationMatrices()) {
-        auto rotated = transform(building, rotationMatrix);
+        auto aligned = building;
 
+        transformInPlace(aligned, rotationMatrix);
         auto min_vertex = *std::min_element(
-            rotated.vertices.begin(), rotated.vertices.end());
+            aligned.vertices.begin(), aligned.vertices.end());
 
-        auto translated = translate(rotated, min_vertex.negate());
-
-        OrderEdges(translated);
-        result.push_back(std::move(translated));
+        translateInPlace(aligned, min_vertex.negate());
+        OrderEdges(aligned);
+        result.push_back(std::move(aligned));
     }
     return result;
+}
+
+void alignBuilding(Building& building) {
+    auto min_vertex = *std::min_element(
+        building.vertices.begin(), building.vertices.end());
+    translateInPlace(building, min_vertex.negate());
+    OrderEdges(building);
 }
 
 int main() {
@@ -589,6 +604,7 @@ int main() {
     std::vector<Building> aligned = createAllAlignments(buildings[0]);
 
     for (std::size_t i = 1; i < buildings.size(); ++i) {
+        alignBuilding(buildings[i]);
         if (isCongruentish(aligned, buildings[i])) {
             good_indexes.push_back(i);
         }
