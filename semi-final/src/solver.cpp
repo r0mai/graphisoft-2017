@@ -3,6 +3,23 @@
 #include <iostream>
 #include <sstream>
 
+// assuming north is negative X
+bool NoPositiveXBorder(int type) {
+	return type & 0b0001;
+}
+
+bool NoNegativeXBorder(int type) {
+	return type & 0b0100;
+}
+
+bool NoPositiveYBorder(int type) {
+	return type & 0b1000;
+}
+
+bool NoNegativeYBorder(int type) {
+	return type & 0b0010;
+}
+
 void solver::init(const std::vector<std::string>& field_infos) {
 	std::cerr << "We got these field informations:" << std::endl;
 

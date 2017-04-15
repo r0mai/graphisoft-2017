@@ -38,4 +38,9 @@ private:
 	} tick;
 };
 
+bool NoPositiveXBorder(int type);
+bool NoNegativeXBorder(int type);
+bool NoPositiveYBorder(int type);
+bool NoNegativeYBorder(int type);
+
 #endif // SOLVER_H_INCLUDED
