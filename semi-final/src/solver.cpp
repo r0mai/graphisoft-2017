@@ -54,7 +54,7 @@ std::vector<std::string> solver::process(const std::vector<std::string>& tick_in
 			ss >> tick.tick;
 		} else if (command == "FIELDS") {
 			for (int y = 0; y < height_; ++y) {
-				for (int x = 0; y < width_; ++x) {
+				for (int x = 0; x < width_; ++x) {
 					ss >> tick.field[x][y];
 				}
 			}
