@@ -11,7 +11,7 @@ class client {
 	std::string received_buffer;
 	solver your_solver;
 public:
-	client(const char host_name[], unsigned short port, 
+	client(const char host_name[], unsigned short port,
 		const char team_name[], const char password[], int task_id) {
 
 		if(!socket_handler.valid()) {
@@ -23,16 +23,16 @@ public:
 		if(!host) {
 			throw std::runtime_error("Error: Cannot find host: " + std::string(host_name));
 		}
-		
+
 		sockaddr_in socket_address;
 		socket_address.sin_family = AF_INET;
 		socket_address.sin_port = htons(port);
 		socket_address.sin_addr.s_addr = inet_addr(inet_ntoa(*(in_addr *)host->h_addr_list[0]));
-		
-		if(connect(socket_handler.get_handler(), (struct sockaddr*)&socket_address, 
+
+		if(connect(socket_handler.get_handler(), (struct sockaddr*)&socket_address,
 			sizeof(socket_address)) != 0) {
-			throw std::runtime_error("Error: Cannot connect to the server: " + 
-				std::string(host_name) + ":" + std::to_string(port) + 
+			throw std::runtime_error("Error: Cannot connect to the server: " +
+				std::string(host_name) + ":" + std::to_string(port) +
 				" error code: " + std::to_string(socketerrno));
 		}
 
@@ -43,7 +43,7 @@ public:
 		if(1 <= task_id && task_id <= 10) {
 			login_messages.push_back("LEVEL " + std::to_string(task_id));
 		}
-		
+
 		send_messages(login_messages);
 	}
 
@@ -69,7 +69,7 @@ public:
 		std::string buffer(512, '\0');
 
 		int received_bytes = recv(socket_handler.get_handler(), &buffer[0], 512, 0);
-		
+
 		switch(received_bytes) {
 		case -1:
 			std::cerr << "Error: recv failed!" << std::endl;
@@ -80,7 +80,7 @@ public:
 		}
 
 		std::vector<std::string> result;
-		
+
 		std::stringstream consumer(received_buffer + buffer.c_str());
 		while(std::getline(consumer, buffer)) {
 			if(buffer == ".") {
@@ -129,10 +129,10 @@ int main(int argc, char** argv) {
 
 	// 0 means here: server choose randomly 1 to 10
 	const int task_id = argc > 1 ? std::atoi(argv[1]) : 0;
-	
+
     try {
     	platform_dep::enable_socket _;
-	
+
 	    client(host_name, port, team_name, password, task_id).run();
 
     } catch(std::exception& e) {

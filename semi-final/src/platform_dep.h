@@ -4,7 +4,7 @@
 #ifdef WIN32
 #	ifndef _WIN32_WINNT // Allow use of features specific to Windows XP or later.
 #	define _WIN32_WINNT 0x0501 // Change this to the appropriate value to target other versions of Windows.
-#	endif						
+#	endif
 #	define _CRT_SECURE_NO_WARNINGS
 #	include <winsock2.h>
 #	undef min
@@ -46,7 +46,7 @@ namespace platform_dep {
 		enable_socket() {
 #ifdef WIN32
 			WSADATA WSAData;
-			
+
 			if(WSAStartup(0x101, &WSAData) != 0) {
 				throw std::runtime_error("Error: Cannot able to use WINSOCK");
 			}
