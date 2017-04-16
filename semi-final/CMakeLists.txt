@@ -22,7 +22,7 @@ add_executable(labyrinth
 add_executable(glabyrinth
     src/FloodFill.cpp
     src/Util.cpp
-    src/Gui.cpp
+    src/gui.cpp
     src/Grid.cpp
 )
 
