@@ -26,9 +26,18 @@ add_executable(glabyrinth
     src/Grid.cpp
 )
 
+add_executable(test-labyrinth
+    src/test.cpp
+    src/solver.cpp
+    src/FloodFill.cpp
+    src/Util.cpp
+    src/Grid.cpp
+)
+
 add_executable(server
     src/server.cpp
 )
+
 
 target_include_directories(glabyrinth PRIVATE ${SFML_INCLUDE_DIR})
 target_link_libraries(glabyrinth ${SFML_LIBRARIES})
