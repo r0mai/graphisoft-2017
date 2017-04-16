@@ -25,7 +25,7 @@ const std::vector<Point>& Grid::Displays() const {
 void Grid::Init(int width, int height, int displays, int players) {
 	fields_ = Matrix<Field>(width, height, Field(0));
 	display_.resize(displays, {-1, -1});
-	position_.resize(players, {-1, -1});
+	positions_.resize(players, {-1, -1});
 }
 
 void Grid::Randomize() {
@@ -45,7 +45,7 @@ void Grid::UpdateDisplay(int index, const Point& pos) {
 }
 
 void Grid::UpdatePosition(int player, const Point& pos) {
-	position_[player] = pos;
+	positions_[player] = pos;
 }
 
 Field Grid::At(int x, int y) const {
@@ -54,6 +54,10 @@ Field Grid::At(int x, int y) const {
 
 const Matrix<Field>& Grid::Fields() const {
 	return fields_;
+}
+
+const std::vector<Point>& Grid::Positions() const {
+	return positions_;
 }
 
 Field Grid::Push(const Point& pos, Field t) {
@@ -65,6 +69,11 @@ Field Grid::Push(const Point& pos, Field t) {
 			std::swap(fields_.At(x, pos.y), fields_.At(x - 1, pos.y));
 		}
 		std::swap(fields_.At(0, pos.y), t);
+		for (auto& p : positions_) {
+			if (p.y == pos.y) {
+				p.x = (p.x + 1) % size.x;
+			}
+		}
 	}
 
 	if (pos.x == size.x) {
@@ -73,6 +82,11 @@ Field Grid::Push(const Point& pos, Field t) {
 			std::swap(fields_.At(x, pos.y), fields_.At(x + 1, pos.y));
 		}
 		std::swap(fields_.At(size.x - 1, pos.y), t);
+		for (auto& p : positions_) {
+			if (p.y == pos.y) {
+				p.x = (p.x - 1 + size.x) % size.x;
+			}
+		}
 	}
 
 	if (pos.y == -1) {
@@ -81,6 +95,11 @@ Field Grid::Push(const Point& pos, Field t) {
 			std::swap(fields_.At(pos.x, y), fields_.At(pos.x, y - 1));
 		}
 		std::swap(fields_.At(pos.x, 0), t);
+		for (auto& p : positions_) {
+			if (p.x == pos.x) {
+				p.y = (p.y + 1) % size.y;
+			}
+		}
 	}
 
 	if (pos.y == size.y) {
@@ -89,6 +108,11 @@ Field Grid::Push(const Point& pos, Field t) {
 			std::swap(fields_.At(pos.x, y), fields_.At(pos.x, y + 1));
 		}
 		std::swap(fields_.At(pos.x, size.y - 1), t);
+		for (auto& p : positions_) {
+			if (p.x == pos.x) {
+				p.y = (p.y - 1 + size.y) % size.y;
+			}
+		}
 	}
 
 	return t;

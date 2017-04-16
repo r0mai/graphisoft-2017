@@ -16,7 +16,7 @@ public:
 	Point Size() const;
 	const Matrix<Field>& Fields() const;
 	const std::vector<Point>& Displays() const;
-
+	const std::vector<Point>& Positions() const;
 
 	void Init(int width, int height, int displays, int players);
 	void Randomize();
@@ -28,7 +28,7 @@ public:
 
 private:
 	std::vector<Point> display_;
-	std::vector<Point> position_;
+	std::vector<Point> positions_;
 	Matrix<Field> fields_;
 };
 

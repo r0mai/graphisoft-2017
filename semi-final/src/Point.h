@@ -16,3 +16,7 @@ inline bool operator==(const Point& lhs, const Point& rhs) {
 inline bool operator!=(const Point& lhs, const Point& rhs) {
 	return !(lhs == rhs);
 }
+
+inline bool operator<(const Point& lhs, const Point& rhs) {
+	return std::tie(lhs.x, lhs.y) < std::tie(rhs.x, rhs.y);
+}

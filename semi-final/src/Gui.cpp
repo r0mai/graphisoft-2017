@@ -138,10 +138,8 @@ void HandleEvents(App& app) {
 	}
 }
 
-sf::CircleShape CreateDot(const sf::Vector2f& pos) {
+sf::CircleShape CreateDot(const sf::Vector2f& pos, float r=0.05f) {
 	sf::CircleShape circ;
-	float r = 0.05f;
-
 	circ.setRadius(r);
 	circ.setOrigin(r - 0.5f, r - 0.5f);
 	circ.setPosition(pos);
@@ -153,6 +151,7 @@ sf::RectangleShape CreateTile(const sf::Vector2f& pos) {
 	float size = 0.98f;
 	sf::RectangleShape shape(sf::Vector2f{size, size});
 	shape.setPosition(pos);
+	shape.setOrigin(-0.01f, -0.01f);
 	return shape;
 }
 
@@ -207,6 +206,7 @@ sf::ConvexShape CreateRoute(const sf::Vector2f& pos, Field tile) {
 		shape.setPoint(k++, dx1 + dym0);
 	}
 	shape.setPosition(pos);
+	shape.setOrigin(-0.01f, -0.01f);
 
 	return shape;
 }
@@ -240,6 +240,24 @@ void DrawDot(App& app, const sf::Vector2f& pos, bool active=false) {
 	app.window.draw(dot);
 }
 
+void DrawPrincesses(App& app) {
+	std::map<Point, int> pos_map;
+
+	int i = 0;
+	for (const auto& pos : app.grid.Positions()) {
+		pos_map[pos] |= (1 << i);
+		++i;
+	}
+
+	for (const auto& p : pos_map) {
+		const auto& pos = p.first;
+		auto dot = CreateDot(sf::Vector2f(pos.x, pos.y), 0.075f);
+		// dot.setOutlineThickness(0.01f);
+		// dot.setOutlineColor(sf::Color(0, 0, 0));
+		dot.setFillColor(sf::Color(0xff, 0x1e, 0x9d));
+		app.window.draw(dot);
+	}
+}
 
 void Draw(App& app) {
 	auto& window = app.window;
@@ -280,6 +298,7 @@ void Draw(App& app) {
 	}
 
 	DrawTile(app, sf::Vector2f(size.x + 1, -1), app.extra);
+	DrawPrincesses(app);
 	window.display();
 }
 
@@ -294,8 +313,9 @@ void Run(App& app) {
 
 int main() {
 	App app;
-	app.grid.Init(14, 8, 0, 0);
+	app.grid.Init(14, 8, 0, 1);
 	app.grid.Randomize();
+	app.grid.UpdatePosition(0, {0, 0});
 
 	sf::ContextSettings settings;
 	settings.antialiasingLevel = 8;
