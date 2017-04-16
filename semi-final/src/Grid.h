@@ -27,6 +27,7 @@ public:
     }
 
     void UpdateFields(std::vector<int> fields) {
+		assert(fields.size() == width_ * height_);
         fields_ = std::move(fields);
     }
 
