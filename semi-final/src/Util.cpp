@@ -1,18 +1,18 @@
 #include "Util.h"
 
-bool NoPositiveXBorder(Field type) {
+bool IsEastOpen(Field type) {
 	return type & 0b1000;
 }
 
-bool NoNegativeXBorder(Field type) {
+bool IsWestOpen(Field type) {
 	return type & 0b0010;
 }
 
-bool NoPositiveYBorder(Field type) {
+bool IsNorthOpen(Field type) {
 	return type & 0b0001;
 }
 
-bool NoNegativeYBorder(Field type) {
+bool IsSouthOpen(Field type) {
 	return type & 0b0100;
 }
 

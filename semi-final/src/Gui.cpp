@@ -105,6 +105,7 @@ void HandleMousePressed(App& app, const sf::Event::MouseButtonEvent& ev) {
 	auto pos = RoundToTile(WindowToView(app, {ev.x, ev.y}));
 	if (IsEdge(app, pos)) {
 		app.extra = app.grid.Push(pos, app.extra);
+		ResetColors(app);
 	} else if (IsInside(app, pos)) {
 		app.colors = FloodFill(app.grid.Fields(), pos);
 	}
