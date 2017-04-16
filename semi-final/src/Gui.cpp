@@ -21,6 +21,7 @@ struct App {
 
 	Field extra = Field(15);
 	Point hover;
+	int self = 0;
 	int target = 0;
 	int tick = 0;
 };
@@ -305,6 +306,13 @@ void DrawDot(App& app, const sf::Vector2f& pos, bool active=false) {
 }
 
 void DrawPrincesses(App& app) {
+	static const sf::Color colors[] = {
+		sf::Color(0xff, 0, 0),
+		sf::Color(0, 0xff, 0),
+		sf::Color(0xff, 0xff, 0),
+		sf::Color(0, 0, 0xff),
+	};
+
 	std::map<Point, int> pos_map;
 
 	int i = 0;
@@ -313,17 +321,35 @@ void DrawPrincesses(App& app) {
 		++i;
 	}
 
+	sf::Vector2f offset{-0.03f, -0.03f};
 	for (const auto& p : pos_map) {
 		const auto& pos = p.first;
-		bool self = !!(p.second & 1);
-		bool others = !!(p.second & 0xe);
-		auto dot = CreateDiamond(sf::Vector2f(pos.x, pos.y));
-		dot.setOutlineThickness(0.01f);
-		dot.setOutlineColor(sf::Color(0, 0, 0, 0x80));
-		dot.setFillColor(self
-			? (others ? sf::Color::Magenta : sf::Color::Red)
-			: sf::Color::Blue);
-		app.window.draw(dot);
+		bool self = !!(p.second & (1<<app.self));
+
+		int k = -1;
+		for (int i = 0; i < 4; ++i) {
+			k += !!(p.second & (1<<i));
+		}
+
+		for (int i = 0; i < 4; ++i) {
+			if (!!(p.second & (1<<i)) && i != app.self) {
+				auto dot = CreateDiamond(
+					sf::Vector2f(pos.x, pos.y) + float(k) * offset);
+				dot.setOutlineThickness(0.01f);
+				dot.setOutlineColor(sf::Color(0, 0, 0, 0x80));
+				dot.setFillColor(colors[i]);
+				app.window.draw(dot);
+				--k;
+			}
+		}
+
+		if (self) {
+			auto dot = CreateDiamond(sf::Vector2f(pos.x, pos.y));
+			dot.setOutlineThickness(0.01f);
+			dot.setOutlineColor(sf::Color(0, 0, 0, 0x80));
+			dot.setFillColor(colors[app.self]);
+			app.window.draw(dot);
+		}
 	}
 }
 
@@ -403,9 +429,10 @@ int main() {
 	app.grid.Init(14, 8, 3, 4);
 	app.grid.Randomize();
 	app.grid.UpdatePosition(0, {0, 0});
-	app.grid.UpdatePosition(1, {13, 7});
-	app.grid.UpdatePosition(2, {0, 7});
-	app.grid.UpdatePosition(3, {13, 0});
+	app.grid.UpdatePosition(1, {0, 2});
+	app.grid.UpdatePosition(2, {0, 1});
+	app.grid.UpdatePosition(3, {0, 3});
+
 	app.grid.UpdateDisplay(0, {13, 5});
 	app.grid.UpdateDisplay(1, {4, 6});
 	app.grid.UpdateDisplay(2, {7, 1});
