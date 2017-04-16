@@ -15,6 +15,7 @@ public:
 	int DisplayCount() const;
 	Point Size() const;
 	const Matrix<Field>& Fields() const;
+	const std::vector<Point>& Displays() const;
 
 
 	void Init(int width, int height, int displays, int players);

@@ -8,13 +8,15 @@
 #include <cassert>
 
 #include "Grid.h"
+#include "Point.h"
 
 
 namespace server {
 namespace asio = boost::asio;
 
 enum class Command {
-	Login, Push, Goto, Over, Level, Message, Size, Displays, Player, MaxTick, Tick
+	Login, Push, Goto, Over, Level, Message, Size, Displays, Player, MaxTick,
+	Tick, Fields, End, Display, Position, Target, ExtraField
 };
 
 std::istream& operator>>(std::istream& is, Command& command) {
@@ -40,6 +42,18 @@ std::istream& operator>>(std::istream& is, Command& command) {
 		command = Command::MaxTick;
 	} else if (token == "TICK") {
 		command = Command::Tick;
+	} else if (token == "FIELDS") {
+		command = Command::Fields;
+	} else if (token == "END") {
+		command = Command::End;
+	} else if (token == "DISPLAY") {
+		command = Command::Display;
+	} else if (token == "POSITION") {
+		command = Command::Position;
+	} else if (token == "TARGET") {
+		command = Command::Target;
+	} else if (token == "EXTRAFIELD") {
+		command = Command::ExtraField;
 	} else {
 		std::cerr << "Failed parse: '" << token << "'" << std::endl;
 		throw std::runtime_error("Could not parse input");
@@ -72,6 +86,18 @@ std::ostream& operator<<(std::ostream& os, const Command& command) {
 			return os << "MAXTICK";
 		case Command::Tick:
 			return os << "TICK";
+		case Command::Fields:
+			return os << "FIELDS";
+		case Command::End:
+			return os << "END";
+		case Command::Display:
+			return os << "DISPLAY";
+		case Command::Position:
+			return os << "POSITION";
+		case Command::Target:
+			return os << "TARGET";
+		case Command::ExtraField:
+			return os << "EXTRAFIELD";
 	}
 }
 
@@ -116,6 +142,26 @@ public:
 
 	const std::string& getTeamName() const {
 		return teamName;
+	}
+
+
+	int getScore() const {
+		return 0;
+	}
+
+	Point getPosition() const {
+		// TODO: implement
+		return {0, 0};
+	}
+
+	int getTarget() const {
+		// TODO: implement
+		return 0;
+	}
+
+	int getExtraField() const {
+		// TODO: implement
+		return 15;
 	}
 
 	template<typename ArgumentType>
@@ -269,7 +315,13 @@ private:
 	void startMatch(asio::yield_context yield) {
 		std::cerr << "All clients logged in, starting the round" << std::endl;
 		for (; currentTick < maxTicks; ++currentTick) {
+			std::cerr << "Tick: " << currentTick << std::endl;
 			updateClients(yield);
+		}
+		for (auto& player: players) {
+			auto& client = player.second;
+			client.writeMessage(
+					Message<int>(Command::End, {client.getScore()}), yield);
 		}
 	}
 
@@ -282,6 +334,39 @@ private:
 
 	void updateClient(Client& client, asio::yield_context yield) {
 		client.writeMessage(Message<int>(Command::Tick, {currentTick}), yield);
+		const auto& fields = grid.Fields().GetFields();
+		std::vector<int> intFields;
+		intFields.reserve(fields.size());
+		std::transform(fields.begin(), fields.end(),
+				std::back_inserter(intFields),
+				[](const Field& field) { return static_cast<int>(field); });
+		client.writeMessage(Message<int>(Command::Fields, intFields), yield);
+
+		const auto& displays = grid.Displays();
+		for (std::size_t i=0; i<displays.size(); ++i) {
+			const auto& display = displays[i];
+			client.writeMessage(
+					Message<int>(Command::Display,
+							{static_cast<int>(i), display.x, display.y}),
+					yield);
+		}
+
+		for (const auto& player: players) {
+			int playerId = player.first;
+			const auto& position = player.second.getPosition();
+			client.writeMessage(
+					Message<int>(Command::Position,
+							{playerId, position.x, position.y}), yield);
+		}
+
+		client.writeMessage(
+				Message<int>(Command::Player, {getId(client)}), yield);
+		// TODO: What does this do?
+		client.writeMessage(
+				Message<std::string>(Command::Message, {"OK"}), yield);
+		client.writeMessage(
+				Message<int>(Command::Target, {client.getTarget()}), yield);
+		client.writeMessage(Message<int>(Command::Over, {}), yield);
 	}
 
 	boost::asio::io_service ioService;

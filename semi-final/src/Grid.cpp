@@ -18,6 +18,10 @@ Point Grid::Size() const {
 	return {fields_.Width(), fields_.Height()};
 }
 
+const std::vector<Point>& Grid::Displays() const {
+	return display_;
+}
+
 void Grid::Init(int width, int height, int displays, int players) {
 	fields_ = Matrix<Field>(width, height, Field(0));
 	display_.resize(displays, {-1, -1});
