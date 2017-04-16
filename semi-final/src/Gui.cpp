@@ -173,6 +173,26 @@ sf::ConvexShape CreateDiamond(const sf::Vector2f& pos) {
 	return shape;
 }
 
+sf::ConvexShape CreateSquare(const sf::Vector2f& pos) {
+	float size = 0.13f;
+
+	sf::Vector2f dx(size, 0.f);
+	sf::Vector2f dy(0.f, size);
+	sf::ConvexShape shape;
+	shape.setPointCount(4);
+
+	int k = 0;
+	shape.setPoint(k++, -dx - dy);
+	shape.setPoint(k++, -dx + dy);
+	shape.setPoint(k++, dx + dy);
+	shape.setPoint(k++, dx - dy);
+
+	shape.setPosition(pos);
+	shape.setOrigin(-0.5f, -0.5f);
+
+	return shape;
+}
+
 
 sf::RectangleShape CreateTile(const sf::Vector2f& pos) {
 	float size = 0.98f;
@@ -286,6 +306,16 @@ void DrawPrincesses(App& app) {
 	}
 }
 
+void DrawDisplays(App& app) {
+	for (const auto& pos : app.grid.Displays()) {
+		auto dot = CreateSquare(sf::Vector2f(pos.x, pos.y));
+		dot.setOutlineThickness(0.01f);
+		dot.setOutlineColor(sf::Color(0, 0, 0, 0x40));
+		dot.setFillColor(sf::Color(0, 0, 0, 0x80));
+		app.window.draw(dot);
+	}
+}
+
 void Draw(App& app) {
 	auto& window = app.window;
 	const auto& hover = app.hover;
@@ -325,6 +355,8 @@ void Draw(App& app) {
 	}
 
 	DrawTile(app, sf::Vector2f(size.x + 1, -1), app.extra);
+
+	DrawDisplays(app);
 	DrawPrincesses(app);
 	window.display();
 }
@@ -340,9 +372,10 @@ void Run(App& app) {
 
 int main() {
 	App app;
-	app.grid.Init(14, 8, 0, 1);
+	app.grid.Init(14, 8, 1, 1);
 	app.grid.Randomize();
 	app.grid.UpdatePosition(0, {0, 0});
+	app.grid.UpdateDisplay(0, {13, 5});
 
 	sf::ContextSettings settings;
 	settings.antialiasingLevel = 8;
