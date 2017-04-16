@@ -96,6 +96,11 @@ void ResetColors(App& app) {
 	app.colors = Matrix<int>(app.grid.Width(), app.grid.Height(), 0);
 }
 
+void UpdateColors(App& app) {
+	auto pos = app.grid.Positions()[0];
+	app.colors = FloodFill(app.grid.Fields(), pos);
+}
+
 void HandleMouseMoved(App& app, const sf::Event::MouseMoveEvent& ev) {
 	auto pos = RoundToTile(WindowToView(app, {ev.x, ev.y}));
 	app.hover = pos;
@@ -105,9 +110,9 @@ void HandleMousePressed(App& app, const sf::Event::MouseButtonEvent& ev) {
 	auto pos = RoundToTile(WindowToView(app, {ev.x, ev.y}));
 	if (IsEdge(app, pos)) {
 		app.extra = app.grid.Push(pos, app.extra);
-		ResetColors(app);
-	} else if (IsInside(app, pos)) {
-		app.colors = FloodFill(app.grid.Fields(), pos);
+		UpdateColors(app);
+	} else if (IsInside(app, pos) && app.colors.At(pos) != 0) {
+		app.grid.UpdatePosition(0, pos);
 	}
 }
 
@@ -146,6 +151,28 @@ sf::CircleShape CreateDot(const sf::Vector2f& pos, float r=0.05f) {
 
 	return circ;
 }
+
+sf::ConvexShape CreateDiamond(const sf::Vector2f& pos) {
+	float size = 0.1f;
+
+	sf::Vector2f dx(size, 0.f);
+	sf::Vector2f dy(0.f, size);
+	sf::ConvexShape shape;
+	shape.setPointCount(5);
+
+	int k = 0;
+	shape.setPoint(k++, dx * 0.5f -dy * 0.5f);
+	shape.setPoint(k++, -dx * 0.5f -dy * 0.5f);
+	shape.setPoint(k++, -dx);
+	shape.setPoint(k++, dy);
+	shape.setPoint(k++, dx);
+
+	shape.setPosition(pos);
+	shape.setOrigin(-0.5f, -0.5f);
+
+	return shape;
+}
+
 
 sf::RectangleShape CreateTile(const sf::Vector2f& pos) {
 	float size = 0.98f;
@@ -251,10 +278,10 @@ void DrawPrincesses(App& app) {
 
 	for (const auto& p : pos_map) {
 		const auto& pos = p.first;
-		auto dot = CreateDot(sf::Vector2f(pos.x, pos.y), 0.075f);
-		// dot.setOutlineThickness(0.01f);
-		// dot.setOutlineColor(sf::Color(0, 0, 0));
-		dot.setFillColor(sf::Color(0xff, 0x1e, 0x9d));
+		auto dot = CreateDiamond(sf::Vector2f(pos.x, pos.y));
+		dot.setOutlineThickness(0.01f);
+		dot.setOutlineColor(sf::Color(0, 0, 0, 0x80));
+		dot.setFillColor(sf::Color(0x1c, 0xdc, 0xff));
 		app.window.draw(dot);
 	}
 }
@@ -326,7 +353,7 @@ int main() {
 		settings
 	);
 
-	ResetColors(app);
+	UpdateColors(app);
 	AdjustView(app);
 	Run(app);
 
