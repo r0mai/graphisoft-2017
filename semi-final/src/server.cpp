@@ -233,7 +233,9 @@ private:
 
 class Game {
 public:
-	Game(int maxPlayers) : maxPlayers(maxPlayers) {
+	Game(int maxPlayers, int maxTicks) :
+		maxPlayers(maxPlayers), maxTicks(maxTicks)
+	{
 		grid.Init(6, 7, 4, 4);
 		grid.Randomize();
 	}
@@ -427,7 +429,8 @@ int main(int argc, const char** argv) {
 	po::options_description desc{"Allowed Options"};
 	desc.add_options()
 			("help", "this help message")
-			("players", po::value<int>(), "players to wait for before starting, defaults to 4");
+			("players", po::value<int>(), "players to wait for before starting, defaults to 4")
+			("ticks", po::value<int>(), "ticks to run the game for, defaults to 10");
 	po::variables_map vm;
 	po::store(po::parse_command_line(argc, argv, desc), vm);
 	po::notify(vm);
@@ -439,6 +442,10 @@ int main(int argc, const char** argv) {
 	if (vm.count("players")) {
 		playersToWaitFor = vm["players"].as<int>();
 	}
-	server::Game game{playersToWaitFor};
+	int maxTicks = 10;
+	if (vm.count("ticks")) {
+		maxTicks = vm["ticks"].as<int>();
+	}
+	server::Game game{playersToWaitFor, maxTicks};
 	game.run();
 }
