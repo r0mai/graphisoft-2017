@@ -26,7 +26,7 @@ private:
 	int current_tick_ = -1;
 	int current_player_ = -1;
 	int target_display_ = -1;
-	int extra_field_ = -1;
+	Field extra_field_ = Field(-1);
 };
 
 #endif // SOLVER_H_INCLUDED

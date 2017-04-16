@@ -17,7 +17,7 @@ struct App {
 	sf::RenderWindow window;
 	Grid grid;
 
-	int extra = 15;
+	Field extra = Field(15);
 	Point hover;
 };
 
@@ -140,7 +140,7 @@ sf::RectangleShape CreateTile(const sf::Vector2f& pos) {
 	return shape;
 }
 
-sf::ConvexShape CreateRoute(const sf::Vector2f& pos, int tile) {
+sf::ConvexShape CreateRoute(const sf::Vector2f& pos, Field tile) {
 	float pad = 0.33f;
 	float size = 0.98f;
 
@@ -196,7 +196,7 @@ sf::ConvexShape CreateRoute(const sf::Vector2f& pos, int tile) {
 }
 
 
-void DrawTile(App& app, const sf::Vector2f& pos, int tile) {
+void DrawTile(App& app, const sf::Vector2f& pos, Field tile) {
 	auto base = CreateTile(pos);
 	auto route = CreateRoute(pos, tile);
 	base.setOutlineThickness(0.01f);

@@ -5,7 +5,7 @@
 
 #include "Util.h"
 
-Matrix<int> FloodFill(const Matrix<int>& field, const Point& origin) {
+Matrix<int> FloodFill(const Matrix<Field>& field, const Point& origin) {
 	std::stack<Point> stack;
 	stack.push(origin);
 

@@ -1,13 +1,14 @@
 #include "FloodFill.h"
+#include "Field.h"
 #include <cstdlib>
 #include <iostream>
 #include <chrono>
 
-Matrix<int> WorstCaseMap(int w, int h) {
-	Matrix<int> field(15, 15, 10);
+Matrix<Field> WorstCaseMap(int w, int h) {
+	Matrix<Field> field(15, 15, Field(10));
 	for (int y = 0; y < h; ++y) {
-		field.At(0,   y) = (y % 2 == 0) ? 12 : 9;
-		field.At(w-1, y) = (y % 2 == 0) ? 3 : 6;
+		field.At(0,   y) = (y % 2 == 0) ? Field(12) : Field(9);
+		field.At(w-1, y) = (y % 2 == 0) ? Field(3) : Field(6);
 	}
 	return field;
 }

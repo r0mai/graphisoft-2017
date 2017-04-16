@@ -15,7 +15,7 @@ Point Grid::Size() const {
 }
 
 void Grid::Init(int width, int height, int displays, int players) {
-	fields_ = Matrix<int>(width, height, 0);
+	fields_ = Matrix<Field>(width, height, Field(0));
 	display_.resize(displays, {-1, -1});
 	position_.resize(players, {-1, -1});
 }
@@ -23,12 +23,12 @@ void Grid::Init(int width, int height, int displays, int players) {
 void Grid::Randomize() {
 	for (int x = 0; x < fields_.Width(); ++x) {
 		for (int y = 0; y < fields_.Height(); ++y) {
-			fields_.At(x, y) = 1 + (rand() % 15);
+			fields_.At(x, y) = Field(1 + (rand() % 15));
 		}
 	}
 }
 
-void Grid::UpdateFields(std::vector<int> fields) {
+void Grid::UpdateFields(std::vector<Field> fields) {
 	fields_.SetFields(std::move(fields));
 }
 
@@ -40,11 +40,11 @@ void Grid::UpdatePosition(int player, const Point& pos) {
 	position_[player] = pos;
 }
 
-int Grid::At(int x, int y) const {
+Field Grid::At(int x, int y) const {
 	return fields_.At(x, y);
 }
 
-int Grid::Push(const Point& pos, int t) {
+Field Grid::Push(const Point& pos, Field t) {
 	auto size = Size();
 
 	if (pos.x == -1) {

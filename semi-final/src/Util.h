@@ -1,9 +1,11 @@
 #pragma once
 
-bool NoPositiveXBorder(int type);
-bool NoNegativeXBorder(int type);
-bool NoPositiveYBorder(int type);
-bool NoNegativeYBorder(int type);
+#include "Field.h"
 
-int RotateLeft(int tile);
-int RotateRight(int tile);
+bool NoPositiveXBorder(Field type);
+bool NoNegativeXBorder(Field type);
+bool NoPositiveYBorder(Field type);
+bool NoNegativeYBorder(Field type);
+
+Field RotateLeft(Field tile);
+Field RotateRight(Field tile);

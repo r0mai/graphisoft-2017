@@ -3,6 +3,7 @@
 #include "Point.h"
 #include <vector>
 #include <cassert>
+#include <ostream>
 
 template<typename T>
 class Matrix {
@@ -35,7 +36,7 @@ public:
     int Width() const { return width_; }
     int Height() const { return height_; }
 
-	void SetFields(std::vector<int> fields) {
+	void SetFields(std::vector<T> fields) {
 		assert(fields.size() == width_ * height_);
 		fields_ = std::move(fields);
 	}
@@ -49,3 +50,14 @@ private:
 	int height_;
 	std::vector<T> fields_;
 };
+
+template<typename T>
+std::ostream& operator<<(std::ostream& os, const Matrix<T>& m) {
+	for (int y = 0; y < m.Height(); ++y) {
+		for (int x = 0; x < m.Widht(); ++x) {
+			os << m.At(x, y) << ' ';
+		}
+		os << '\n';
+	}
+	return os;
+}

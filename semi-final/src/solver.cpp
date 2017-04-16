@@ -59,8 +59,8 @@ std::vector<std::string> solver::process(const std::vector<std::string>& tick_in
 		} else if (command == "TICK") {
 			ss >> current_tick_;
 		} else if (command == "FIELDS") {
-			std::vector<int> fields(grid_.Width() * grid_.Height());
-			for (int& f : fields) {
+			std::vector<Field> fields(grid_.Width() * grid_.Height());
+			for (Field& f : fields) {
 				ss >> f;
 			}
 			grid_.UpdateFields(std::move(fields));
