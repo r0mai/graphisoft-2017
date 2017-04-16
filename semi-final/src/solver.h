@@ -4,6 +4,9 @@
 #include <vector>
 #include <string>
 
+template<typename T>
+using Matrix = std::vector<std::vector<T>>;
+
 struct Point {
 	Point() = default;
 	Point(int x, int y) : x(x), y(y) {}
@@ -33,7 +36,7 @@ private:
 		int current_player = -1;
 		int target_display = -1;
 		int our_field_type = -1;
-		std::vector<std::vector<int>> field;
+		Matrix<int> field;
 		std::vector<Point> displays;
 	} tick;
 };
@@ -42,5 +45,14 @@ bool NoPositiveXBorder(int type);
 bool NoNegativeXBorder(int type);
 bool NoPositiveYBorder(int type);
 bool NoNegativeYBorder(int type);
+
+template<typename T, typename U>
+Matrix<T> CloneMatrixDimensions(const Matrix<U>& m) {
+	Matrix<T> result{m.size()};
+	for (int i = 0; i < m.size(); ++i) {
+		result[i].resize(m[i].size());
+	}
+	return result;
+}
 
 #endif // SOLVER_H_INCLUDED
