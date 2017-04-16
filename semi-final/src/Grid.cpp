@@ -1,5 +1,5 @@
 #include "Grid.h"
-
+#include <cassert>
 
 
 int Grid::Width() const {
@@ -45,6 +45,39 @@ int Grid::At(int x, int y) const {
 }
 
 int Grid::Push(const Point& pos, int t) {
-	// if (pos.x == -1) {}
-	return 0;
+	auto size = Size();
+
+	if (pos.x == -1) {
+		assert(pos.y >= 0 && pos.y < size.y);
+		for (int x = size.x; x-- > 1; ) {
+			std::swap(fields_.At(x, pos.y), fields_.At(x - 1, pos.y));
+		}
+		std::swap(fields_.At(0, pos.y), t);
+	}
+
+	if (pos.x == size.x) {
+		assert(pos.y >= 0 && pos.y < size.y);
+		for (int x = 0; x < size.x - 1; ++x) {
+			std::swap(fields_.At(x, pos.y), fields_.At(x + 1, pos.y));
+		}
+		std::swap(fields_.At(size.x - 1, pos.y), t);
+	}
+
+	if (pos.y == -1) {
+		assert(pos.x >= 0 && pos.x < size.x);
+		for (int y = size.y; y-- > 1; ) {
+			std::swap(fields_.At(pos.x, y), fields_.At(pos.x, y - 1));
+		}
+		std::swap(fields_.At(pos.x, 0), t);
+	}
+
+	if (pos.y == size.y) {
+		assert(pos.x >= 0 && pos.x < size.x);
+		for (int y = 0; y < size.y - 1; ++y) {
+			std::swap(fields_.At(pos.x, y), fields_.At(pos.x, y + 1));
+		}
+		std::swap(fields_.At(pos.x, size.y - 1), t);
+	}
+
+	return t;
 }

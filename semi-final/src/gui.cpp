@@ -17,7 +17,7 @@ struct App {
 	sf::RenderWindow window;
 	Grid grid;
 
-	int extra = 3;
+	int extra = 15;
 	Point hover;
 };
 
@@ -54,7 +54,7 @@ void HandleKeypress(App& app, const sf::Event::KeyEvent& ev) {
 }
 
 
-sf::Vector2f windowToView(App& app, const Point& pos) {
+sf::Vector2f WindowToView(App& app, const Point& pos) {
 	auto size = app.window.getSize();
 	auto view = app.window.getView();
 	auto view_size = view.getSize();
@@ -67,14 +67,33 @@ sf::Vector2f windowToView(App& app, const Point& pos) {
 	return {mx, my};
 }
 
-Point roundToTile(const sf::Vector2f& pos) {
+Point RoundToTile(const sf::Vector2f& pos) {
 	return Point(floor(pos.x), floor(pos.y));
 }
 
+bool IsEdge(const App& app, const Point& pos) {
+	auto size = app.grid.Size();
+	bool x_edge = pos.x == -1 || pos.x == size.x;
+	bool y_edge = pos.y == -1 || pos.y == size.y;
+
+	bool x_in = pos.x >= 0 && pos.x < size.x;
+	bool y_in = pos.y >= 0 && pos.y < size.y;
+
+	return (x_edge && y_in) || (y_edge && x_in);
+}
+
 void HandleMouseMoved(App& app, const sf::Event::MouseMoveEvent& ev) {
-	auto pos = roundToTile(windowToView(app, {ev.x, ev.y}));
+	auto pos = RoundToTile(WindowToView(app, {ev.x, ev.y}));
 	app.hover = pos;
 }
+
+void HandleMousePressed(App& app, const sf::Event::MouseButtonEvent& ev) {
+	auto pos = RoundToTile(WindowToView(app, {ev.x, ev.y}));
+	if (IsEdge(app, pos)) {
+		app.extra = app.grid.Push(pos, app.extra);
+	}
+}
+
 
 void HandleEvents(App& app) {
 	sf::Event event;
@@ -93,6 +112,9 @@ void HandleEvents(App& app) {
 			case sf::Event::MouseMoved:
 				HandleMouseMoved(app, event.mouseMove);
 				break;
+            case sf::Event::MouseButtonPressed:
+                HandleMousePressed(app, event.mouseButton);
+                break;
 			default:
 				break;
 		}
