@@ -1,19 +1,19 @@
 #include "Util.h"
 
 bool NoPositiveXBorder(int type) {
-	return type & 0b0001;
-}
-
-bool NoNegativeXBorder(int type) {
-	return type & 0b0100;
-}
-
-bool NoPositiveYBorder(int type) {
 	return type & 0b1000;
 }
 
-bool NoNegativeYBorder(int type) {
+bool NoNegativeXBorder(int type) {
 	return type & 0b0010;
+}
+
+bool NoPositiveYBorder(int type) {
+	return type & 0b0001;
+}
+
+bool NoNegativeYBorder(int type) {
+	return type & 0b0100;
 }
 
 int RotateLeft(int tile) {
