@@ -11,11 +11,13 @@
 #include "Point.h"
 #include "Grid.h"
 #include "Util.h"
+#include "FloodFill.h"
 
 
 struct App {
 	sf::RenderWindow window;
 	Grid grid;
+	Matrix<int> colors;
 
 	Field extra = Field(15);
 	Point hover;
@@ -82,6 +84,18 @@ bool IsEdge(const App& app, const Point& pos) {
 	return (x_edge && y_in) || (y_edge && x_in);
 }
 
+bool IsInside(const App& app, const Point& pos) {
+	auto size = app.grid.Size();
+	bool x_in = pos.x >= 0 && pos.x < size.x;
+	bool y_in = pos.y >= 0 && pos.y < size.y;
+
+	return x_in && y_in;
+}
+
+void ResetColors(App& app) {
+	app.colors = Matrix<int>(app.grid.Width(), app.grid.Height(), 0);
+}
+
 void HandleMouseMoved(App& app, const sf::Event::MouseMoveEvent& ev) {
 	auto pos = RoundToTile(WindowToView(app, {ev.x, ev.y}));
 	app.hover = pos;
@@ -91,9 +105,10 @@ void HandleMousePressed(App& app, const sf::Event::MouseButtonEvent& ev) {
 	auto pos = RoundToTile(WindowToView(app, {ev.x, ev.y}));
 	if (IsEdge(app, pos)) {
 		app.extra = app.grid.Push(pos, app.extra);
+	} else if (IsInside(app, pos)) {
+		app.colors = FloodFill(app.grid.Fields(), pos);
 	}
 }
-
 
 void HandleEvents(App& app) {
 	sf::Event event;
@@ -196,13 +211,22 @@ sf::ConvexShape CreateRoute(const sf::Vector2f& pos, Field tile) {
 }
 
 
-void DrawTile(App& app, const sf::Vector2f& pos, Field tile) {
+void DrawTile(App& app, const sf::Vector2f& pos, Field tile, int color_id=0) {
 	auto base = CreateTile(pos);
 	auto route = CreateRoute(pos, tile);
 	base.setOutlineThickness(0.01f);
 	base.setOutlineColor(sf::Color(0x40, 0x30, 0x40));
 	base.setFillColor(sf::Color(0x66, 0x50, 0x66));
-	route.setFillColor(sf::Color(0xf0, 0xf0, 0xe0));
+
+	sf::Color color = sf::Color(0xf0, 0xf0, 0xe0);
+	switch (color_id) {
+		case 1:
+			color = sf::Color(0xff, 0xc4, 0x14);
+			break;
+		default:
+			break;
+	}
+	route.setFillColor(color);
 
 	app.window.draw(base);
 	app.window.draw(route);
@@ -225,7 +249,8 @@ void Draw(App& app) {
 
 	for (int y = 0; y < size.y; ++y) {
 		for (int x = 0; x < size.x; ++x) {
-			DrawTile(app, sf::Vector2f(x, y), app.grid.At(x, y));
+			auto color_id = app.colors.At(x, y);
+			DrawTile(app, sf::Vector2f(x, y), app.grid.At(x, y), color_id);
 		}
 	}
 
@@ -280,6 +305,7 @@ int main() {
 		settings
 	);
 
+	ResetColors(app);
 	AdjustView(app);
 	Run(app);
 

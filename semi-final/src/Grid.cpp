@@ -48,6 +48,10 @@ Field Grid::At(int x, int y) const {
 	return fields_.At(x, y);
 }
 
+const Matrix<Field>& Grid::Fields() const {
+	return fields_;
+}
+
 Field Grid::Push(const Point& pos, Field t) {
 	auto size = Size();
 

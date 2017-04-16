@@ -14,6 +14,7 @@ public:
 	int Height() const;
 	int DisplayCount() const;
 	Point Size() const;
+	const Matrix<Field>& Fields() const;
 
 
 	void Init(int width, int height, int displays, int players);
