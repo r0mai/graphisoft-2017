@@ -21,6 +21,7 @@ struct App {
 
 	Field extra = Field(15);
 	Point hover;
+	int target = 0;
 };
 
 
@@ -54,7 +55,6 @@ void HandleKeypress(App& app, const sf::Event::KeyEvent& ev) {
 			break;
 	}
 }
-
 
 sf::Vector2f WindowToView(App& app, const Point& pos) {
 	auto size = app.window.getSize();
@@ -92,6 +92,17 @@ bool IsInside(const App& app, const Point& pos) {
 	return x_in && y_in;
 }
 
+int NextDisplay(const App& app) {
+	int index = 0;
+	for (const auto& pos : app.grid.Displays()) {
+		if (pos.x != -1 || pos.y != -1) {
+			return index;
+		}
+		++index;
+	}
+	return -1;
+}
+
 void ResetColors(App& app) {
 	app.colors = Matrix<int>(app.grid.Width(), app.grid.Height(), 0);
 }
@@ -113,6 +124,10 @@ void HandleMousePressed(App& app, const sf::Event::MouseButtonEvent& ev) {
 		UpdateColors(app);
 	} else if (IsInside(app, pos) && app.colors.At(pos) != 0) {
 		app.grid.UpdatePosition(0, pos);
+		if (app.target != -1 && pos == app.grid.Displays()[app.target]) {
+			app.grid.UpdateDisplay(app.target, {-1, -1});
+			app.target = NextDisplay(app);
+		}
 	}
 }
 
@@ -307,12 +322,19 @@ void DrawPrincesses(App& app) {
 }
 
 void DrawDisplays(App& app) {
+	int index = 0;
 	for (const auto& pos : app.grid.Displays()) {
-		auto dot = CreateSquare(sf::Vector2f(pos.x, pos.y));
-		dot.setOutlineThickness(0.01f);
-		dot.setOutlineColor(sf::Color(0, 0, 0, 0x40));
-		dot.setFillColor(sf::Color(0, 0, 0, 0x80));
-		app.window.draw(dot);
+		if (pos.x != -1 || pos.y != -1) {
+			auto dot = CreateSquare(sf::Vector2f(pos.x, pos.y));
+			dot.setOutlineThickness(0.01f);
+			dot.setOutlineColor(sf::Color(0, 0, 0, 0x40));
+			dot.setFillColor(
+				index == app.target
+				? sf::Color(0x83, 0xb8, 0x0b, 0xe0)
+				: sf::Color(0xef, 0x60, 0xa0, 0xe0));
+			app.window.draw(dot);
+		}
+		++index;
 	}
 }
 
@@ -372,10 +394,12 @@ void Run(App& app) {
 
 int main() {
 	App app;
-	app.grid.Init(14, 8, 1, 1);
+	app.grid.Init(14, 8, 3, 1);
 	app.grid.Randomize();
 	app.grid.UpdatePosition(0, {0, 0});
 	app.grid.UpdateDisplay(0, {13, 5});
+	app.grid.UpdateDisplay(1, {4, 6});
+	app.grid.UpdateDisplay(2, {7, 1});
 
 	sf::ContextSettings settings;
 	settings.antialiasingLevel = 8;
