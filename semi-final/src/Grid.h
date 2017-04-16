@@ -25,6 +25,7 @@ public:
 	void UpdatePosition(int player, const Point& pos);
 	Field At(int x, int y) const;
 	Field Push(const Point& pos, Field t);
+	Field Push(int c, int p, int k, Field t);
 
 private:
 	std::vector<Point> display_;

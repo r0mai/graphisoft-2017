@@ -117,3 +117,13 @@ Field Grid::Push(const Point& pos, Field t) {
 
 	return t;
 }
+
+Field Grid::Push(int c, int p, int k, Field t) {
+	auto size = Size();
+	if (c == 0) {
+		return Push({p == 0 ? size.x : -1, k}, t);
+	} else {
+		return Push({k, p == 0 ? size.y : -1}, t);
+	}
+}
+
