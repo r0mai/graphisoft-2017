@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 find_package(SFML 2 REQUIRED system window graphics)
-find_package(Boost 1.59 REQUIRED system context coroutine)
+find_package(Boost 1.58 REQUIRED system context coroutine)
 include_directories(${Boost_INCLUDE_DIRS})
 link_directories(${Boost_LIBRARY_DIRS})
 
@@ -22,7 +22,7 @@ add_executable(labyrinth
 add_executable(glabyrinth
     src/FloodFill.cpp
     src/Util.cpp
-    src/gui.cpp
+    src/Gui.cpp
     src/Grid.cpp
 )
 
