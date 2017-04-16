@@ -12,10 +12,9 @@
 
 class Grid {
 public:
-
-    int GetWidth() const { return width_; }
-    int GetHeight() const { return height_; }
-    Point GetSize() const { return {width_, height_}; }
+    int Width() const { return width_; }
+    int Height() const { return height_; }
+    Point Size() const { return {width_, height_}; }
 
     void Init(int width, int height, int displays, int players) {
         width_ = width;
@@ -48,10 +47,25 @@ public:
         return fields_[x + y * width_];
     }
 
+    int Extra() const {
+        return extra_;
+    }
+
+    void RotateLeft() {
+        extra_ = (extra_ >> 3) + ((extra_ << 1) & 0xf);
+    }
+
+    void RotateRight() {
+        extra_ = ((extra_ & 1) << 3) + (extra_ >> 1);
+        std::cerr << extra_ << std::endl;
+    }
+
+
 private:
     int width_ = -1;
     int height_ = -1;
     int players_ = -1;
+    int extra_ = 3;
     std::vector<int> fields_;
     std::vector<Point> display_;
     std::vector<Point> position_;
@@ -68,8 +82,10 @@ struct App {
 
 void AdjustView(App& app) {
     auto size = app.window.getSize();
-    float h = app.grid.GetHeight() + 2;
-    float w = app.grid.GetWidth() + 2;
+    float w0 = app.grid.Width();
+    float h0 = app.grid.Height();
+    float w = w0 + 4;
+    float h = h0 + 2;
 
     if (size.x * h > size.y * w) {
         w = size.x * h / size.y;
@@ -77,9 +93,23 @@ void AdjustView(App& app) {
         h = size.y * w / size.x;
     }
 
-    app.window.setView(sf::View(sf::FloatRect(-1, -1, w, h)));
+    float dx = (w - w0 - 2) / 2;
+    float dy = (h - h0) / 2;
+    app.window.setView(sf::View(sf::FloatRect(-dx, -dy, w, h)));
 }
 
+void HandleKeypress(App& app, const sf::Event::KeyEvent& ev) {
+    switch (ev.code) {
+        case sf::Keyboard::A:
+            app.grid.RotateLeft();
+            break;
+        case sf::Keyboard::D:
+            app.grid.RotateRight();
+            break;
+        default:
+            break;
+    }
+}
 
 void HandleEvents(App& app) {
     sf::Event event;
@@ -92,11 +122,25 @@ void HandleEvents(App& app) {
                 AdjustView(app);
                 break;
             }
+            case sf::Event::KeyPressed:
+                HandleKeypress(app, event.key);
+                break;
             default:
                 break;
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
     }
+}
+
+sf::CircleShape CreateDot(const sf::Vector2f& pos) {
+    sf::CircleShape circ;
+    float r = 0.05f;
+
+    circ.setRadius(r);
+    circ.setOrigin(r - 0.5f, r - 0.5f);
+    circ.setPosition(pos);
+
+    return circ;
 }
 
 sf::RectangleShape CreateTile(const sf::Vector2f& pos) {
@@ -107,7 +151,7 @@ sf::RectangleShape CreateTile(const sf::Vector2f& pos) {
 }
 
 sf::ConvexShape CreateRoute(const sf::Vector2f& pos, int tile) {
-    float pad = 0.3f;
+    float pad = 0.33f;
     float size = 0.98f;
 
     sf::Vector2f dx(size, 0.f);
@@ -162,26 +206,51 @@ sf::ConvexShape CreateRoute(const sf::Vector2f& pos, int tile) {
 }
 
 
+void DrawTile(App& app, const sf::Vector2f& pos, int tile) {
+    auto base = CreateTile(pos);
+    auto route = CreateRoute(pos, tile);
+    base.setOutlineThickness(0.01f);
+    base.setOutlineColor(sf::Color(0x40, 0x30, 0x40));
+    base.setFillColor(sf::Color(0x66, 0x50, 0x66));
+    route.setFillColor(sf::Color(0xf0, 0xf0, 0xe0));
+
+    app.window.draw(base);
+    app.window.draw(route);
+}
+
+
+void DrawDot(App& app, const sf::Vector2f& pos, bool active=false) {
+    auto dot = CreateDot(pos);
+    dot.setFillColor(sf::Color::Black);
+    // dot.setOutlineColor(sf::Color(0xee, 0xee, 0xee));
+    // dot.setOutlineThickness(0.02f);
+    app.window.draw(dot);
+}
+
+
 void Draw(App& app) {
     auto& window = app.window;
-    auto size = app.grid.GetSize();
+    auto size = app.grid.Size();
 
-    window.clear();
+    window.clear(sf::Color(0x33, 0x33, 0x33));
 
     for (int y = 0; y < size.y; ++y) {
         for (int x = 0; x < size.x; ++x) {
-            auto tile = CreateTile(sf::Vector2f(x, y));
-            auto route = CreateRoute(sf::Vector2f(x, y), app.grid.At(x, y));
-            tile.setOutlineThickness(0.01);
-            tile.setOutlineColor(sf::Color(0x40, 0x30, 0x40));
-            tile.setFillColor(sf::Color(0x66, 0x50, 0x66));
-            route.setFillColor(sf::Color(0xf0, 0xf0, 0xe0));
-
-            window.draw(tile);
-            window.draw(route);
+            DrawTile(app, sf::Vector2f(x, y), app.grid.At(x, y));
         }
     }
 
+    for (int y = 0; y < size.y; ++y) {
+        DrawDot(app, sf::Vector2f(-1, y));
+        DrawDot(app, sf::Vector2f(size.x, y));
+    }
+
+    for (int x = 0; x < size.x; ++x) {
+        DrawDot(app, sf::Vector2f(x, -1));
+        DrawDot(app, sf::Vector2f(x, size.y));
+    }
+
+    DrawTile(app, sf::Vector2f(size.x + 1, -1), app.grid.Extra());
     window.display();
 }
 
