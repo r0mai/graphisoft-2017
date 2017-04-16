@@ -38,25 +38,11 @@ public:
         return fields_[x + y * width_];
     }
 
-    int Extra() const {
-        return extra_;
-    }
-
-    void RotateLeft() {
-        extra_ = (extra_ >> 3) + ((extra_ << 1) & 0xf);
-    }
-
-    void RotateRight() {
-        extra_ = ((extra_ & 1) << 3) + (extra_ >> 1);
-        std::cerr << extra_ << std::endl;
-    }
-
 
 private:
     int width_ = -1;
     int height_ = -1;
     int players_ = -1;
-    int extra_ = 3;
     std::vector<int> fields_;
     std::vector<Point> display_;
     std::vector<Point> position_;

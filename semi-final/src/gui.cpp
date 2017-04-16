@@ -10,12 +10,14 @@
 
 #include "Point.h"
 #include "Grid.h"
+#include "Util.h"
 
 
 struct App {
     sf::RenderWindow window;
     sf::Font font;
     Grid grid;
+    int extra = 3;
 };
 
 
@@ -23,8 +25,8 @@ void AdjustView(App& app) {
     auto size = app.window.getSize();
     float w0 = app.grid.Width();
     float h0 = app.grid.Height();
-    float w = w0 + 4;
-    float h = h0 + 2;
+    float w = w0 + 3.5;
+    float h = h0 + 2.5;
 
     if (size.x * h > size.y * w) {
         w = size.x * h / size.y;
@@ -32,7 +34,7 @@ void AdjustView(App& app) {
         h = size.y * w / size.x;
     }
 
-    float dx = (w - w0 - 2) / 2;
+    float dx = (w - w0 - 1.5) / 2;
     float dy = (h - h0) / 2;
     app.window.setView(sf::View(sf::FloatRect(-dx, -dy, w, h)));
 }
@@ -40,14 +42,41 @@ void AdjustView(App& app) {
 void HandleKeypress(App& app, const sf::Event::KeyEvent& ev) {
     switch (ev.code) {
         case sf::Keyboard::A:
-            app.grid.RotateLeft();
+            app.extra = RotateLeft(app.extra);
             break;
         case sf::Keyboard::D:
-            app.grid.RotateRight();
+            app.extra = RotateRight(app.extra);
             break;
         default:
             break;
     }
+}
+
+// sf::Vector2i Game::windowToTile(int wx, int wy) const {
+//     auto columns = model.tiles.shape()[0];
+//     auto rows = model.tiles.shape()[1];
+
+//     float width = window.getSize().x;
+//     float height = window.getSize().y;
+
+//     if (wx < 0 || wx >= int(width) ||
+//         wy < 0 || wy >= int(height))
+//     {
+//         return {-1, -1};
+//     }
+
+//     int x = wx / (width / float(columns));
+//     int y = wy / (height / float(rows));
+
+//     return sf::Vector2i{x, y};
+// }
+
+void HandleMouseMoved(App& app, const sf::Event::MouseMoveEvent& ev) {
+    // auto p = windowToTile(ev.x, ev.y);
+    // if (model.isValidPosition(p)) {
+    //     highlights = model.cellsAround(p, 10);
+    //     cursor = p;
+    // }
 }
 
 void HandleEvents(App& app) {
@@ -63,6 +92,9 @@ void HandleEvents(App& app) {
             }
             case sf::Event::KeyPressed:
                 HandleKeypress(app, event.key);
+                break;
+            case sf::Event::MouseMoved:
+                HandleMouseMoved(app, event.mouseMove);
                 break;
             default:
                 break;
@@ -189,7 +221,7 @@ void Draw(App& app) {
         DrawDot(app, sf::Vector2f(x, size.y));
     }
 
-    DrawTile(app, sf::Vector2f(size.x + 1, -1), app.grid.Extra());
+    DrawTile(app, sf::Vector2f(size.x + 1, -1), app.extra);
     window.display();
 }
 
