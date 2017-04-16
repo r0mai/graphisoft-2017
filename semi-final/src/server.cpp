@@ -1,6 +1,7 @@
 #include <boost/asio.hpp>
 #include <boost/asio/spawn.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/optional.hpp>
 #include <iostream>
 #include <string>
 #include <algorithm>
@@ -39,6 +40,7 @@ std::map<std::string, Command> getTokenToCommand() {
 	result.emplace("POSITION", Command::Position);
 	result.emplace("TARGET", Command::Target);
 	result.emplace("EXTRAFIELD", Command::ExtraField);
+	result.emplace("GOTO", Command::Goto);
 
 	return result;
 }
@@ -61,6 +63,7 @@ std::map<Command, std::string> getCommandToToken() {
 	result.emplace(Command::Position, "POSITION");
 	result.emplace(Command::Target, "TARGET");
 	result.emplace(Command::ExtraField, "EXTRAFIELD");
+	result.emplace(Command::Goto, "GOTO");
 	return result;
 }
 
@@ -138,8 +141,11 @@ public:
 	}
 
 	Point getPosition() const {
-		// TODO: implement
-		return {0, 0};
+		return position;
+	}
+
+	void moveTo(int x, int y) {
+		position = Point{x, y};
 	}
 
 	int getTarget() const {
@@ -177,7 +183,11 @@ private:
 		auto newLinePos = result.find('\n');
 		if (newLinePos != std::string::npos) {
 			std::string untilLineEnd{previousRead, 0, newLinePos};
-			previousRead = std::string{previousRead, newLinePos};
+			if (newLinePos == previousRead.size()) {
+				previousRead = "";
+			} else {
+				previousRead = previousRead.substr(newLinePos+1);
+			}
 			return untilLineEnd;
 		}
 		for (;;) {
@@ -207,6 +217,7 @@ private:
 	boost::asio::ip::tcp::socket socket;
 	std::string teamName;
 	std::string previousRead;
+	Point position;
 };
 
 
@@ -314,7 +325,6 @@ private:
 	}
 
 	void updateClients(asio::yield_context yield) {
-		// Consider using a parallel for
 		for (auto& player: players) {
 			updateClient(player.second, yield);
 		}
@@ -355,6 +365,45 @@ private:
 		client.writeMessage(
 				Message<int>(Command::Target, {client.getTarget()}), yield);
 		client.writeMessage(Message<int>(Command::Over, {}), yield);
+
+		evaluateClientInstruction(client, yield);
+	}
+
+	void evaluateClientInstruction(Client& client, asio::yield_context yield) {
+		std::cerr << "Running instructions of: "
+				<< client.getTeamName() << std::endl;
+		boost::optional<Message<int>> pushMessage;
+		boost::optional<Message<int>> gotoMessage;
+		auto message = client.readMessage<int>(yield);
+		while (message.getCommand() != Command::Over) {
+			std::cerr << "Read command" << std::endl;
+			switch(message.getCommand()) {
+				default:
+					std::cerr << "Got invalid command from player: "
+							<< message.getCommand() << std::endl;
+					continue;
+				case Command::Goto:
+					if (!gotoMessage) {
+						gotoMessage = message;
+					}
+				case Command::Push:
+					if (!pushMessage) {
+						pushMessage = message;
+					}
+					break;
+			}
+			message = client.readMessage<int>(yield);
+		}
+		// Commands read, now evaluate
+		if (pushMessage) {
+			const auto& arguments = pushMessage->getArguments();
+			grid.Push(arguments[0], arguments[1], arguments[2],
+					static_cast<Field>(arguments[3]));
+		}
+		if (gotoMessage) {
+			const auto& arguments = gotoMessage->getArguments();
+			client.moveTo(arguments[0], arguments[1]);
+		}
 	}
 
 	boost::asio::io_service ioService;
