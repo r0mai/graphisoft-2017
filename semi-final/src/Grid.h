@@ -1,4 +1,9 @@
 #pragma once
+#include <vector>
+#include <cstdlib>
+#include <cassert>
+#include <iostream>
+
 #include "Point.h"
 
 class Grid {
