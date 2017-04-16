@@ -12,7 +12,9 @@ class Grid {
 public:
 	int Width() const;
 	int Height() const;
+	int DisplayCount() const;
 	Point Size() const;
+
 
 	void Init(int width, int height, int displays, int players);
 	void Randomize();

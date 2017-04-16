@@ -10,6 +10,10 @@ int Grid::Height() const {
 	return fields_.Height();
 }
 
+int Grid::DisplayCount() const {
+	return display_.size();
+}
+
 Point Grid::Size() const {
 	return {fields_.Width(), fields_.Height()};
 }

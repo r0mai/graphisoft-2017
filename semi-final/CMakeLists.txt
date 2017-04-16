@@ -36,6 +36,7 @@ add_executable(test-labyrinth
 
 add_executable(server
     src/server.cpp
+    src/Grid.cpp
 )
 
 

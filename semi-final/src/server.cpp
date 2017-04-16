@@ -1,16 +1,20 @@
 #include <boost/asio.hpp>
 #include <boost/asio/spawn.hpp>
+#include <boost/lexical_cast.hpp>
 #include <iostream>
 #include <string>
 #include <algorithm>
 #include <sstream>
+#include <cassert>
+
+#include "Grid.h"
 
 
 namespace server {
 namespace asio = boost::asio;
 
 enum class Command {
-	Login, Push, Goto
+	Login, Push, Goto, Over, Level, Message, Size, Displays, Player, MaxTick, Tick
 };
 
 std::istream& operator>>(std::istream& is, Command& command) {
@@ -20,7 +24,24 @@ std::istream& operator>>(std::istream& is, Command& command) {
 		command = Command::Login;
 	} else if (token == "PUSH") {
 		command = Command::Push;
+	} else if (token == ".") {
+		command = Command::Over;
+	} else if (token == "LEVEL") {
+		command = Command::Level;
+	} else if (token == "MESSAGE") {
+		command = Command::Message;
+	} else if (token == "SIZE") {
+		command = Command::Size;
+	} else if (token == "DISPLAYS") {
+		command = Command::Displays;
+	} else if (token == "PLAYER") {
+		command = Command::Player;
+	} else if (token == "MAXTICK") {
+		command = Command::MaxTick;
+	} else if (token == "TICK") {
+		command = Command::Tick;
 	} else {
+		std::cerr << "Failed parse: '" << token << "'" << std::endl;
 		throw std::runtime_error("Could not parse input");
 	}
 	return is;
@@ -35,6 +56,22 @@ std::ostream& operator<<(std::ostream& os, const Command& command) {
 			return os << "PUSH";
 		case Command::Goto:
 			return os << "GOTO";
+		case Command::Over:
+			return os << ".";
+		case Command::Level:
+			return os << "LEVEL";
+		case Command::Message:
+			return os << "MESSAGE";
+		case Command::Size:
+			return os << "SIZE";
+		case Command::Displays:
+			return os << "DISPLAYS";
+		case Command::Player:
+			return os << "PLAYER";
+		case Command::MaxTick:
+			return os << "MAXTICK";
+		case Command::Tick:
+			return os << "TICK";
 	}
 }
 
@@ -73,21 +110,42 @@ public:
 				<< this->socket.remote_endpoint() << std::endl;
 	}
 
-	void processLogin(asio::yield_context yield) {
-		auto loginCommand = readMessage<std::string>(yield);
-		auto arguments = loginCommand.getArguments();
-		teamName = arguments[0];
-		auto password = arguments[1];
-		std::cerr << "Team " << teamName << " logged in" << std::endl;
+	void setTeamName(std::string teamName) {
+		this->teamName = std::move(teamName);
 	}
 
 	const std::string& getTeamName() const {
 		return teamName;
 	}
 
+	template<typename ArgumentType>
+	Message<ArgumentType> readMessage(asio::yield_context yield) {
+		auto line = readLine(yield);
+		Message<ArgumentType> message{line};
+		return message;
+	}
+
+
+	template<typename ArgumentType>
+	void writeMessage(const Message<ArgumentType>& message,
+			asio::yield_context yield) {
+		auto line = boost::lexical_cast<std::string>(message.getCommand());
+		for (const auto& argument: message.getArguments()) {
+			line += " " + boost::lexical_cast<std::string>(argument);
+		}
+		line += "\n";
+		socket.async_write_some(boost::asio::buffer(line), yield);
+	}
+
 private:
 	std::string readLine(asio::yield_context yield) {
 		std::string result = previousRead;
+		auto newLinePos = result.find('\n');
+		if (newLinePos != std::string::npos) {
+			std::string untilLineEnd{previousRead, 0, newLinePos};
+			previousRead = std::string{previousRead, newLinePos};
+			return untilLineEnd;
+		}
 		for (;;) {
 			char buffer[128];
 			std::size_t n = socket.async_read_some(boost::asio::buffer(buffer),
@@ -99,20 +157,16 @@ private:
 				// Keep reading
 			} else {
 				std::string untilLineEnd{currentChunk, 0, newLinePos};
-				previousRead = std::string{currentChunk, newLinePos};
+				if (newLinePos == currentChunk.size()) {
+					previousRead = "";
+				} else {
+					previousRead = currentChunk.substr(newLinePos+1);
+				}
 				result += untilLineEnd;
 				break;
 			}
 		}
 		return result;
-	}
-
-
-	template<typename ArgumentType>
-	Message<ArgumentType> readMessage(asio::yield_context yield) {
-		auto line = readLine(yield);
-		Message<ArgumentType> message{line};
-		return message;
 	}
 
 
@@ -122,30 +176,126 @@ private:
 };
 
 
-void handleClient(asio::ip::tcp::socket socket, asio::yield_context yield) {
-	Client client{std::move(socket)};
-	client.processLogin(yield);
-}
-
-
-void start(asio::io_service& ioService, asio::yield_context yield) {
-	asio::ip::tcp::acceptor acceptor{ioService,
-			asio::ip::tcp::endpoint{asio::ip::tcp::v4(), 42500}};
-	for (;;) {
-		boost::system::error_code ec;
-		asio::ip::tcp::socket socket{ioService};
-		acceptor.async_accept(socket, yield[ec]);
-		boost::asio::spawn(ioService,
-				[&socket](asio::yield_context yield) {
-					handleClient(std::move(socket), yield); } );
+class Game {
+public:
+	Game() {
+		grid.Init(6, 7, 4, 4);
+		grid.Randomize();
 	}
-}
+
+	void run() {
+		using std::placeholders::_1;
+		boost::asio::spawn(ioService,
+				std::bind(&Game::start, this, _1));
+		ioService.run();
+	}
+
+private:
+	void handleNewClient(asio::ip::tcp::socket socket, asio::yield_context yield) {
+		auto newPlayerId = playerCount++;
+		auto p = players.emplace(newPlayerId, Client{std::move(socket)});
+		auto& client = p.first->second;
+		processLogin(client, yield);
+		std::cerr << "After login" << std::endl;
+	}
+
+	void processLogin(Client& client, asio::yield_context yield) {
+		auto loginCommand = client.readMessage<std::string>(yield);
+		auto arguments = loginCommand.getArguments();
+		client.setTeamName(arguments[0]);
+		auto password = arguments[1];
+		std::cerr << "Team " << client.getTeamName() << " logged in"
+				<< std::endl;
+		auto nextCommand = client.readMessage<int>(yield);
+		int requestedLevel = 1;
+		if (nextCommand.getCommand() == Command::Over) {
+			std::cerr << "Client doesn't request any specific level"
+					<< std::endl;
+		} else {
+			requestedLevel = nextCommand.getArguments()[0];
+			std::cerr << "Client requests level: "
+					<< requestedLevel << std::endl;
+			auto overCommand = client.readMessage<int>(yield);
+			assert(overCommand.getCommand() == Command::Over);
+		}
+		std::cerr << "Got All Info" << std::endl;
+
+		client.writeMessage(
+				Message<std::string>(Command::Message, {"OK"}), yield);
+		client.writeMessage(
+				Message<int>(Command::Level, {requestedLevel}), yield);
+		client.writeMessage(
+				Message<int>(Command::Size, {grid.Width(), grid.Height()}),
+				yield);
+		client.writeMessage(
+				Message<int>(Command::Displays, {grid.DisplayCount()}), yield);
+		client.writeMessage(
+				Message<int>(Command::Player, {getId(client)}), yield);
+		client.writeMessage(
+				Message<int>(Command::MaxTick, {maxTicks}), yield);
+		client.writeMessage(Message<int>(Command::Over, {}), yield);
+		std::cerr << "Client all set up" << std::endl;
+	}
+
+	int getId(const Client& client) const {
+		for (const auto& player: players) {
+			if (&player.second == &client) {
+				return player.first;
+			}
+		}
+		return -1;
+	}
+
+	void processMove(Client& client, asio::yield_context yield) {
+		auto pushCommand = client.readMessage<int>(yield);
+		auto gotoCommand = client.readMessage<int>(yield);
+		auto overCommand = client.readMessage<int>(yield);
+	}
+
+	void start(asio::yield_context yield) {
+		asio::ip::tcp::acceptor acceptor{ioService,
+				asio::ip::tcp::endpoint{asio::ip::tcp::v4(), 42500}};
+		for (;;) {
+			boost::system::error_code ec;
+			asio::ip::tcp::socket socket{ioService};
+			acceptor.async_accept(socket, yield[ec]);
+			handleNewClient(std::move(socket), yield);
+			// TODO: Something more sophisticated for starting th match
+			break;
+		}
+		startMatch(yield);
+	}
+
+	void startMatch(asio::yield_context yield) {
+		std::cerr << "All clients logged in, starting the round" << std::endl;
+		for (; currentTick < maxTicks; ++currentTick) {
+			updateClients(yield);
+		}
+	}
+
+	void updateClients(asio::yield_context yield) {
+		// Consider using a parallel for
+		for (auto& player: players) {
+			updateClient(player.second, yield);
+		}
+	}
+
+	void updateClient(Client& client, asio::yield_context yield) {
+		client.writeMessage(Message<int>(Command::Tick, {currentTick}), yield);
+	}
+
+	boost::asio::io_service ioService;
+	Grid grid;
+	std::size_t playerCount = 0;
+	std::map<std::size_t, Client> players;
+	int maxTicks = 1;
+	int currentTick = 0;
+};
+
 
 } // namespace server
 
 int main() {
-	boost::asio::io_service ioService;
-	boost::asio::spawn(ioService, [&](boost::asio::yield_context yield) {
-			server::start(ioService, yield); });
-	ioService.run();
+	server::Game game;
+	game.run();
 }
