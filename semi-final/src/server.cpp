@@ -64,7 +64,12 @@ public:
 
 
 	int getScore() const {
-		return 0;
+		return score;
+	}
+
+	void onHitTarget() {
+		++score;
+		++target;
 	}
 
 	Point getPosition(Grid& grid) const {
@@ -76,8 +81,8 @@ public:
 	}
 
 	int getTarget() const {
-		// TODO: implement
-		return 0;
+		// TODO: coordinate with other players, or just use a random int
+		return target;
 	}
 
 	int getId() const {
@@ -152,6 +157,8 @@ private:
 	boost::asio::ip::tcp::socket socket;
 	Field field = static_cast<Field>(15);
 	std::string teamName;
+	int score = 0;
+	int target = 0;
 	std::string previousRead;
 };
 
@@ -334,6 +341,10 @@ private:
 		if (gotoMessage) {
 			const auto& arguments = gotoMessage->getArguments();
 			client.moveTo(grid, arguments[0], arguments[1]);
+			const auto& target = grid.Displays()[client.getTarget()];
+			if (client.getPosition(grid) == target) {
+				client.onHitTarget();
+			}
 		}
 	}
 
