@@ -28,7 +28,7 @@ public:
 	Field Push(int c, int p, int k, Field t);
 
 private:
-	std::vector<Point> display_;
+	std::vector<Point> displays_;
 	std::vector<Point> positions_;
 	Matrix<Field> fields_;
 };

@@ -1,6 +1,26 @@
 #include "Grid.h"
 #include <cassert>
 
+namespace {
+
+void ShiftCol(const Point& size, const Point& pos, int d, std::vector<Point>& vec) {
+	for (auto& p : vec) {
+		if (pos.x == p.x) {
+			p.y = (p.y + d + size.y) % size.y;
+		}
+	}
+}
+
+void ShiftRow(const Point& size, const Point& pos, int d, std::vector<Point>& vec) {
+	for (auto& p : vec) {
+		if (pos.y == p.y) {
+			p.x = (p.x + d + size.x) % size.x;
+		}
+	}
+}
+
+} // namespace
+
 
 int Grid::Width() const {
 	return fields_.Width();
@@ -11,7 +31,7 @@ int Grid::Height() const {
 }
 
 int Grid::DisplayCount() const {
-	return display_.size();
+	return displays_.size();
 }
 
 Point Grid::Size() const {
@@ -19,12 +39,12 @@ Point Grid::Size() const {
 }
 
 const std::vector<Point>& Grid::Displays() const {
-	return display_;
+	return displays_;
 }
 
 void Grid::Init(int width, int height, int displays, int players) {
 	fields_ = Matrix<Field>(width, height, Field(0));
-	display_.resize(displays, {-1, -1});
+	displays_.resize(displays, {-1, -1});
 	positions_.resize(players, {-1, -1});
 }
 
@@ -41,7 +61,7 @@ void Grid::UpdateFields(std::vector<Field> fields) {
 }
 
 void Grid::UpdateDisplay(int index, const Point& pos) {
-	display_[index] = pos;
+	displays_[index] = pos;
 }
 
 void Grid::UpdatePosition(int player, const Point& pos) {
@@ -69,11 +89,8 @@ Field Grid::Push(const Point& pos, Field t) {
 			std::swap(fields_.At(x, pos.y), fields_.At(x - 1, pos.y));
 		}
 		std::swap(fields_.At(0, pos.y), t);
-		for (auto& p : positions_) {
-			if (p.y == pos.y) {
-				p.x = (p.x + 1) % size.x;
-			}
-		}
+		ShiftRow(size, pos, 1, positions_);
+		ShiftRow(size, pos, 1, displays_);
 	}
 
 	if (pos.x == size.x) {
@@ -82,11 +99,8 @@ Field Grid::Push(const Point& pos, Field t) {
 			std::swap(fields_.At(x, pos.y), fields_.At(x + 1, pos.y));
 		}
 		std::swap(fields_.At(size.x - 1, pos.y), t);
-		for (auto& p : positions_) {
-			if (p.y == pos.y) {
-				p.x = (p.x - 1 + size.x) % size.x;
-			}
-		}
+		ShiftRow(size, pos, -1, positions_);
+		ShiftRow(size, pos, -1, displays_);
 	}
 
 	if (pos.y == -1) {
@@ -95,11 +109,8 @@ Field Grid::Push(const Point& pos, Field t) {
 			std::swap(fields_.At(pos.x, y), fields_.At(pos.x, y - 1));
 		}
 		std::swap(fields_.At(pos.x, 0), t);
-		for (auto& p : positions_) {
-			if (p.x == pos.x) {
-				p.y = (p.y + 1) % size.y;
-			}
-		}
+		ShiftCol(size, pos, 1, positions_);
+		ShiftCol(size, pos, 1, displays_);
 	}
 
 	if (pos.y == size.y) {
@@ -108,11 +119,8 @@ Field Grid::Push(const Point& pos, Field t) {
 			std::swap(fields_.At(pos.x, y), fields_.At(pos.x, y + 1));
 		}
 		std::swap(fields_.At(pos.x, size.y - 1), t);
-		for (auto& p : positions_) {
-			if (p.x == pos.x) {
-				p.y = (p.y - 1 + size.y) % size.y;
-			}
-		}
+		ShiftCol(size, pos, -1, positions_);
+		ShiftCol(size, pos, -1, displays_);
 	}
 
 	return t;
