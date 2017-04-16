@@ -1,4 +1,9 @@
 #pragma once
+#include <vector>
+#include <cstdlib>
+#include <cassert>
+#include <iostream>
+
 #include "Point.h"
 
 class Grid {
@@ -22,6 +27,7 @@ public:
     }
 
     void UpdateFields(std::vector<int> fields) {
+		assert(fields.size() == width_ * height_);
         fields_ = std::move(fields);
     }
 

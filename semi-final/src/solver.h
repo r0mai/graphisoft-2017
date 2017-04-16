@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include "Point.h"
+#include "Grid.h"
 
 template<typename T>
 using Matrix = std::vector<std::vector<T>>;
@@ -17,22 +18,17 @@ public:
 	void end(const std::string& message);
 private:
 	// stuff we get form init()
-	int level_ = -1;
-	int width_ = -1; // N
-	int height_ = -1; // M
-	int display_count_ = -1;
-	int player_index_ = -1;
+	int level_ = -1; // index of the map
 	int max_tick_ = -1;
 
+	Grid grid_;
+	int player_index_ = -1;
+
 	// stuff from process()
-	struct {
-		int tick = -1;
-		int current_player = -1;
-		int target_display = -1;
-		int our_field_type = -1;
-		Matrix<int> field;
-		std::vector<Point> displays;
-	} tick;
+	int current_tick_ = -1;
+	int current_player_ = -1;
+	int target_display_ = -1;
+	int extra_field_ = -1;
 };
 
 bool NoPositiveXBorder(int type);

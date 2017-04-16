@@ -28,6 +28,11 @@ void solver::init(const std::vector<std::string>& field_infos) {
 		std::cerr << info << std::endl;
 	}
 
+	int width = -1;
+	int height = -1;
+	int players = 4;
+	int displays = -1;
+
 	for (auto& info : field_infos) {
 		std::stringstream ss(info);
 		std::string command;
@@ -37,14 +42,9 @@ void solver::init(const std::vector<std::string>& field_infos) {
 		} else if (command == "LEVEL") {
 			ss >> level_;
 		} else if (command == "SIZE") {
-			ss >> width_ >> height_;
-			tick.field.resize(width_);
-			for (auto& col : tick.field) {
-				col.resize(height_);
-			}
+			ss >> width >> height;
 		} else if (command == "DISPLAYS") {
-			ss >> display_count_;
-			tick.displays.resize(display_count_);
+			ss >> displays;
 		} else if (command == "PLAYER") {
 			ss >> player_index_;
 		} else if (command == "MAXTICK") {
@@ -53,6 +53,12 @@ void solver::init(const std::vector<std::string>& field_infos) {
 			std::cerr << "WARNING: unhandled command: " << command << std::endl;
 		}
 	}
+
+	assert(width > 0);
+	assert(height > 0);
+	assert(displays >= 0);
+
+	grid_.Init(width, height, displays, players);
 }
 
 std::vector<std::string> solver::process(const std::vector<std::string>& tick_infos) {
@@ -69,27 +75,28 @@ std::vector<std::string> solver::process(const std::vector<std::string>& tick_in
 		if (command == "MESSAGE") {
 			// nothing to do with this
 		} else if (command == "TICK") {
-			ss >> tick.tick;
+			ss >> current_tick_;
 		} else if (command == "FIELDS") {
-			for (int y = 0; y < height_; ++y) {
-				for (int x = 0; x < width_; ++x) {
-					ss >> tick.field[x][y];
-				}
+			std::vector<int> fields(grid_.Width() * grid_.Height());
+			for (int& f : fields) {
+				ss >> f;
 			}
+			grid_.UpdateFields(std::move(fields));
 		} else if (command == "DISPLAY") {
 			int index;
-			ss >> index;
-			ss >> tick.displays[index].x >> tick.displays[index].y;
+			Point p;
+			ss >> index >> p.x >> p.y;
+			grid_.UpdateDisplay(index, p);
 		} else if (command == "PLAYER") {
-			ss >> tick.current_player;
+			ss >> current_player_;
 		} else if (command == "TARGET") {
-			ss >> tick.target_display;
+			ss >> target_display_;
 		} else if (command == "EXTRAFIELD") {
-			ss >> tick.our_field_type;
+			ss >> extra_field_;
 		}
 	}
 
-	if (player_index_ != tick.current_player) {
+	if (player_index_ != current_player_) {
 		// not our turn
 		return {};
 	}
