@@ -123,8 +123,8 @@ private:
 
 class Client {
 public:
-	explicit Client(asio::ip::tcp::socket socket) :
-		socket(std::move(socket)) {
+	Client(asio::ip::tcp::socket socket, int id) :
+		id(id), socket(std::move(socket)) {
 		std::cerr << "Client logged in from: "
 				<< this->socket.remote_endpoint() << std::endl;
 	}
@@ -142,12 +142,12 @@ public:
 		return 0;
 	}
 
-	Point getPosition() const {
-		return position;
+	Point getPosition(Grid& grid) const {
+		return grid.Positions()[id];
 	}
 
-	void moveTo(int x, int y) {
-		position = Point{x, y};
+	void moveTo(Grid& grid, int x, int y) {
+		grid.UpdatePosition(id, Point{x, y});
 	}
 
 	int getTarget() const {
@@ -155,9 +155,16 @@ public:
 		return 0;
 	}
 
-	int getExtraField() const {
-		// TODO: implement
-		return 15;
+	int getId() const {
+		return id;
+	}
+
+	Field getExtraField() const {
+		return field;
+	}
+
+	void setExtraField(Field field) {
+		this->field = field;
 	}
 
 	template<typename ArgumentType>
@@ -216,16 +223,17 @@ private:
 	}
 
 
+	int id;
 	boost::asio::ip::tcp::socket socket;
+	Field field = static_cast<Field>(15);
 	std::string teamName;
 	std::string previousRead;
-	Point position;
 };
 
 
 class Game {
 public:
-	Game(unsigned maxPlayers) : maxPlayers(maxPlayers) {
+	Game(int maxPlayers) : maxPlayers(maxPlayers) {
 		grid.Init(6, 7, 4, 4);
 		grid.Randomize();
 	}
@@ -240,7 +248,8 @@ public:
 private:
 	void handleNewClient(asio::ip::tcp::socket socket, asio::yield_context yield) {
 		auto newPlayerId = playerCount++;
-		auto p = players.emplace(newPlayerId, Client{std::move(socket)});
+		auto p = players.emplace(
+				newPlayerId, Client{std::move(socket), newPlayerId});
 		auto& client = p.first->second;
 		processLogin(client, yield);
 		std::cerr << "After login" << std::endl;
@@ -277,20 +286,11 @@ private:
 		client.writeMessage(
 				Message<int>(Command::Displays, {grid.DisplayCount()}), yield);
 		client.writeMessage(
-				Message<int>(Command::Player, {getId(client)}), yield);
+				Message<int>(Command::Player, {client.getId()}), yield);
 		client.writeMessage(
 				Message<int>(Command::MaxTick, {maxTicks}), yield);
 		client.writeMessage(Message<int>(Command::Over, {}), yield);
 		std::cerr << "Client all set up" << std::endl;
-	}
-
-	int getId(const Client& client) const {
-		for (const auto& player: players) {
-			if (&player.second == &client) {
-				return player.first;
-			}
-		}
-		return -1;
 	}
 
 	void processMove(Client& client, asio::yield_context yield) {
@@ -354,14 +354,14 @@ private:
 
 		for (const auto& player: players) {
 			int playerId = player.first;
-			const auto& position = player.second.getPosition();
+			const auto& position = player.second.getPosition(grid);
 			client.writeMessage(
 					Message<int>(Command::Position,
 							{playerId, position.x, position.y}), yield);
 		}
 
 		client.writeMessage(
-				Message<int>(Command::Player, {getId(client)}), yield);
+				Message<int>(Command::Player, {client.getId()}), yield);
 		// TODO: What does this do?
 		client.writeMessage(
 				Message<std::string>(Command::Message, {"OK"}), yield);
@@ -400,19 +400,20 @@ private:
 		// Commands read, now evaluate
 		if (pushMessage) {
 			const auto& arguments = pushMessage->getArguments();
-			grid.Push(arguments[0], arguments[1], arguments[2],
+			auto popped = grid.Push(arguments[0], arguments[1], arguments[2],
 					static_cast<Field>(arguments[3]));
+			client.setExtraField(popped);
 		}
 		if (gotoMessage) {
 			const auto& arguments = gotoMessage->getArguments();
-			client.moveTo(arguments[0], arguments[1]);
+			client.moveTo(grid, arguments[0], arguments[1]);
 		}
 	}
 
 	boost::asio::io_service ioService;
 	Grid grid;
-	std::size_t playerCount = 0;
-	unsigned maxPlayers;
+	int playerCount = 0;
+	int maxPlayers;
 	std::map<std::size_t, Client> players;
 	int maxTicks = 1;
 	int currentTick = 0;
@@ -426,17 +427,17 @@ int main(int argc, const char** argv) {
 	po::options_description desc{"Allowed Options"};
 	desc.add_options()
 			("help", "this help message")
-			("players", po::value<unsigned>(), "players to wait for before starting, defaults to 4");
+			("players", po::value<int>(), "players to wait for before starting, defaults to 4");
 	po::variables_map vm;
 	po::store(po::parse_command_line(argc, argv, desc), vm);
 	po::notify(vm);
-	unsigned playersToWaitFor = 4;
+	int playersToWaitFor = 4;
 	if (vm.count("help")) {
 		std::cout << desc << std::endl;
 		return 0;
 	}
 	if (vm.count("players")) {
-		playersToWaitFor = vm["players"].as<unsigned>();
+		playersToWaitFor = vm["players"].as<int>();
 	}
 	server::Game game{playersToWaitFor};
 	game.run();
