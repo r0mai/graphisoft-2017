@@ -111,49 +111,44 @@ void solver::end(const std::string& message) {
 	std::cerr << "We got the end message: " << message << std::endl;
 }
 
-#if 0
-Matrix<bool> FloodFill(const Matrix<int>& field, const Point& origin) {
-	int w = field.size();
-	int h = field[0].size();
-
+Matrix<int> FloodFill(const Matrix<int>& field, const Point& origin) {
 	std::stack<Point> stack;
 	stack.push(origin);
 
-	Matrix<bool> reachable = CloneMatrixDimensions(field, false);
+	Matrix<int> reachable{field.Width(), field.Height(), false};
 
 	while (!stack.empty()) {
 		Point p = stack.top();
 		stack.pop();
-		if (reachable[p.x][p.y]) {
+		if (reachable.At(p)) {
 			continue;
 		}
-		reachable[p.x][p.y] = true;
+		reachable.At(p) = true;
 
-		if (p.x+1 < w &&
-			NoPositiveXBorder(field[p.x][p.y]) &&
-			NoNegativeXBorder(field[p.x+1][p.y]))
+		if (p.x+1 < field.Width() &&
+			NoPositiveXBorder(field.At(p)) &&
+			NoNegativeXBorder(field.At(p.x+1, p.y)))
 		{
 			stack.push({p.x+1, p.y});
 		}
 		if (p.x-1 >= 0 &&
-			NoNegativeXBorder(field[p.x][p.y]) &&
-			NoPositiveXBorder(field[p.x-1][p.y]))
+			NoNegativeXBorder(field.At(p)) &&
+			NoPositiveXBorder(field.At(p.x-1, p.y)))
 		{
 			stack.push({p.x-1, p.y});
 		}
-		if (p.y+1 < h &&
-			NoPositiveYBorder(field[p.x][p.y]) &&
-			NoNegativeYBorder(field[p.x][p.y+1]))
+		if (p.y+1 < field.Height() &&
+			NoPositiveYBorder(field.At(p)) &&
+			NoNegativeYBorder(field.At(p.x, p.y+1)))
 		{
 			stack.push({p.x, p.y+1});
 		}
 		if (p.y-1 >= 0 &&
-			NoNegativeYBorder(field[p.x][p.y]) &&
-			NoPositiveYBorder(field[p.x][p.y-1]))
+			NoNegativeYBorder(field.At(p)) &&
+			NoPositiveYBorder(field.At(p.x, p.y-1)))
 		{
 			stack.push({p.x, p.y-1});
 		}
 	}
 	return reachable;
 }
-#endif
