@@ -10,11 +10,15 @@ find_package(SFML 2 REQUIRED system window graphics)
 add_executable(labyrinth
     src/main.cpp
     src/solver.cpp
+    src/FloodFill.cpp
+    src/Util.cpp
 )
 
 
 add_executable(glabyrinth
     src/gui.cpp
+    src/FloodFill.cpp
+    src/Util.cpp
 )
 
 target_include_directories(glabyrinth PRIVATE ${SFML_INCLUDE_DIR})

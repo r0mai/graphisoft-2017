@@ -1,9 +1,9 @@
 #pragma once
 
-int RotateLeft(int tile) {
-    return (tile >> 3) + ((tile << 1) & 0xf);
-}
+bool NoPositiveXBorder(int type);
+bool NoNegativeXBorder(int type);
+bool NoPositiveYBorder(int type);
+bool NoNegativeYBorder(int type);
 
-int RotateRight(int tile) {
-    return ((tile & 1) << 3) + (tile >> 1);
-}
+int RotateLeft(int tile);
+int RotateRight(int tile);

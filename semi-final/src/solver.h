@@ -5,6 +5,7 @@
 #include <string>
 #include "Point.h"
 #include "Grid.h"
+#include "FloodFill.h"
 
 class solver {
 public:
@@ -27,12 +28,5 @@ private:
 	int target_display_ = -1;
 	int extra_field_ = -1;
 };
-
-bool NoPositiveXBorder(int type);
-bool NoNegativeXBorder(int type);
-bool NoPositiveYBorder(int type);
-bool NoNegativeYBorder(int type);
-
-Matrix<int> FloodFill(const Matrix<int>& field, const Point& origin);
 
 #endif // SOLVER_H_INCLUDED

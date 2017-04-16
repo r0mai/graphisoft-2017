@@ -2,24 +2,6 @@
 
 #include <iostream>
 #include <sstream>
-#include <stack>
-
-// assuming north is negative X
-bool NoPositiveXBorder(int type) {
-	return type & 0b0001;
-}
-
-bool NoNegativeXBorder(int type) {
-	return type & 0b0100;
-}
-
-bool NoPositiveYBorder(int type) {
-	return type & 0b1000;
-}
-
-bool NoNegativeYBorder(int type) {
-	return type & 0b0010;
-}
 
 void solver::init(const std::vector<std::string>& field_infos) {
 	std::cerr << "We got these field informations:" << std::endl;
@@ -109,46 +91,4 @@ std::vector<std::string> solver::process(const std::vector<std::string>& tick_in
 
 void solver::end(const std::string& message) {
 	std::cerr << "We got the end message: " << message << std::endl;
-}
-
-Matrix<int> FloodFill(const Matrix<int>& field, const Point& origin) {
-	std::stack<Point> stack;
-	stack.push(origin);
-
-	Matrix<int> reachable{field.Width(), field.Height(), false};
-
-	while (!stack.empty()) {
-		Point p = stack.top();
-		stack.pop();
-		if (reachable.At(p)) {
-			continue;
-		}
-		reachable.At(p) = true;
-
-		if (p.x+1 < field.Width() &&
-			NoPositiveXBorder(field.At(p)) &&
-			NoNegativeXBorder(field.At(p.x+1, p.y)))
-		{
-			stack.push({p.x+1, p.y});
-		}
-		if (p.x-1 >= 0 &&
-			NoNegativeXBorder(field.At(p)) &&
-			NoPositiveXBorder(field.At(p.x-1, p.y)))
-		{
-			stack.push({p.x-1, p.y});
-		}
-		if (p.y+1 < field.Height() &&
-			NoPositiveYBorder(field.At(p)) &&
-			NoNegativeYBorder(field.At(p.x, p.y+1)))
-		{
-			stack.push({p.x, p.y+1});
-		}
-		if (p.y-1 >= 0 &&
-			NoNegativeYBorder(field.At(p)) &&
-			NoPositiveYBorder(field.At(p.x, p.y-1)))
-		{
-			stack.push({p.x, p.y-1});
-		}
-	}
-	return reachable;
 }

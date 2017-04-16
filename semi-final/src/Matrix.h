@@ -2,6 +2,7 @@
 
 #include "Point.h"
 #include <vector>
+#include <cassert>
 
 template<typename T>
 class Matrix {
