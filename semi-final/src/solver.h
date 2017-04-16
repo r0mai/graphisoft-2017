@@ -5,9 +5,7 @@
 #include <string>
 #include "Point.h"
 #include "Grid.h"
-
-template<typename T>
-using Matrix = std::vector<std::vector<T>>;
+#include "FloodFill.h"
 
 class solver {
 public:
@@ -30,21 +28,5 @@ private:
 	int target_display_ = -1;
 	int extra_field_ = -1;
 };
-
-bool NoPositiveXBorder(int type);
-bool NoNegativeXBorder(int type);
-bool NoPositiveYBorder(int type);
-bool NoNegativeYBorder(int type);
-
-template<typename T, typename U>
-Matrix<T> CloneMatrixDimensions(const Matrix<U>& m, const T& default_value = T{}) {
-	Matrix<T> result{m.size()};
-	for (int i = 0; i < m.size(); ++i) {
-		result[i].resize(m[i].size(), default_value);
-	}
-	return result;
-}
-
-Matrix<bool> FloodFill(const Matrix<int>& field, const Point& origin);
 
 #endif // SOLVER_H_INCLUDED

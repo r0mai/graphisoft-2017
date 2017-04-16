@@ -13,11 +13,17 @@ link_directories(${Boost_LIBRARY_DIRS})
 add_executable(labyrinth
     src/main.cpp
     src/solver.cpp
+    src/FloodFill.cpp
+    src/Util.cpp
+    src/Grid.cpp
 )
 
 
 add_executable(glabyrinth
-    src/gui.cpp
+    src/FloodFill.cpp
+    src/Util.cpp
+    src/Gui.cpp
+    src/Grid.cpp
 )
 
 add_executable(server
