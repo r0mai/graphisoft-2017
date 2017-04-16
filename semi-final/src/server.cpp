@@ -28,7 +28,7 @@ std::istream& operator>>(std::istream& is, Command& command) {
 
 
 std::ostream& operator<<(std::ostream& os, const Command& command) {
-	switch(command) {
+	switch (command) {
 		case Command::Login:
 			return os << "LOGIN";
 		case Command::Push:
