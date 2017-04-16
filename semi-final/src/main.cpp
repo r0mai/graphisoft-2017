@@ -122,7 +122,7 @@ public:
 
 int main(int argc, char** argv) {
 	/* config area */
-	const char host_name[] = "SZERVERNEVE";
+	const char host_name[] = "localhost";
 	const unsigned short port = 42500;
 	const char team_name[] = "CSAPATNEVETEK";
 	const char password[] = "JELSZAVATOK";
