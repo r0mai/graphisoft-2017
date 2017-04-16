@@ -3,16 +3,10 @@
 
 #include <vector>
 #include <string>
+#include "Point.h"
 
 template<typename T>
 using Matrix = std::vector<std::vector<T>>;
-
-struct Point {
-	Point() = default;
-	Point(int x, int y) : x(x), y(y) {}
-	int x = -1;
-	int y = -1;
-};
 
 class solver {
 public:
