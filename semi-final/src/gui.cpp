@@ -15,9 +15,10 @@
 
 struct App {
     sf::RenderWindow window;
-    sf::Font font;
     Grid grid;
+
     int extra = 3;
+    Point hover;
 };
 
 
@@ -52,31 +53,27 @@ void HandleKeypress(App& app, const sf::Event::KeyEvent& ev) {
     }
 }
 
-// sf::Vector2i Game::windowToTile(int wx, int wy) const {
-//     auto columns = model.tiles.shape()[0];
-//     auto rows = model.tiles.shape()[1];
 
-//     float width = window.getSize().x;
-//     float height = window.getSize().y;
+sf::Vector2f windowToView(App& app, const Point& pos) {
+    auto size = app.window.getSize();
+    auto view = app.window.getView();
+    auto view_size = view.getSize();
+    auto view_center = view.getCenter();
 
-//     if (wx < 0 || wx >= int(width) ||
-//         wy < 0 || wy >= int(height))
-//     {
-//         return {-1, -1};
-//     }
+    auto offset = view_center - view_size * 0.5f;
 
-//     int x = wx / (width / float(columns));
-//     int y = wy / (height / float(rows));
+    auto mx = (float(pos.x) / size.x) * view_size.x + offset.x;
+    auto my = (float(pos.y) / size.y) * view_size.y + offset.y;
+    return {mx, my};
+}
 
-//     return sf::Vector2i{x, y};
-// }
+Point roundToTile(const sf::Vector2f& pos) {
+    return Point(floor(pos.x), floor(pos.y));
+}
 
 void HandleMouseMoved(App& app, const sf::Event::MouseMoveEvent& ev) {
-    // auto p = windowToTile(ev.x, ev.y);
-    // if (model.isValidPosition(p)) {
-    //     highlights = model.cellsAround(p, 10);
-    //     cursor = p;
-    // }
+    auto pos = roundToTile(windowToView(app, {ev.x, ev.y}));
+    app.hover = pos;
 }
 
 void HandleEvents(App& app) {
@@ -192,15 +189,14 @@ void DrawTile(App& app, const sf::Vector2f& pos, int tile) {
 
 void DrawDot(App& app, const sf::Vector2f& pos, bool active=false) {
     auto dot = CreateDot(pos);
-    dot.setFillColor(sf::Color::Black);
-    // dot.setOutlineColor(sf::Color(0xee, 0xee, 0xee));
-    // dot.setOutlineThickness(0.02f);
+    dot.setFillColor(active ? sf::Color::Red : sf::Color::Black);
     app.window.draw(dot);
 }
 
 
 void Draw(App& app) {
     auto& window = app.window;
+    const auto& hover = app.hover;
     auto size = app.grid.Size();
 
     window.clear(sf::Color(0x33, 0x33, 0x33));
@@ -212,13 +208,27 @@ void Draw(App& app) {
     }
 
     for (int y = 0; y < size.y; ++y) {
-        DrawDot(app, sf::Vector2f(-1, y));
-        DrawDot(app, sf::Vector2f(size.x, y));
+        bool active0 = false;
+        bool active1 = false;
+        if (hover.y == y) {
+            active0 = hover.x == -1;
+            active1 = hover.x == size.x;
+        }
+
+        DrawDot(app, sf::Vector2f(-1, y), active0);
+        DrawDot(app, sf::Vector2f(size.x, y), active1);
     }
 
     for (int x = 0; x < size.x; ++x) {
-        DrawDot(app, sf::Vector2f(x, -1));
-        DrawDot(app, sf::Vector2f(x, size.y));
+        bool active0 = false;
+        bool active1 = false;
+        if (hover.x == x) {
+            active0 = hover.y == -1;
+            active1 = hover.y == size.y;
+        }
+
+        DrawDot(app, sf::Vector2f(x, -1), active0);
+        DrawDot(app, sf::Vector2f(x, size.y), active1);
     }
 
     DrawTile(app, sf::Vector2f(size.x + 1, -1), app.extra);
