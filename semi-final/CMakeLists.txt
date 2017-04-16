@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 find_package(SFML 2 REQUIRED system window graphics)
-find_package(Boost 1.58 REQUIRED system context coroutine)
+find_package(Boost 1.58 REQUIRED system context coroutine program_options)
 include_directories(${Boost_INCLUDE_DIRS})
 link_directories(${Boost_LIBRARY_DIRS})
 
@@ -44,4 +44,4 @@ target_include_directories(glabyrinth PRIVATE ${SFML_INCLUDE_DIR})
 target_link_libraries(glabyrinth ${SFML_LIBRARIES})
 
 target_include_directories(server PRIVATE ${BOOST_INCLUDEDIR})
-target_link_libraries(server ${Boost_SYSTEM_LIBRARY} ${Boost_CONTEXT_LIBRARY} ${Boost_COROUTINE_LIBRARY})
+target_link_libraries(server ${Boost_SYSTEM_LIBRARY} ${Boost_CONTEXT_LIBRARY} ${Boost_COROUTINE_LIBRARY} ${Boost_PROGRAM_OPTIONS_LIBRARY})

@@ -8,6 +8,8 @@
 #include <sstream>
 #include <cassert>
 
+#include <boost/program_options.hpp>
+
 #include "Grid.h"
 #include "Point.h"
 
@@ -223,7 +225,7 @@ private:
 
 class Game {
 public:
-	Game() {
+	Game(unsigned maxPlayers) : maxPlayers(maxPlayers) {
 		grid.Init(6, 7, 4, 4);
 		grid.Randomize();
 	}
@@ -305,8 +307,9 @@ private:
 			asio::ip::tcp::socket socket{ioService};
 			acceptor.async_accept(socket, yield[ec]);
 			handleNewClient(std::move(socket), yield);
-			// TODO: Something more sophisticated for starting th match
-			break;
+			if (playerCount == maxPlayers) {
+				break;
+			}
 		}
 		startMatch(yield);
 	}
@@ -409,6 +412,7 @@ private:
 	boost::asio::io_service ioService;
 	Grid grid;
 	std::size_t playerCount = 0;
+	unsigned maxPlayers;
 	std::map<std::size_t, Client> players;
 	int maxTicks = 1;
 	int currentTick = 0;
@@ -417,7 +421,23 @@ private:
 
 } // namespace server
 
-int main() {
-	server::Game game;
+int main(int argc, const char** argv) {
+	namespace po = boost::program_options;
+	po::options_description desc{"Allowed Options"};
+	desc.add_options()
+			("help", "this help message")
+			("players", po::value<unsigned>(), "players to wait for before starting, defaults to 4");
+	po::variables_map vm;
+	po::store(po::parse_command_line(argc, argv, desc), vm);
+	po::notify(vm);
+	unsigned playersToWaitFor = 4;
+	if (vm.count("help")) {
+		std::cout << desc << std::endl;
+		return 0;
+	}
+	if (vm.count("players")) {
+		playersToWaitFor = vm["players"].as<unsigned>();
+	}
+	server::Game game{playersToWaitFor};
 	game.run();
 }
