@@ -6,9 +6,6 @@
 #include "Point.h"
 #include "Grid.h"
 
-template<typename T>
-using Matrix = std::vector<std::vector<T>>;
-
 class solver {
 public:
 	void init(const std::vector<std::string>& field_infos);
@@ -36,6 +33,7 @@ bool NoNegativeXBorder(int type);
 bool NoPositiveYBorder(int type);
 bool NoNegativeYBorder(int type);
 
+#if 0
 template<typename T, typename U>
 Matrix<T> CloneMatrixDimensions(const Matrix<U>& m, const T& default_value = T{}) {
 	Matrix<T> result{m.size()};
@@ -46,5 +44,6 @@ Matrix<T> CloneMatrixDimensions(const Matrix<U>& m, const T& default_value = T{}
 }
 
 Matrix<bool> FloodFill(const Matrix<int>& field, const Point& origin);
+#endif
 
 #endif // SOLVER_H_INCLUDED

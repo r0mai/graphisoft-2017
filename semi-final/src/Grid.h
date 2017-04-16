@@ -5,30 +5,30 @@
 #include <iostream>
 
 #include "Point.h"
+#include "Matrix.h"
 
 class Grid {
 public:
-    int Width() const { return width_; }
-    int Height() const { return height_; }
-    Point Size() const { return {width_, height_}; }
+    int Width() const { return fields_.Width(); }
+    int Height() const { return fields_.Height();; }
+    Point Size() const { return {fields_.Width(), fields_.Height()}; }
 
     void Init(int width, int height, int displays, int players) {
-        width_ = width;
-        height_ = height;
+		fields_ = Matrix<int>(width, height, 0);
         display_.resize(displays, {-1, -1});
         position_.resize(players, {-1, -1});
-        fields_.resize(width * height, 0);
     }
 
     void Randomize() {
-        for (auto& v : fields_) {
-            v = 1 + (rand() % 15);
-        }
+		for (int x = 0; x < fields_.Width(); ++x) {
+			for (int y = 0; y < fields_.Height(); ++y) {
+				fields_.At(x, y) = 1 + (rand() % 15);
+			}
+		}
     }
 
     void UpdateFields(std::vector<int> fields) {
-		assert(fields.size() == width_ * height_);
-        fields_ = std::move(fields);
+		fields_.SetFields(std::move(fields));
     }
 
     void UpdateDisplay(int index, const Point& pos) {
@@ -40,17 +40,14 @@ public:
     }
 
     int At(int x, int y) const {
-        assert(x >= 0 && y >= 0 && x < width_ && y < height_);
-        return fields_[x + y * width_];
+		return fields_.At(x, y);
     }
 
 
 private:
-    int width_ = -1;
-    int height_ = -1;
     int players_ = -1;
-    std::vector<int> fields_;
     std::vector<Point> display_;
     std::vector<Point> position_;
+	Matrix<int> fields_;
 };
 

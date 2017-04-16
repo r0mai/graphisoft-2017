@@ -111,6 +111,7 @@ void solver::end(const std::string& message) {
 	std::cerr << "We got the end message: " << message << std::endl;
 }
 
+#if 0
 Matrix<bool> FloodFill(const Matrix<int>& field, const Point& origin) {
 	int w = field.size();
 	int h = field[0].size();
@@ -155,3 +156,4 @@ Matrix<bool> FloodFill(const Matrix<int>& field, const Point& origin) {
 	}
 	return reachable;
 }
+#endif
