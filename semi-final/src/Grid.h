@@ -22,7 +22,6 @@ public:
 	int Push(const Point& pos, int t);
 
 private:
-	int players_ = -1;
 	std::vector<Point> display_;
 	std::vector<Point> position_;
 	Matrix<int> fields_;
