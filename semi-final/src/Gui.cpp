@@ -22,6 +22,7 @@ struct App {
 	Field extra = Field(15);
 	Point hover;
 	int target = 0;
+	int tick = 0;
 };
 
 
@@ -124,6 +125,7 @@ void HandleMousePressed(App& app, const sf::Event::MouseButtonEvent& ev) {
 		UpdateColors(app);
 	} else if (IsInside(app, pos) && app.colors.At(pos) != 0) {
 		app.grid.UpdatePosition(0, pos);
+		ResetColors(app);
 		if (app.target != -1 && pos == app.grid.Displays()[app.target]) {
 			app.grid.UpdateDisplay(app.target, {-1, -1});
 			app.target = NextDisplay(app);
@@ -168,7 +170,7 @@ sf::CircleShape CreateDot(const sf::Vector2f& pos, float r=0.05f) {
 }
 
 sf::ConvexShape CreateDiamond(const sf::Vector2f& pos) {
-	float size = 0.1f;
+	float size = 0.12f;
 
 	sf::Vector2f dx(size, 0.f);
 	sf::Vector2f dy(0.f, size);
@@ -313,10 +315,14 @@ void DrawPrincesses(App& app) {
 
 	for (const auto& p : pos_map) {
 		const auto& pos = p.first;
+		bool self = !!(p.second & 1);
+		bool others = !!(p.second & 0xe);
 		auto dot = CreateDiamond(sf::Vector2f(pos.x, pos.y));
 		dot.setOutlineThickness(0.01f);
 		dot.setOutlineColor(sf::Color(0, 0, 0, 0x80));
-		dot.setFillColor(sf::Color(0x1c, 0xdc, 0xff));
+		dot.setFillColor(self
+			? (others ? sf::Color::Magenta : sf::Color::Red)
+			: sf::Color::Blue);
 		app.window.draw(dot);
 	}
 }
@@ -394,9 +400,12 @@ void Run(App& app) {
 
 int main() {
 	App app;
-	app.grid.Init(14, 8, 3, 1);
+	app.grid.Init(14, 8, 3, 4);
 	app.grid.Randomize();
 	app.grid.UpdatePosition(0, {0, 0});
+	app.grid.UpdatePosition(1, {13, 7});
+	app.grid.UpdatePosition(2, {0, 7});
+	app.grid.UpdatePosition(3, {13, 0});
 	app.grid.UpdateDisplay(0, {13, 5});
 	app.grid.UpdateDisplay(1, {4, 6});
 	app.grid.UpdateDisplay(2, {7, 1});
@@ -410,7 +419,7 @@ int main() {
 		settings
 	);
 
-	UpdateColors(app);
+	ResetColors(app);
 	AdjustView(app);
 	Run(app);
 
