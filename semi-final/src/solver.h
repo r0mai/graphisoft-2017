@@ -3,13 +3,10 @@
 
 #include <vector>
 #include <string>
+#include "Point.h"
 
-struct Point {
-	Point() = default;
-	Point(int x, int y) : x(x), y(y) {}
-	int x = -1;
-	int y = -1;
-};
+template<typename T>
+using Matrix = std::vector<std::vector<T>>;
 
 class solver {
 public:
@@ -33,7 +30,7 @@ private:
 		int current_player = -1;
 		int target_display = -1;
 		int our_field_type = -1;
-		std::vector<std::vector<int>> field;
+		Matrix<int> field;
 		std::vector<Point> displays;
 	} tick;
 };
@@ -42,5 +39,16 @@ bool NoPositiveXBorder(int type);
 bool NoNegativeXBorder(int type);
 bool NoPositiveYBorder(int type);
 bool NoNegativeYBorder(int type);
+
+template<typename T, typename U>
+Matrix<T> CloneMatrixDimensions(const Matrix<U>& m, const T& default_value = T{}) {
+	Matrix<T> result{m.size()};
+	for (int i = 0; i < m.size(); ++i) {
+		result[i].resize(m[i].size(), default_value);
+	}
+	return result;
+}
+
+Matrix<bool> FloodFill(const Matrix<int>& field, const Point& origin);
 
 #endif // SOLVER_H_INCLUDED
