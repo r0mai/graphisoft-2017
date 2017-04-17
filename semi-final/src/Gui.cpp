@@ -12,7 +12,7 @@
 #include "Grid.h"
 #include "Util.h"
 #include "FloodFill.h"
-
+#include "EagerTaxicab.h"
 
 // -> {Push, Move} func(Grid, player, target, extra)
 
@@ -41,6 +41,7 @@ struct App {
 
 	Grid grid;
 	Field extra;
+	Field field; // saved when push is done
 	int self = 0;
 	int target = 0;
 
@@ -80,6 +81,15 @@ void HandleKeypress(App& app, const sf::Event::KeyEvent& ev) {
 		case sf::Keyboard::D:
 			app.extra = RotateRight(app.extra);
 			break;
+		case sf::Keyboard::P:
+			if (app.state == State::kPush) {
+				EagerTaxicab ai(app.grid, app.self, app.target, app.extra);
+				auto response = ai.GetResponse();
+				app.push = response.push.direction;
+				app.move = response.move.target;
+				app.field = response.push.field;
+				app.state = State::kDone;
+			}
 		default:
 			break;
 	}
@@ -151,7 +161,7 @@ void HandleMousePressed(App& app, const sf::Event::MouseButtonEvent& ev) {
 	if (app.state == State::kPush && IsEdge(app, pos)) {
 		app.state = State::kMove;
 		app.push = pos;
-
+		app.field = app.extra;
 		app.extra = app.grid.Push(pos, app.extra);
 		UpdateColors(app);
 	} else if (app.state == State::kMove && IsInside(app, pos) &&
@@ -421,6 +431,7 @@ void Draw(App& app) {
 	auto& window = app.window;
 	const auto& hover = app.hover;
 	auto size = app.grid.Size();
+	auto is_push = app.state == State::kPush;
 
 	window.clear(sf::Color(0x33, 0x33, 0x33));
 
@@ -434,7 +445,7 @@ void Draw(App& app) {
 	for (int y = 0; y < size.y; ++y) {
 		bool active0 = false;
 		bool active1 = false;
-		if (hover.y == y) {
+		if (is_push && hover.y == y) {
 			active0 = hover.x == -1;
 			active1 = hover.x == size.x;
 		}
@@ -446,7 +457,7 @@ void Draw(App& app) {
 	for (int x = 0; x < size.x; ++x) {
 		bool active0 = false;
 		bool active1 = false;
-		if (hover.x == x) {
+		if (is_push && hover.x == x) {
 			active0 = hover.y == -1;
 			active1 = hover.y == size.y;
 		}
@@ -480,7 +491,7 @@ void NextPlayer(Game& game, App& app) {
 
 void ApplyMove(Game& game, App& app) {
 	auto& extra = game.extras[game.player];
-	extra = game.grid.Push(app.push, extra);
+	extra = game.grid.Push(app.push, app.field);
 	if (IsValid(app.move)) {
 		// TODO: check if this is a valid move
 		auto target = app.target;
