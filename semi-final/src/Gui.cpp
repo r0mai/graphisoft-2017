@@ -568,6 +568,7 @@ public:
 		app_.extra = Field(15);	// FIXME
 
 		// FIXME:
+		ResetColors(app_);
 		Draw(app_);
 	}
 
@@ -578,6 +579,7 @@ public:
 		app_.extra = field;
 		app_.response = {};
 		callback_ = fn;
+		ResetColors(app_);
 	}
 
 	void Idle() override {
