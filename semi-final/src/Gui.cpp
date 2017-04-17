@@ -171,7 +171,7 @@ void HandleMousePressed(App& app, const sf::Event::MouseButtonEvent& ev) {
 	{
 		app.state = State::kDone;
 		app.response.move = pos;
-		app.grid.UpdatePosition(0, pos);
+		app.grid.UpdatePosition(app.self, pos);
 		ResetColors(app);
 	}
 }
