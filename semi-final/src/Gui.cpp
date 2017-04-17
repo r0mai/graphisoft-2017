@@ -416,11 +416,11 @@ void DrawDisplays(App& app) {
 		if (IsValid(pos)) {
 			auto dot = CreateSquare(sf::Vector2f(pos.x, pos.y));
 			dot.setOutlineThickness(0.01f);
-			dot.setOutlineColor(sf::Color(0, 0, 0, 0x40));
+			dot.setOutlineColor(sf::Color(0, 0, 0, 0x60));
 			dot.setFillColor(
 				index == app.target
-				? sf::Color(0x83, 0xb8, 0x0b, 0xe0)
-				: sf::Color(0xef, 0x60, 0xa0, 0xe0));
+				? sf::Color(0x83, 0xb8, 0x0b)
+				: sf::Color(0xef, 0xff, 0xaf));
 			app.window.draw(dot);
 		}
 		++index;
@@ -514,7 +514,7 @@ void Run(Game& game, App& app) {
 }
 
 void InitGame(Game& game) {
-	game.displays = 3;
+	game.displays = 6;
 	game.players = 4;
 	game.grid.Init(14, 8, game.displays, game.players);
 	game.grid.Randomize();
@@ -530,6 +530,9 @@ void InitGame(Game& game) {
 	game.grid.UpdateDisplay(0, {13, 5});
 	game.grid.UpdateDisplay(1, {4, 6});
 	game.grid.UpdateDisplay(2, {7, 1});
+	game.grid.UpdateDisplay(3, {2, 7});
+	game.grid.UpdateDisplay(4, {10, 2});
+	game.grid.UpdateDisplay(5, {4, 3});
 }
 
 int main() {
