@@ -34,3 +34,4 @@ private:
 	Matrix<Field> fields_;
 };
 
+std::ostream& operator<<(std::ostream& os, const Grid& grid);

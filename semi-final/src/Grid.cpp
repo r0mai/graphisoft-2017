@@ -1,4 +1,5 @@
 #include "Grid.h"
+#include "Util.h"
 #include <cassert>
 
 namespace {
@@ -141,3 +142,39 @@ Field Grid::Push(int c, int p, int k, Field t) {
 	}
 }
 
+namespace {
+
+struct ConsoleChar {
+	std::string ch;
+};
+
+} // anonymous namespace
+
+std::ostream& operator<<(std::ostream& os, const Grid& grid) {
+	std::string fb = "\x1b[7m \x1b[0m";
+	Matrix<ConsoleChar> chars(3*grid.Width(), 3*grid.Height());
+	for (int x = 0; x < grid.Width(); ++x) {
+		for (int y = 0; y < grid.Height(); ++y) {
+			Field f = grid.At(x, y);
+			// corners
+			chars.At(3*x + 0, 3*y + 0).ch = fb;
+			chars.At(3*x + 2, 3*y + 0).ch = fb;
+			chars.At(3*x + 0, 3*y + 2).ch = fb;
+			chars.At(3*x + 2, 3*y + 2).ch = fb;
+			// center
+			chars.At(3*x + 1, 3*y + 1).ch = " ";
+			// sides
+			chars.At(3*x + 1, 3*y + 0).ch = IsNorthOpen(f) ? " " : fb;
+			chars.At(3*x + 2, 3*y + 1).ch = IsEastOpen(f) ? " " : fb;
+			chars.At(3*x + 1, 3*y + 2).ch = IsSouthOpen(f) ? " " : fb;
+			chars.At(3*x + 0, 3*y + 1).ch = IsWestOpen(f) ? " " : fb;
+		}
+	}
+	for (int y = 0; y < chars.Height(); ++y) {
+		for (int x = 0; x < chars.Width(); ++x) {
+			os << chars.At(x, y).ch;
+		}
+		os << '\n';
+	}
+	return os;
+}
