@@ -1,6 +1,7 @@
 #pragma once
 #include <tuple>
 #include <cstdlib>
+#include <ostream>
 
 struct Point {
 	Point() = default;
@@ -19,6 +20,10 @@ inline bool operator!=(const Point& lhs, const Point& rhs) {
 
 inline bool operator<(const Point& lhs, const Point& rhs) {
 	return std::tie(lhs.x, lhs.y) < std::tie(rhs.x, rhs.y);
+}
+
+inline std::ostream& operator<<(std::ostream& os, const Point& p) {
+	return os << '(' << p.x << ", " << p.y << ')';
 }
 
 inline bool IsValid(const Point& p) {
