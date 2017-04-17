@@ -621,10 +621,10 @@ int main(int argc, char* argv[]) {
 	namespace po = boost::program_options;
 	po::options_description desc{"Allowed Options"};
 	desc.add_options()
-		("help", "this help message")
-		("host", po::value<std::string>(), "hostname to connect, defaults to localhost")
-		("teamname", po::value<std::string>(), "teamname to use during login")
-		("password", po::value<std::string>(), "password to use for authentication");
+		("help,h", "this help message")
+		("host,H", po::value<std::string>(), "hostname to connect, defaults to localhost")
+		("team,t", po::value<std::string>(), "teamname to use during login")
+		("password,p", po::value<std::string>(), "password to use for authentication");
 	po::variables_map vm;
 	try {
 		po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -648,8 +648,8 @@ int main(int argc, char* argv[]) {
 		host_name = vm["host"].as<std::string>();
 	}
 
-	if (vm.count("teamname")) {
-		team_name = vm["teamname"].as<std::string>();
+	if (vm.count("team")) {
+		team_name = vm["team"].as<std::string>();
 	}
 
 	if (vm.count("password")) {
