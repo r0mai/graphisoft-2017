@@ -23,11 +23,14 @@ namespace asio = boost::asio;
 template<typename ArgumentType>
 class Message {
 public:
-	Message(Command command, std::vector<ArgumentType> arguments) :
-		command(command), arguments(std::move(arguments)) { }
+	Message(Command command, std::vector<ArgumentType> arguments)
+		: command(command)
+		, arguments(std::move(arguments))
+	{}
 
 	explicit Message(const std::string& line) {
 		std::stringstream lineStream(line);
+		str = line;
 		lineStream >> command;
 		while (lineStream.good()) {
 			ArgumentType value;
@@ -36,11 +39,13 @@ public:
 		}
 	}
 
+	const std::string& getString() const { return str; }
 	Command getCommand() const { return command; }
 	const std::vector<ArgumentType>& getArguments() const { return arguments; }
 
 
 private:
+	std::string str;
 	Command command;
 	std::vector<ArgumentType> arguments;
 };
@@ -325,7 +330,7 @@ private:
 		boost::optional<Message<int>> gotoMessage;
 		auto message = client.readMessage<int>(yield);
 		while (message.getCommand() != Command::Over) {
-			std::cerr << "Read command" << std::endl;
+			std::cerr << "Read command: " << message.getString() << std::endl;
 			switch(message.getCommand()) {
 				default:
 					std::cerr << "Got invalid command from player: "

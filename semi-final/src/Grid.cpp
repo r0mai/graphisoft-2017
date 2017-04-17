@@ -205,7 +205,9 @@ std::ostream& operator<<(std::ostream& os, const Grid& grid) {
 		}
 	}
 	for (auto& display : grid.Displays()) {
-		chars.At(3*display.x + 1, 3*display.y + 1).ch = "D";
+		if (IsValid(display)) {
+			chars.At(3*display.x + 1, 3*display.y + 1).ch = "D";
+		}
 	}
 	for (auto& player : grid.Positions()) {
 		chars.At(3*player.x + 1, 3*player.y + 1).ch = "P";
