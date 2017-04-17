@@ -1,6 +1,7 @@
 #include "Grid.h"
 #include "Util.h"
 #include <cassert>
+#include <set>
 
 namespace {
 
@@ -18,6 +19,21 @@ void ShiftRow(const Point& size, const Point& pos, int d, std::vector<Point>& ve
 			p.x = (p.x + d + size.x) % size.x;
 		}
 	}
+}
+
+std::vector<Point> RandomPositions(int n, int w, int h) {
+	assert(n < w * h);
+	std::set<int> ps;
+	std::vector<Point> result;
+
+	while (ps.size() < n) {
+		auto num = rand() % (w * h);
+		if (ps.count(num) == 0) {
+			result.push_back(Point{num / h, num % h});
+		}
+		ps.insert(num);
+	}
+	return result;
 }
 
 } // namespace
@@ -50,10 +66,23 @@ void Grid::Init(int width, int height, int displays, int players) {
 }
 
 void Grid::Randomize() {
-	for (int x = 0; x < fields_.Width(); ++x) {
-		for (int y = 0; y < fields_.Height(); ++y) {
+	auto width = fields_.Width();
+	auto height = fields_.Height();
+	for (int x = 0; x < width; ++x) {
+		for (int y = 0; y < height; ++y) {
 			fields_.At(x, y) = Field(1 + (rand() % 15));
 		}
+	}
+
+	auto k = displays_.size();
+	auto l = positions_.size();
+	auto ps = RandomPositions(k + l, width, height);
+
+	for (int i = 0; i < k; ++i) {
+		displays_[i] = ps[i];
+	}
+	for (int i = 0; i < l; ++i) {
+		positions_[i] = ps[k + i];
 	}
 }
 

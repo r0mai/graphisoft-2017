@@ -518,24 +518,12 @@ void InitGame(Game& game) {
 	game.players = 4;
 	game.grid.Init(14, 8, game.displays, game.players);
 	game.grid.Randomize();
-
-	// players
 	game.extras.resize(game.players, Field(15));
-	game.grid.UpdatePosition(0, {0, 0});
-	game.grid.UpdatePosition(1, {0, 2});
-	game.grid.UpdatePosition(2, {0, 1});
-	game.grid.UpdatePosition(3, {0, 3});
-
-	// displays
-	game.grid.UpdateDisplay(0, {13, 5});
-	game.grid.UpdateDisplay(1, {4, 6});
-	game.grid.UpdateDisplay(2, {7, 1});
-	game.grid.UpdateDisplay(3, {2, 7});
-	game.grid.UpdateDisplay(4, {10, 2});
-	game.grid.UpdateDisplay(5, {4, 3});
 }
 
 int main() {
+	srand(10371);
+
 	Game game;
 	sf::ContextSettings settings;
 	settings.antialiasingLevel = 8;
