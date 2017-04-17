@@ -194,6 +194,13 @@ std::ostream& operator<<(std::ostream& os, const Grid& grid) {
 				!= positions.end();
 	};
 
+	auto isAnyDisplayOnPoint = [&grid](int x, int y) {
+		const auto& displays = grid.Displays();
+		const auto& display = Point{x, y};
+		return std::find(displays.begin(), displays.end(), display)
+				!= displays.end();
+	};
+
 	for (int x = 0; x < grid.Width(); ++x) {
 		for (int y = 0; y < grid.Height(); ++y) {
 			Field f = grid.At(x, y);
@@ -203,7 +210,14 @@ std::ostream& operator<<(std::ostream& os, const Grid& grid) {
 			chars.At(3*x + 0, 3*y + 2).ch = fb;
 			chars.At(3*x + 2, 3*y + 2).ch = fb;
 			// center
-			chars.At(3*x + 1, 3*y + 1).ch = isAnyPlayerOnPoint(x, y)? "P":" ";
+			std::string center = " ";
+			if (isAnyDisplayOnPoint(x, y)) {
+				center = "D";
+			}
+			if (isAnyPlayerOnPoint(x, y)) {
+				center = "P";
+			}
+			chars.At(3*x + 1, 3*y + 1).ch = center;
 			// sides
 			chars.At(3*x + 1, 3*y + 0).ch = IsNorthOpen(f) ? " " : fb;
 			chars.At(3*x + 2, 3*y + 1).ch = IsEastOpen(f) ? " " : fb;
