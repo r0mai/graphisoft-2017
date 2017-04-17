@@ -1,5 +1,7 @@
 #include "Util.h"
 
+#include <cassert>
+
 bool IsEastOpen(Field type) {
 	return type & 0b1000;
 }
@@ -25,6 +27,7 @@ Field RotateRight(Field tile) {
 }
 
 std::vector<Field> GetRotations(Field tile) {
+	assert(int(tile) >= 1 && int(tile) <= 15);
 	std::vector<Field> rotations;
 	rotations.reserve(4);
 
