@@ -39,6 +39,7 @@ struct App {
 	sf::RenderWindow window;
 	Matrix<int> colors;
 	Point hover;
+	bool invalid = true;
 
 	State state;
 
@@ -365,6 +366,10 @@ void DrawPrincesses(App& app) {
 	sf::Vector2f offset{-0.03f, -0.03f};
 	for (const auto& p : pos_map) {
 		const auto& pos = p.first;
+		if (!IsValid(pos)) {
+			continue;
+		}
+
 		bool self = !!(p.second & (1<<app.self));
 
 		int k = -1;
@@ -429,6 +434,11 @@ void DrawDisplays(App& app) {
 }
 
 void Draw(App& app) {
+	if (app.invalid) {
+		app.invalid = false;
+		AdjustView(app);
+	}
+
 	auto& window = app.window;
 	const auto& hover = app.hover;
 	auto size = app.grid.Size();
