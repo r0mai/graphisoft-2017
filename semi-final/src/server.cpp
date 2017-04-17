@@ -114,14 +114,18 @@ public:
 
 
 	template<typename ArgumentType>
-	void writeMessage(const Message<ArgumentType>& message,
-			asio::yield_context yield) {
+	void addMessage(const Message<ArgumentType>& message) {
 		auto line = boost::lexical_cast<std::string>(message.getCommand());
 		for (const auto& argument: message.getArguments()) {
 			line += " " + boost::lexical_cast<std::string>(argument);
 		}
 		line += "\n";
-		socket.async_write_some(boost::asio::buffer(line), yield);
+		outBuffer += line;
+	}
+
+	void sendMessages(asio::yield_context yield) {
+		socket.async_write_some(boost::asio::buffer(outBuffer), yield);
+		outBuffer.clear();
 	}
 
 private:
@@ -168,6 +172,7 @@ private:
 	int score = 0;
 	int target = 0;
 	std::string previousRead;
+	std::string outBuffer;
 };
 
 
@@ -218,20 +223,16 @@ private:
 		}
 		std::cerr << "Got All Info" << std::endl;
 
-		client.writeMessage(
-				Message<std::string>(Command::Message, {"OK"}), yield);
-		client.writeMessage(
-				Message<int>(Command::Level, {requestedLevel}), yield);
-		client.writeMessage(
-				Message<int>(Command::Size, {grid.Width(), grid.Height()}),
-				yield);
-		client.writeMessage(
-				Message<int>(Command::Displays, {grid.DisplayCount()}), yield);
-		client.writeMessage(
-				Message<int>(Command::Player, {client.getId()}), yield);
-		client.writeMessage(
-				Message<int>(Command::MaxTick, {maxTicks}), yield);
-		client.writeMessage(Message<int>(Command::Over, {}), yield);
+		client.addMessage(Message<std::string>(Command::Message, {"OK"}));
+		client.addMessage(Message<int>(Command::Level, {requestedLevel}));
+		client.addMessage(
+				Message<int>(Command::Size, {grid.Width(), grid.Height()}));
+		client.addMessage(
+				Message<int>(Command::Displays, {grid.DisplayCount()}));
+		client.addMessage(Message<int>(Command::Player, {client.getId()}));
+		client.addMessage(Message<int>(Command::MaxTick, {maxTicks}));
+		client.addMessage(Message<int>(Command::Over, {}));
+		client.sendMessages(yield);
 		std::cerr << "Client all set up" << std::endl;
 	}
 
@@ -260,8 +261,8 @@ private:
 			auto& client = player.second;
 			std::cout << "Team: " << client.getTeamName() << " scored: "
 					<< client.getScore() << std::endl;
-			client.writeMessage(
-					Message<int>(Command::End, {client.getScore()}), yield);
+			client.addMessage(Message<int>(Command::End, {client.getScore()}));
+			client.sendMessages(yield);
 		}
 	}
 
@@ -283,14 +284,14 @@ private:
 
 	void updateClient(Client& client, int originatingPlayer, bool sendOver,
 			asio::yield_context yield) {
-		client.writeMessage(Message<int>(Command::Tick, {currentTick}), yield);
+		client.addMessage(Message<int>(Command::Tick, {currentTick}));
 		const auto& fields = grid.Fields().GetFields();
 		std::vector<int> intFields;
 		intFields.reserve(fields.size());
 		std::transform(fields.begin(), fields.end(),
 				std::back_inserter(intFields),
 				[](const Field& field) { return static_cast<int>(field); });
-		client.writeMessage(Message<int>(Command::Fields, intFields), yield);
+		client.addMessage(Message<int>(Command::Fields, intFields));
 
 		const auto& displays = grid.Displays();
 		for (std::size_t i=0; i<displays.size(); ++i) {
@@ -298,37 +299,34 @@ private:
 			if (!IsValid(display)) {
 				continue;
 			}
-			client.writeMessage(
-					Message<int>(Command::Display,
-							{static_cast<int>(i), display.x, display.y}),
-					yield);
+			client.addMessage(Message<int>(Command::Display,
+					{static_cast<int>(i), display.x, display.y}));
 		}
 
 		for (const auto& player: players) {
 			int playerId = player.first;
 			const auto& position = player.second.getPosition(grid);
-			client.writeMessage(
+			client.addMessage(
 					Message<int>(Command::Position,
-							{playerId, position.x, position.y}), yield);
+							{playerId, position.x, position.y}));
 		}
-		client.writeMessage(
-				Message<int>(Command::Player, {originatingPlayer}), yield);
+		client.addMessage(
+				Message<int>(Command::Player, {originatingPlayer}));
 		if (sendOver) {
-			client.writeMessage(Message<int>(Command::Over, {}), yield);
+			client.addMessage(Message<int>(Command::Over, {}));
+			client.sendMessages(yield);
 		}
 	}
 
 	void updateCurrentClient(Client& client, asio::yield_context yield) {
 		// TODO: What does this do?
 		updateClient(client, client.getId(), false, yield);
-		client.writeMessage(
-				Message<std::string>(Command::Message, {"OK"}), yield);
-		client.writeMessage(
-				Message<int>(Command::Target, {client.getTarget()}), yield);
-		client.writeMessage(
-				Message<int>(Command::ExtraField, {client.getExtraField()}),
-				yield);
-		client.writeMessage(Message<int>(Command::Over, {}), yield);
+		client.addMessage(Message<std::string>(Command::Message, {"OK"}));
+		client.addMessage(Message<int>(Command::Target, {client.getTarget()}));
+		client.addMessage(
+				Message<int>(Command::ExtraField, {client.getExtraField()}));
+		client.addMessage(Message<int>(Command::Over, {}));
+		client.sendMessages(yield);
 	}
 
 	void evaluateClientInstruction(Client& client, asio::yield_context yield) {
