@@ -249,7 +249,6 @@ private:
 		std::cerr << "All clients logged in, starting the round" << std::endl;
 		for (; currentTick < maxTicks; ++currentTick) {
 			std::cerr << "Tick: " << currentTick << std::endl;
-			std::cout << grid << std::endl;
 			updateClients(yield);
 		}
 		for (auto& player: players) {
@@ -262,6 +261,7 @@ private:
 	void updateClients(asio::yield_context yield) {
 		int playerTurn = 0;
 		for (auto& player: players) {
+			std::cout << grid << std::endl;
 			updateClient(playerTurn, player.second, yield);
 			++playerTurn;
 		}
