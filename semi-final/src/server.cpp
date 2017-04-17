@@ -258,7 +258,7 @@ private:
 		}
 		for (auto& player: players) {
 			auto& client = player.second;
-			std::cout << "Team: " << client.getTeamName() << "scored: "
+			std::cout << "Team: " << client.getTeamName() << " scored: "
 					<< client.getScore() << std::endl;
 			client.writeMessage(
 					Message<int>(Command::End, {client.getScore()}), yield);
