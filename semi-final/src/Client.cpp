@@ -188,6 +188,7 @@ bool Client::Process(const std::vector<std::string>& tick_infos, Solver& solver)
 
 	assert(current_tick >= 0);
 	assert(current_player >= 0);
+	opponent_ = (player_index_ != current_player);
 
 	if (player_index_ != current_player) {
 		solver.Update(grid_, current_player);
@@ -256,6 +257,9 @@ void Client::Run(Solver& solver) {
 		if (socket_handler_.valid()) {
 			if (!Process(msg, solver)) {
 				break;
+			}
+			if (opponent_) {
+				continue;
 			}
 
 			while (wait_) {
