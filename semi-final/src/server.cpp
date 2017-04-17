@@ -262,12 +262,15 @@ private:
 	}
 
 	void updateClients(asio::yield_context yield) {
+		int playerTurn = 0;
 		for (auto& player: players) {
-			updateClient(player.second, yield);
+			updateClient(playerTurn, player.second, yield);
+			++playerTurn;
 		}
 	}
 
-	void updateClient(Client& client, asio::yield_context yield) {
+	void updateClient(int playerTurn, Client& client, asio::yield_context yield)
+	{
 		client.writeMessage(Message<int>(Command::Tick, {currentTick}), yield);
 		const auto& fields = grid.Fields().GetFields();
 		std::vector<int> intFields;
@@ -297,13 +300,16 @@ private:
 		client.writeMessage(
 				Message<int>(Command::Player, {client.getId()}), yield);
 		// TODO: What does this do?
-		client.writeMessage(
-				Message<std::string>(Command::Message, {"OK"}), yield);
-		client.writeMessage(
-				Message<int>(Command::Target, {client.getTarget()}), yield);
-		client.writeMessage(Message<int>(Command::Over, {}), yield);
-
-		evaluateClientInstruction(client, yield);
+		if (playerTurn == client.getId()) {
+			client.writeMessage(
+					Message<std::string>(Command::Message, {"OK"}), yield);
+			client.writeMessage(
+					Message<int>(Command::Target, {client.getTarget()}), yield);
+			client.writeMessage(Message<int>(Command::Over, {}), yield);
+			evaluateClientInstruction(client, yield);
+		} else {
+			client.writeMessage(Message<int>(Command::Over, {}), yield);
+		}
 	}
 
 	void evaluateClientInstruction(Client& client, asio::yield_context yield) {
