@@ -14,6 +14,7 @@ link_directories(${Boost_LIBRARY_DIRS})
 add_executable(labyrinth
     src/main.cpp
     src/solver.cpp
+    src/Client.cpp
     src/FloodFill.cpp
     src/Util.cpp
     src/Grid.cpp
