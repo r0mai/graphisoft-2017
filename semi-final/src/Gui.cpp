@@ -626,8 +626,13 @@ int main(int argc, char* argv[]) {
 		("teamname", po::value<std::string>(), "teamname to use during login")
 		("password", po::value<std::string>(), "password to use for authentication");
 	po::variables_map vm;
-	po::store(po::parse_command_line(argc, argv, desc), vm);
-	po::notify(vm);
+	try {
+		po::store(po::parse_command_line(argc, argv, desc), vm);
+		po::notify(vm);
+	} catch(std::exception& e) {
+		std::cerr << "error: " << e.what() << std::endl;
+		return 1;
+	}
 
 	int port = 42500;
 	std::string host_name = "localhost";
