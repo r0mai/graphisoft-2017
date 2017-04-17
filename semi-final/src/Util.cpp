@@ -23,3 +23,16 @@ Field RotateLeft(Field tile) {
 Field RotateRight(Field tile) {
     return Field(((tile & 1) << 3) + (tile >> 1));
 }
+
+std::vector<Field> GetRotations(Field tile) {
+	std::vector<Field> rotations;
+	rotations.reserve(4);
+
+	Field rotation = tile;
+	do {
+		rotations.push_back(rotation);
+		rotation = RotateLeft(rotation);
+	} while (rotation != tile);
+
+	return rotations;
+}

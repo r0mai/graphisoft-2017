@@ -1,6 +1,6 @@
 #pragma once
 #include <tuple>
-
+#include <cstdlib>
 
 struct Point {
 	Point() = default;
@@ -23,4 +23,8 @@ inline bool operator<(const Point& lhs, const Point& rhs) {
 
 inline bool IsValid(const Point& p) {
 	return p.x != -1 || p.y != -1;
+}
+
+inline int TaxicabDistance(const Point& a, const Point& b) {
+	return std::labs(a.x - b.x) + std::labs(a.y - b.y);
 }
