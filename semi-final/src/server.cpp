@@ -270,6 +270,12 @@ private:
 		for (auto& player: players) {
 			std::cout << grid << std::endl;
 			updateClient(playerTurn, player.second, yield);
+			for (auto& otherPlayer: players) {
+				if (&otherPlayer == &player) {
+					continue;
+				}
+				updateClient(playerTurn, otherPlayer.second, yield);
+			}
 			++playerTurn;
 		}
 	}
@@ -306,7 +312,7 @@ private:
 		}
 
 		client.writeMessage(
-				Message<int>(Command::Player, {client.getId()}), yield);
+				Message<int>(Command::Player, {playerTurn}), yield);
 		// TODO: What does this do?
 		if (playerTurn == client.getId()) {
 			client.writeMessage(
