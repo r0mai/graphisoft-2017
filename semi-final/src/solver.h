@@ -1,6 +1,4 @@
-#ifndef SOLVER_H_INCLUDED
-#define SOLVER_H_INCLUDED
-
+#pragma once
 #include <vector>
 #include <string>
 #include "Point.h"
@@ -8,17 +6,14 @@
 #include "FloodFill.h"
 #include "ClientResponse.h"
 
-class solver {
+class Solver {
 public:
-	void init(const std::vector<std::string>& field_infos);
+	void Init(const std::vector<std::string>& field_infos);
+	std::vector<std::string> Process(const std::vector<std::string>& tick_infos);
+	void End(const std::string& message);
 
-	std::vector<std::string> process(const std::vector<std::string>& tick_infos);
-
-	void end(const std::string& message);
 private:
-
 	ClientResponse DoEagerTaxicab();
-
 	std::vector<std::string> ClientResponseToStrings(
 		const ClientResponse& response) const;
 
@@ -35,5 +30,3 @@ private:
 	int target_display_ = -1;
 	Field extra_field_ = Field(-1);
 };
-
-#endif // SOLVER_H_INCLUDED

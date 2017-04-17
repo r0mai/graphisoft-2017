@@ -92,17 +92,17 @@ void Client::Run() {
 	std::vector<std::string> tmp = ReceiveMessage();
 
 	if(socket_handler.valid()) {
-		your_solver.init(tmp);
+		your_solver.Init(tmp);
 	}
 
 	while(socket_handler.valid()) {
 		tmp = ReceiveMessage();
 		if(socket_handler.valid()) {
 			if(tmp.size() == 1 && tmp[0].find("END") == 0) {
-				your_solver.end(tmp[0]);
+				your_solver.End(tmp[0]);
 				break;
 			}
-			tmp = your_solver.process(tmp);
+			tmp = your_solver.Process(tmp);
 
 			if(!tmp.empty()) {
 				SendMessages(tmp);

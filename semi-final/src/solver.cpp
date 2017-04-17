@@ -5,7 +5,7 @@
 
 #include "EagerTaxicab.h"
 
-void solver::init(const std::vector<std::string>& field_infos) {
+void Solver::Init(const std::vector<std::string>& field_infos) {
 	std::cerr << "We got these field informations:" << std::endl;
 
 	for (auto& info : field_infos) {
@@ -45,7 +45,7 @@ void solver::init(const std::vector<std::string>& field_infos) {
 	grid_.Init(width, height, displays, players);
 }
 
-std::vector<std::string> solver::process(const std::vector<std::string>& tick_infos) {
+std::vector<std::string> Solver::Process(const std::vector<std::string>& tick_infos) {
 	std::cerr << "We got these tick informations:" << std::endl;
 
 	for (auto& info : tick_infos) {
@@ -94,12 +94,12 @@ std::vector<std::string> solver::process(const std::vector<std::string>& tick_in
 	return ClientResponseToStrings(DoEagerTaxicab());
 }
 
-ClientResponse solver::DoEagerTaxicab() {
+ClientResponse Solver::DoEagerTaxicab() {
 	EagerTaxicab ai(grid_, player_index_, target_display_, extra_field_);
 	return ai.GetResponse();
 }
 
-std::vector<std::string> solver::ClientResponseToStrings(
+std::vector<std::string> Solver::ClientResponseToStrings(
 	const ClientResponse& response) const
 {
 	std::vector<std::string> strings;
@@ -140,6 +140,6 @@ std::vector<std::string> solver::ClientResponseToStrings(
 	return strings;
 }
 
-void solver::end(const std::string& message) {
+void Solver::End(const std::string& message) {
 	std::cerr << "We got the end message: " << message << std::endl;
 }

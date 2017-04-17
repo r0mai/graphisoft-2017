@@ -18,5 +18,5 @@ public:
 private:
 	platform_dep::tcp_socket socket_handler;
 	std::string received_buffer;
-	solver your_solver;
+	Solver your_solver;
 };
