@@ -253,6 +253,8 @@ private:
 		}
 		for (auto& player: players) {
 			auto& client = player.second;
+			std::cout << "Team: " << client.getTeamName() << "scored: "
+					<< client.getScore() << std::endl;
 			client.writeMessage(
 					Message<int>(Command::End, {client.getScore()}), yield);
 		}
@@ -408,6 +410,9 @@ int main(int argc, const char** argv) {
 	if (vm.count("ticks")) {
 		maxTicks = vm["ticks"].as<int>();
 	}
-	server::Game game{playersToWaitFor, maxTicks};
-	game.run();
+	for (;;) {
+		std::cerr << "Starting new game" << std::endl;
+		server::Game game{playersToWaitFor, maxTicks};
+		game.run();
+	}
 }
