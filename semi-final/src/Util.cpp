@@ -39,3 +39,48 @@ std::vector<Field> GetRotations(Field tile) {
 
 	return rotations;
 }
+
+std::vector<PushVariation> GetPushVariations(const Point& field_size, Field extra) {
+	int w = field_size.x;
+	int h = field_size.y;
+
+	std::vector<PushVariation> variations;
+	PushVariation v;
+
+	auto rotations = GetRotations(extra);
+
+	for (int x = 0; x < w; ++x) {
+		for (Field f : rotations) {
+			{
+				v.tile = f;
+				v.edge = Point{x, -1};
+				v.opposite_edge = Point{x, h};
+				variations.push_back(v);
+			}
+			{
+				v.tile = f;
+				v.edge = Point{x, h};
+				v.opposite_edge = Point{x, -1};
+				variations.push_back(v);
+			}
+		}
+	}
+	for (int y = 0; y < h; ++y) {
+		for (Field f : rotations) {
+			{
+				v.tile = f;
+				v.edge = Point{-1, y};
+				v.opposite_edge = Point{w, y};
+				variations.push_back(v);
+			}
+			{
+				v.tile = f;
+				v.edge = Point{w, y};
+				v.opposite_edge = Point{-1, y};
+				variations.push_back(v);
+			}
+		}
+	}
+
+	return variations;
+}

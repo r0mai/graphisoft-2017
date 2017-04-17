@@ -11,7 +11,9 @@ public:
 
 private:
 	Response GetResponse();
-	std::tuple<int, Point> MoveClosestResponse();
+
+	// <distance from target after move, move posiiton>
+	std::tuple<int, Point> MoveClosestToTarget();
 
 	Grid grid_;
 	Field extra_;
