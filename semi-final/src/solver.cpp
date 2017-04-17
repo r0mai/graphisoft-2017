@@ -97,6 +97,7 @@ ClientResponse solver::MVPAI() {
 	response.push.direction = {-1, 0};
 	response.push.field = extra_field_;
 	response.move.target = grid_.Positions()[player_index_];
+
 	return response;
 }
 

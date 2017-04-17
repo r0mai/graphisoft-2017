@@ -54,7 +54,7 @@ private:
 template<typename T>
 std::ostream& operator<<(std::ostream& os, const Matrix<T>& m) {
 	for (int y = 0; y < m.Height(); ++y) {
-		for (int x = 0; x < m.Widht(); ++x) {
+		for (int x = 0; x < m.Width(); ++x) {
 			os << m.At(x, y) << ' ';
 		}
 		os << '\n';
