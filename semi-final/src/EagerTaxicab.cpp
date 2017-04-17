@@ -46,6 +46,8 @@ ClientResponse EagerTaxicab::GetResponse() {
 		}
 	}
 
+	std::cout << "Push direction " << best_response.push.direction << std::endl;
+
 	return best_response;
 }
 
@@ -61,7 +63,7 @@ std::tuple<int, Point> EagerTaxicab::MoveClosestResponse() {
 	for (int x = 0; x < grid_.Width(); ++x) {
 		for (int y = 0; y < grid_.Height(); ++y) {
 			int distance = TaxicabDistance(target, {x, y});
-			if (distance < closest_distance) {
+			if (flood_fill.At(x, y) && distance < closest_distance) {
 				closest_distance = distance;
 				closest_target = {x, y};
 			}
