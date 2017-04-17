@@ -9,8 +9,8 @@
 class Client {
 public:
 	Client(
-		const char host_name[], unsigned short port,
-		const char team_name[], const char password[], int task_id);
+		const std::string& host_name, int port,
+		const std::string& team_name, const std::string& password, int task_id);
 
 	void Run(Solver& solver);
 

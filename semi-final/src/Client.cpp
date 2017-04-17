@@ -3,17 +3,18 @@
 #include <iostream>
 
 
-Client::Client(const char host_name[], unsigned short port,
-	const char team_name[], const char password[], int task_id) {
+Client::Client(
+	const std::string& host_name, int port,
+	const std::string& team_name, const std::string& password, int task_id) {
 
 	if(!socket_handler_.valid()) {
 		throw std::runtime_error("Error: Cannot open a socket!");
 	}
 
-	hostent* host = gethostbyname(host_name);
+	hostent* host = gethostbyname(host_name.c_str());
 
 	if(!host) {
-		throw std::runtime_error("Error: Cannot find host: " + std::string(host_name));
+		throw std::runtime_error("Error: Cannot find host: " + host_name);
 	}
 
 	sockaddr_in socket_address;
@@ -23,8 +24,9 @@ Client::Client(const char host_name[], unsigned short port,
 
 	if(connect(socket_handler_.get_handler(), (struct sockaddr*)&socket_address,
 		sizeof(socket_address)) != 0) {
-		throw std::runtime_error("Error: Cannot connect to the server: " +
-			std::string(host_name) + ":" + std::to_string(port) +
+		throw std::runtime_error(
+			"Error: Cannot connect to the server: " +
+			host_name + ":" + std::to_string(port) +
 			" error code: " + std::to_string(socketerrno));
 	}
 
@@ -224,8 +226,8 @@ std::vector<std::string> Client::FromResponse(const Response& response) const {
 	}
 
 	k = (c == 0
-		? response.push.edge.x
-		: response.push.edge.y);
+		? response.push.edge.y
+		: response.push.edge.x);
 	t = response.push.field;
 
 	if (true) {

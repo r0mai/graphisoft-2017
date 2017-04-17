@@ -26,6 +26,7 @@ add_executable(glabyrinth
     src/Util.cpp
     src/Gui.cpp
     src/Grid.cpp
+    src/Client.cpp
     src/EagerTaxicab.cpp
 )
 

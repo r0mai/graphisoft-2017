@@ -1,3 +1,11 @@
+#include "Point.h"
+#include "Grid.h"
+#include "Util.h"
+#include "FloodFill.h"
+#include "EagerTaxicab.h"
+#include "Solver.h"
+#include "Client.h"
+
 #include <cassert>
 #include <iostream>
 #include <chrono>
@@ -7,14 +15,8 @@
 #include <sstream>
 #include <cstdlib>
 #include <SFML/Graphics.hpp>
+#include <boost/program_options.hpp>
 
-#include "Point.h"
-#include "Grid.h"
-#include "Util.h"
-#include "FloodFill.h"
-#include "EagerTaxicab.h"
-
-// -> {Push, Move} func(Grid, player, target, extra)
 
 struct Game {
 	Grid grid;
@@ -27,6 +29,7 @@ struct Game {
 };
 
 enum class State {
+	kOpponent,
 	kPush,
 	kMove,
 	kDone
@@ -41,12 +44,10 @@ struct App {
 
 	Grid grid;
 	Field extra;
-	Field field; // saved when push is done
 	int self = 0;
 	int target = 0;
 
-	Point push;
-	Point move;
+	Response response;
 };
 
 
@@ -160,15 +161,15 @@ void HandleMousePressed(App& app, const sf::Event::MouseButtonEvent& ev) {
 	auto pos = RoundToTile(WindowToView(app, {ev.x, ev.y}));
 	if (app.state == State::kPush && IsEdge(app, pos)) {
 		app.state = State::kMove;
-		app.push = pos;
-		app.field = app.extra;
+		app.response.push.edge = pos;
+		app.response.push.field = app.extra;
 		app.extra = app.grid.Push(pos, app.extra);
 		UpdateColors(app);
 	} else if (app.state == State::kMove && IsInside(app, pos) &&
 		app.colors.At(pos) != 0)
 	{
 		app.state = State::kDone;
-		app.move = pos;
+		app.response.move = pos;
 		app.grid.UpdatePosition(0, pos);
 		ResetColors(app);
 	}
@@ -484,19 +485,22 @@ void NextPlayer(Game& game, App& app) {
 	app.target = NextDisplay(app.grid);
 	app.state = State::kPush;
 	app.extra = game.extras[game.player];
-	app.push = {};
-	app.move = {};
+	app.response.push.edge = {};
+	app.response.move = {};
 	ResetColors(app);
 }
 
 void ApplyMove(Game& game, App& app) {
 	auto& extra = game.extras[game.player];
-	extra = game.grid.Push(app.push, app.field);
-	if (IsValid(app.move)) {
+	auto& push = app.response.push;
+	extra = game.grid.Push(push.edge, push.field);
+	if (IsValid(app.response.move)) {
 		// TODO: check if this is a valid move
 		auto target = app.target;
-		game.grid.UpdatePosition(game.player, app.move);
-		if (target != -1 && app.move == game.grid.Displays()[app.target]) {
+		game.grid.UpdatePosition(game.player, app.response.move);
+		if (target != -1 &&
+			app.response.move == game.grid.Displays()[app.target])
+		{
 			game.grid.UpdateDisplay(target, {});
 		}
 	}
@@ -521,7 +525,7 @@ void InitGame(Game& game) {
 	game.extras.resize(game.players, Field(15));
 }
 
-int main() {
+void HotSeat() {
 	srand(10371);
 
 	Game game;
@@ -539,6 +543,81 @@ int main() {
 	NextPlayer(game, app);
 	AdjustView(app);
 	Run(game, app);
+}
 
+
+class InteractiveSolver : public Solver {
+public:
+	void Init(int player) override {
+		sf::ContextSettings settings;
+		settings.antialiasingLevel = 8;
+
+		app_.self = player;
+		app_.window.create(
+			sf::VideoMode(1600, 1000), "Labirintus",
+			sf::Style::Default,
+			settings
+		);
+	}
+
+	void Shutdown() override {}
+	void Update(const Grid& grid, int player) override {
+		app_.grid = grid;
+		app_.target = -1;
+		app_.state = State::kOpponent;
+		app_.extra = Field(15);	// FIXME
+
+		// FIXME:
+		Draw(app_);
+	}
+
+	void Turn(const Grid& grid, int player, int target, Field field, Callback fn) override {
+		app_.grid = grid;
+		app_.target = target;
+		app_.state = State::kPush;
+		app_.extra = field;
+		app_.response = {};
+		callback_ = fn;
+	}
+
+	void Idle() override {
+		if (app_.window.isOpen()) {
+			HandleEvents(app_);
+			if (app_.state == State::kDone && callback_) {
+				app_.state = State::kOpponent;
+				ResetColors(app_);
+				callback_(app_.response);
+				callback_ = {};
+			}
+
+			Draw(app_);
+		} else {
+			exit(0);
+		}
+	}
+
+private:
+	App app_;
+	Callback callback_;
+};
+
+
+int main() {
+#if 0
+	HotSeat();
+#else
+	int port = 42500;
+	std::string host_name = "localhost";
+	std::string user = "the_hypnotoad";
+	std::string pass = "****";
+
+    try {
+    	platform_dep::enable_socket _;
+		InteractiveSolver solver;
+	    Client(host_name, port, user, pass, 0).Run(solver);
+    } catch(std::exception& e) {
+        std::cerr << "Exception thrown. what(): " << e.what() << std::endl;
+    }
+#endif
 	return 0;
 }

@@ -21,8 +21,8 @@ int main(int argc, char** argv) {
 	/* config area */
 	std::string host_name = "localhost";
 	const unsigned short port = 42500;
-	std::string team_name = "CSAPATNEVETEK";
-	std::string password = "JELSZAVATOK";
+	std::string team_name = "taxicab";
+	std::string password = "******";
 
 	if (vm.count("help")) {
 		std::cout << desc << std::endl;
@@ -44,14 +44,14 @@ int main(int argc, char** argv) {
 	// 0 means here: server choose randomly 1 to 10
 	const int task_id = argc > 1 ? std::atoi(argv[1]) : 0;
 
-    try {
-    	platform_dep::enable_socket _;
-    	EagerTaxicab solver;
+	try {
+		platform_dep::enable_socket _;
+		EagerTaxicab solver;
 
-	    Client(host_name.c_str(), port, team_name.c_str(),
+		Client(host_name.c_str(), port, team_name.c_str(),
 				password.c_str(), task_id).Run(solver);
 
-    } catch(std::exception& e) {
-        std::cerr << "Exception throwed. what(): " << e.what() << std::endl;
-    }
+	} catch(std::exception& e) {
+		std::cerr << "Exception throwed. what(): " << e.what() << std::endl;
+	}
 }
