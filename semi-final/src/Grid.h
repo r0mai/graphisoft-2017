@@ -20,6 +20,7 @@ public:
 
 	void Init(int width, int height, int displays, int players);
 	void Randomize();
+	void ResetDisplays();
 	void UpdateFields(std::vector<Field> fields);
 	void UpdateDisplay(int index, const Point& pos);
 	void UpdatePosition(int player, const Point& pos);

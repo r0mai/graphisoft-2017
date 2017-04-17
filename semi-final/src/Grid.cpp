@@ -56,6 +56,12 @@ void Grid::Randomize() {
 	}
 }
 
+void Grid::ResetDisplays() {
+	for (auto& p : displays_) {
+		p.x = p.y = -1;
+	}
+}
+
 void Grid::UpdateFields(std::vector<Field> fields) {
 	fields_.SetFields(std::move(fields));
 }

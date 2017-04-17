@@ -50,6 +50,7 @@ std::vector<std::string> solver::process(const std::vector<std::string>& tick_in
 		std::cerr << info << std::endl;
 	}
 
+	grid_.ResetDisplays();
 	for (auto& info : tick_infos) {
 		std::stringstream ss(info);
 		std::string command;
