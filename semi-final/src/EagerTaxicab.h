@@ -1,13 +1,20 @@
 #pragma once
+#include "Solver.h"
 
-#include "AI.h"
-
-class EagerTaxicab : public AI {
+class EagerTaxicab : public Solver {
 public:
-	using AI::AI;
+	void Init(int player) override {}
+	void Shutdown() override {}
+	void Update(const Grid& grid, int player) override {}
+	void Turn(const Grid& grid, int player, int target, Field field, Callback fn) override;
+	void Idle() override {}
 
-	ClientResponse GetResponse() override;
 private:
-	// <distance, move target>
+	Response GetResponse();
 	std::tuple<int, Point> MoveClosestResponse();
+
+	Grid grid_;
+	Field extra_;
+	int player_;
+	int target_display_;
 };

@@ -82,14 +82,14 @@ void HandleKeypress(App& app, const sf::Event::KeyEvent& ev) {
 			app.extra = RotateRight(app.extra);
 			break;
 		case sf::Keyboard::P:
-			if (app.state == State::kPush) {
-				EagerTaxicab ai(app.grid, app.self, app.target, app.extra);
-				auto response = ai.GetResponse();
-				app.push = response.push.direction;
-				app.move = response.move.target;
-				app.field = response.push.field;
-				app.state = State::kDone;
-			}
+			// if (app.state == State::kPush) {
+			// 	EagerTaxicab ai(app.grid, app.self, app.target, app.extra);
+			// 	auto response = ai.GetResponse();
+			// 	app.push = response.push.direction;
+			// 	app.move = response.move.target;
+			// 	app.field = response.push.field;
+			// 	app.state = State::kDone;
+			// }
 		default:
 			break;
 	}

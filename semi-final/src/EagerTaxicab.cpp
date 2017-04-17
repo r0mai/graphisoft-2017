@@ -4,18 +4,27 @@
 
 #include <limits>
 
-ClientResponse EagerTaxicab::GetResponse() {
+
+void EagerTaxicab::Turn(const Grid& grid, int player, int target, Field field, Callback fn) {
+	grid_ = grid;
+	player_ = player;
+	target_display_ = target;
+	extra_ = field;
+	fn(GetResponse());
+}
+
+Response EagerTaxicab::GetResponse() {
 	int best_distance = std::numeric_limits<int>::max();
-	ClientResponse best_response{};
+	Response best_response{};
 	auto OnPushVariation = [&](Point push_direction, Field extra) {
 		int distance;
 		Point target;
 		std::tie(distance, target) = MoveClosestResponse();
 		if (distance < best_distance) {
 			best_distance = distance;
-			best_response.push.direction = push_direction;
+			best_response.push.edge = push_direction;
 			best_response.push.field = extra;
-			best_response.move.target = target;
+			best_response.move = target;
 		}
 	};
 
@@ -48,7 +57,7 @@ ClientResponse EagerTaxicab::GetResponse() {
 		}
 	}
 
-	std::cout << "Push direction " << best_response.push.direction << std::endl;
+	std::cout << "Push direction " << best_response.push.edge << std::endl;
 
 	return best_response;
 }

@@ -1,4 +1,4 @@
-#include "solver.h"
+#include "EagerTaxicab.h"
 #include "Client.h"
 #include <iostream>
 #include <vector>
@@ -46,9 +46,10 @@ int main(int argc, char** argv) {
 
     try {
     	platform_dep::enable_socket _;
+    	EagerTaxicab solver;
 
 	    Client(host_name.c_str(), port, team_name.c_str(),
-				password.c_str(), task_id).Run();
+				password.c_str(), task_id).Run(solver);
 
     } catch(std::exception& e) {
         std::cerr << "Exception throwed. what(): " << e.what() << std::endl;

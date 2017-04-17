@@ -1,6 +1,6 @@
 #pragma once
 #include "platform_dep.h"
-#include "solver.h"
+#include "Solver.h"
 #include <string>
 #include <sstream>
 #include <vector>
@@ -8,15 +8,25 @@
 
 class Client {
 public:
-	Client(const char host_name[], unsigned short port,
+	Client(
+		const char host_name[], unsigned short port,
 		const char team_name[], const char password[], int task_id);
 
-	void SendMessages(const std::vector<std::string>& messages);
-	std::vector<std::string> ReceiveMessage();
-	void Run();
+	void Run(Solver& solver);
 
 private:
-	platform_dep::tcp_socket socket_handler;
-	std::string received_buffer;
-	Solver your_solver;
+	void Init(const std::vector<std::string>& field_infos, Solver& solver);
+	bool Process(const std::vector<std::string>& tick_infos, Solver& solver);
+
+	void SendMessages(const std::vector<std::string>& messages);
+	std::vector<std::string> FromResponse(const Response& response) const;
+	std::vector<std::string> ReceiveMessage();
+
+	platform_dep::tcp_socket socket_handler_;
+	std::string received_buffer_;
+
+	Grid grid_;
+	int player_index_ = -1;
+	bool wait_ = false;
+	Response response_;
 };
