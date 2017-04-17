@@ -281,6 +281,9 @@ private:
 		const auto& displays = grid.Displays();
 		for (std::size_t i=0; i<displays.size(); ++i) {
 			const auto& display = displays[i];
+			if (!IsValid(display)) {
+				continue;
+			}
 			client.writeMessage(
 					Message<int>(Command::Display,
 							{static_cast<int>(i), display.x, display.y}),
@@ -348,7 +351,7 @@ private:
 		if (gotoMessage) {
 			const auto& arguments = gotoMessage->getArguments();
 			client.moveTo(grid, arguments[0], arguments[1]);
-			const auto& target = grid.Displays()[client.getTarget()];
+			Point target = grid.Displays()[client.getTarget()];
 			if (client.getPosition(grid) == target) {
 				client.onHitTarget();
 				for (auto& player : players) {
@@ -357,6 +360,16 @@ private:
 						player.second.onTargetInvalidated();
 					}
 				}
+				removeDisplay(target);
+			}
+		}
+	}
+
+	void removeDisplay(Point target) {
+		for (int i = 0; i < grid.DisplayCount(); ++i) {
+			const auto& display = grid.Displays()[i];
+			if (display == target) {
+				grid.UpdateDisplay(i, Point{});
 			}
 		}
 	}
