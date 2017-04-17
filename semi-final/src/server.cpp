@@ -69,6 +69,9 @@ public:
 
 	void onHitTarget() {
 		++score;
+	}
+
+	void onTargetInvalidated() {
 		++target;
 	}
 
@@ -227,12 +230,6 @@ private:
 		std::cerr << "Client all set up" << std::endl;
 	}
 
-	void processMove(Client& client, asio::yield_context yield) {
-		auto pushCommand = client.readMessage<int>(yield);
-		auto gotoCommand = client.readMessage<int>(yield);
-		auto overCommand = client.readMessage<int>(yield);
-	}
-
 	void start(asio::yield_context yield) {
 		asio::ip::tcp::acceptor acceptor{ioService,
 				asio::ip::tcp::endpoint{asio::ip::tcp::v4(), 42500}};
@@ -350,6 +347,12 @@ private:
 			const auto& target = grid.Displays()[client.getTarget()];
 			if (client.getPosition(grid) == target) {
 				client.onHitTarget();
+				for (auto& player : players) {
+					if (grid.Displays()[player.second.getTarget()]
+							== client.getPosition(grid)) {
+						player.second.onTargetInvalidated();
+					}
+				}
 			}
 		}
 	}
