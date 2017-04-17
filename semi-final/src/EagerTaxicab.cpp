@@ -2,6 +2,8 @@
 #include "Util.h"
 #include "FloodFill.h"
 
+#include <limits>
+
 ClientResponse EagerTaxicab::GetResponse() {
 	int best_distance = std::numeric_limits<int>::max();
 	ClientResponse best_response{};
