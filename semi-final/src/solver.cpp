@@ -69,6 +69,11 @@ std::vector<std::string> solver::process(const std::vector<std::string>& tick_in
 			Point p;
 			ss >> index >> p.x >> p.y;
 			grid_.UpdateDisplay(index, p);
+		} else if (command == "POSITION") {
+			int index;
+			Point p;
+			ss >> index >> p.x >> p.y;
+			grid_.UpdatePosition(index, p);
 		} else if (command == "PLAYER") {
 			ss >> current_player_;
 		} else if (command == "TARGET") {
