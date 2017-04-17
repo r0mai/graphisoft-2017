@@ -302,6 +302,9 @@ private:
 					Message<std::string>(Command::Message, {"OK"}), yield);
 			client.writeMessage(
 					Message<int>(Command::Target, {client.getTarget()}), yield);
+			client.writeMessage(
+					Message<int>(Command::ExtraField, {client.getExtraField()}),
+					yield);
 			client.writeMessage(Message<int>(Command::Over, {}), yield);
 			evaluateClientInstruction(client, yield);
 		} else {
