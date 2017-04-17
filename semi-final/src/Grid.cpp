@@ -2,6 +2,7 @@
 #include "Util.h"
 #include <cassert>
 #include <set>
+#include <algorithm>
 
 namespace {
 
@@ -185,6 +186,14 @@ std::ostream& operator<<(std::ostream& os, const Grid& grid) {
 	// http://stackoverflow.com/a/13437275
 	std::string fb = "\x1b[7m \x1b[0m";
 	Matrix<ConsoleChar> chars(3*grid.Width(), 3*grid.Height());
+
+	auto isAnyPlayerOnPoint = [&grid](int x, int y) {
+		const auto& positions = grid.Positions();
+		const auto& position = Point{x, y};
+		return std::find(positions.begin(), positions.end(), position)
+				!= positions.end();
+	};
+
 	for (int x = 0; x < grid.Width(); ++x) {
 		for (int y = 0; y < grid.Height(); ++y) {
 			Field f = grid.At(x, y);
@@ -194,7 +203,7 @@ std::ostream& operator<<(std::ostream& os, const Grid& grid) {
 			chars.At(3*x + 0, 3*y + 2).ch = fb;
 			chars.At(3*x + 2, 3*y + 2).ch = fb;
 			// center
-			chars.At(3*x + 1, 3*y + 1).ch = " ";
+			chars.At(3*x + 1, 3*y + 1).ch = isAnyPlayerOnPoint(x, y)? "P":" ";
 			// sides
 			chars.At(3*x + 1, 3*y + 0).ch = IsNorthOpen(f) ? " " : fb;
 			chars.At(3*x + 2, 3*y + 1).ch = IsEastOpen(f) ? " " : fb;

@@ -171,7 +171,7 @@ public:
 	Game(int maxPlayers, int maxTicks) :
 		maxPlayers(maxPlayers), maxTicks(maxTicks)
 	{
-		grid.Init(6, 7, 4, 4);
+		grid.Init(6, 7, 4, maxPlayers);
 		grid.Randomize();
 	}
 
@@ -249,6 +249,7 @@ private:
 		std::cerr << "All clients logged in, starting the round" << std::endl;
 		for (; currentTick < maxTicks; ++currentTick) {
 			std::cerr << "Tick: " << currentTick << std::endl;
+			std::cout << grid << std::endl;
 			updateClients(yield);
 		}
 		for (auto& player: players) {
