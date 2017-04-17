@@ -151,6 +151,9 @@ struct ConsoleChar {
 } // anonymous namespace
 
 std::ostream& operator<<(std::ostream& os, const Grid& grid) {
+	// Full block character didn't work,
+	// so print a space with inverted video mode
+	// http://stackoverflow.com/a/13437275
 	std::string fb = "\x1b[7m \x1b[0m";
 	Matrix<ConsoleChar> chars(3*grid.Width(), 3*grid.Height());
 	for (int x = 0; x < grid.Width(); ++x) {
