@@ -88,10 +88,56 @@ std::vector<std::string> solver::process(const std::vector<std::string>& tick_in
 		return {};
 	}
 
-	// our turn
-	std::vector<std::string> result;
-	// TODO
-	return result;
+	return ClientResponseToStrings(MVPAI());
+}
+
+ClientResponse solver::MVPAI() {
+	ClientResponse response;
+	response.push.direction = {-1, 0};
+	response.push.field = extra_field_;
+	response.move.target = grid_.Positions()[player_index_];
+	return response;
+}
+
+std::vector<std::string> solver::ClientResponseToStrings(
+	const ClientResponse& response) const
+{
+	std::vector<std::string> strings;
+
+	int c, p, k, t;
+	if (response.push.direction.x == -1) {
+		c = 0;
+		p = 1;
+	} else if (response.push.direction.x == grid_.Width()) {
+		c = 0;
+		p = 0;
+	} else if (response.push.direction.y == -1) {
+		c = 1;
+		p = 1;
+	} else if (response.push.direction.y == grid_.Height()) {
+		c = 1;
+		p = 0;
+	} else {
+		assert(false);
+	}
+	if (c == 0) {
+		k = response.push.direction.y;
+	} else {
+		k = response.push.direction.x;
+	}
+	t = response.push.field;
+
+	{
+		std::stringstream ss;
+		ss << "PUSH " << c << " " << p << " " << k << " " << t;
+		strings.push_back(ss.str());
+	}
+	{
+		std::stringstream ss;
+		ss << "GOTO " << response.move.target.x << " " << response.move.target.y;
+		strings.push_back(ss.str());
+	}
+	return strings;
 }
 
 void solver::end(const std::string& message) {

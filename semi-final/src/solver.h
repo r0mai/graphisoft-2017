@@ -6,6 +6,7 @@
 #include "Point.h"
 #include "Grid.h"
 #include "FloodFill.h"
+#include "ClientResponse.h"
 
 class solver {
 public:
@@ -15,6 +16,12 @@ public:
 
 	void end(const std::string& message);
 private:
+
+	ClientResponse MVPAI();
+
+	std::vector<std::string> ClientResponseToStrings(
+		const ClientResponse& response) const;
+
 	// stuff we get form init()
 	int level_ = -1; // index of the map
 	int max_tick_ = -1;
