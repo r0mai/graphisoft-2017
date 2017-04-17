@@ -614,19 +614,50 @@ private:
 };
 
 
-int main() {
+int main(int argc, char* argv[]) {
 #if 0
 	HotSeat();
 #else
+	namespace po = boost::program_options;
+	po::options_description desc{"Allowed Options"};
+	desc.add_options()
+		("help", "this help message")
+		("host", po::value<std::string>(), "hostname to connect, defaults to localhost")
+		("teamname", po::value<std::string>(), "teamname to use during login")
+		("password", po::value<std::string>(), "password to use for authentication");
+	po::variables_map vm;
+	po::store(po::parse_command_line(argc, argv, desc), vm);
+	po::notify(vm);
+
 	int port = 42500;
 	std::string host_name = "localhost";
-	std::string user = "the_hypnotoad";
-	std::string pass = "****";
+	std::string team_name = "the_hypnotoad";
+	std::string password = "******";
+
+	if (vm.count("help")) {
+		std::cout << desc << std::endl;
+		return 0;
+	}
+
+	if (vm.count("host")) {
+		host_name = vm["host"].as<std::string>();
+	}
+
+	if (vm.count("teamname")) {
+		team_name = vm["teamname"].as<std::string>();
+	}
+
+	if (vm.count("password")) {
+		password = vm["password"].as<std::string>();
+	}
+
+	// 0 means here: server choose randomly 1 to 10
+	int task_id = argc > 1 ? std::atoi(argv[1]) : 0;
 
     try {
     	platform_dep::enable_socket _;
 		InteractiveSolver solver;
-	    Client(host_name, port, user, pass, 0).Run(solver);
+	    Client(host_name, port, team_name, password, task_id).Run(solver);
     } catch(std::exception& e) {
         std::cerr << "Exception thrown. what(): " << e.what() << std::endl;
     }

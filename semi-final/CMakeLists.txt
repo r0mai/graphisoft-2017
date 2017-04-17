@@ -46,8 +46,14 @@ add_executable(server
 )
 
 
-target_include_directories(glabyrinth PRIVATE ${SFML_INCLUDE_DIR})
-target_link_libraries(glabyrinth ${SFML_LIBRARIES})
+target_include_directories(glabyrinth PRIVATE
+    ${SFML_INCLUDE_DIR}
+    ${BOOST_INCLUDEDIR}
+)
+target_link_libraries(glabyrinth
+    ${SFML_LIBRARIES}
+    ${Boost_PROGRAM_OPTIONS_LIBRARY}
+)
 
 target_include_directories(labyrinth PRIVATE ${BOOST_INCLUDEDIR})
 target_link_libraries(labyrinth ${Boost_PROGRAM_OPTIONS_LIBRARY})
