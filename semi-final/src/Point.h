@@ -20,3 +20,7 @@ inline bool operator!=(const Point& lhs, const Point& rhs) {
 inline bool operator<(const Point& lhs, const Point& rhs) {
 	return std::tie(lhs.x, lhs.y) < std::tie(rhs.x, rhs.y);
 }
+
+inline bool IsValid(const Point& p) {
+	return p.x != -1 || p.y != -1;
+}

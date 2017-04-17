@@ -14,16 +14,38 @@
 #include "FloodFill.h"
 
 
+// -> {Push, Move} func(Grid, player, target, extra)
+
+struct Game {
+	Grid grid;
+	std::vector<Field> extras;
+	int tick = -1;
+	int player = -1;
+
+	int players = 0;
+	int displays = 0;
+};
+
+enum class State {
+	kPush,
+	kMove,
+	kDone
+};
+
 struct App {
 	sf::RenderWindow window;
-	Grid grid;
 	Matrix<int> colors;
-
-	Field extra = Field(15);
 	Point hover;
+
+	State state;
+
+	Grid grid;
+	Field extra;
 	int self = 0;
 	int target = 0;
-	int tick = 0;
+
+	Point push;
+	Point move;
 };
 
 
@@ -47,6 +69,11 @@ void AdjustView(App& app) {
 
 void HandleKeypress(App& app, const sf::Event::KeyEvent& ev) {
 	switch (ev.code) {
+		case sf::Keyboard::Space:
+			if (app.state == State::kMove) {
+				app.state = State::kDone;
+			}
+			break;
 		case sf::Keyboard::A:
 			app.extra = RotateLeft(app.extra);
 			break;
@@ -94,10 +121,10 @@ bool IsInside(const App& app, const Point& pos) {
 	return x_in && y_in;
 }
 
-int NextDisplay(const App& app) {
+int NextDisplay(const Grid& grid) {
 	int index = 0;
-	for (const auto& pos : app.grid.Displays()) {
-		if (pos.x != -1 || pos.y != -1) {
+	for (const auto& pos : grid.Displays()) {
+		if (IsValid(pos)) {
 			return index;
 		}
 		++index;
@@ -110,7 +137,7 @@ void ResetColors(App& app) {
 }
 
 void UpdateColors(App& app) {
-	auto pos = app.grid.Positions()[0];
+	auto pos = app.grid.Positions()[app.self];
 	app.colors = FloodFill(app.grid.Fields(), pos);
 }
 
@@ -121,16 +148,19 @@ void HandleMouseMoved(App& app, const sf::Event::MouseMoveEvent& ev) {
 
 void HandleMousePressed(App& app, const sf::Event::MouseButtonEvent& ev) {
 	auto pos = RoundToTile(WindowToView(app, {ev.x, ev.y}));
-	if (IsEdge(app, pos)) {
+	if (app.state == State::kPush && IsEdge(app, pos)) {
+		app.state = State::kMove;
+		app.push = pos;
+
 		app.extra = app.grid.Push(pos, app.extra);
 		UpdateColors(app);
-	} else if (IsInside(app, pos) && app.colors.At(pos) != 0) {
+	} else if (app.state == State::kMove && IsInside(app, pos) &&
+		app.colors.At(pos) != 0)
+	{
+		app.state = State::kDone;
+		app.move = pos;
 		app.grid.UpdatePosition(0, pos);
 		ResetColors(app);
-		if (app.target != -1 && pos == app.grid.Displays()[app.target]) {
-			app.grid.UpdateDisplay(app.target, {-1, -1});
-			app.target = NextDisplay(app);
-		}
 	}
 }
 
@@ -308,9 +338,9 @@ void DrawDot(App& app, const sf::Vector2f& pos, bool active=false) {
 void DrawPrincesses(App& app) {
 	static const sf::Color colors[] = {
 		sf::Color(0xff, 0, 0),
-		sf::Color(0, 0xff, 0),
-		sf::Color(0xff, 0xff, 0),
-		sf::Color(0, 0, 0xff),
+		sf::Color(0x20, 0xcf, 0),
+		sf::Color(0xff, 0xef, 0x30),
+		sf::Color(0x60, 0x40, 0xff),
 	};
 
 	std::map<Point, int> pos_map;
@@ -333,11 +363,18 @@ void DrawPrincesses(App& app) {
 
 		for (int i = 0; i < 4; ++i) {
 			if (!!(p.second & (1<<i)) && i != app.self) {
+				auto color = colors[i];
 				auto dot = CreateDiamond(
 					sf::Vector2f(pos.x, pos.y) + float(k) * offset);
-				dot.setOutlineThickness(0.01f);
-				dot.setOutlineColor(sf::Color(0, 0, 0, 0x80));
-				dot.setFillColor(colors[i]);
+
+				color.a = 0x80;
+				dot.setOutlineThickness(-0.01f);
+				dot.setOutlineColor(
+					// color);
+					sf::Color(0, 0, 0, 0x80));
+				dot.setFillColor(
+					color);
+					// sf::Color(0xff, 0xff, 0xff,0x80));
 				app.window.draw(dot);
 				--k;
 			}
@@ -351,12 +388,22 @@ void DrawPrincesses(App& app) {
 			app.window.draw(dot);
 		}
 	}
+
+	if (1) {
+		// draw on extra tile
+		auto size = app.grid.Size();
+		auto dot = CreateDiamond(sf::Vector2f(size.x + 1, -1));
+		dot.setOutlineThickness(0.01f);
+		dot.setOutlineColor(sf::Color(0, 0, 0, 0x80));
+		dot.setFillColor(colors[app.self]);
+		app.window.draw(dot);
+	}
 }
 
 void DrawDisplays(App& app) {
 	int index = 0;
 	for (const auto& pos : app.grid.Displays()) {
-		if (pos.x != -1 || pos.y != -1) {
+		if (IsValid(pos)) {
 			auto dot = CreateSquare(sf::Vector2f(pos.x, pos.y));
 			dot.setOutlineThickness(0.01f);
 			dot.setOutlineColor(sf::Color(0, 0, 0, 0x40));
@@ -415,40 +462,81 @@ void Draw(App& app) {
 	window.display();
 }
 
+void NextPlayer(Game& game, App& app) {
+	game.player = (game.player + 1) % game.players;
+	if (game.player == 0) {
+		++game.tick;
+	}
 
-void Run(App& app) {
-	while (app.window.isOpen()) {
-		HandleEvents(app);
-		Draw(app);
+	app.grid = game.grid;
+	app.self = game.player;
+	app.target = NextDisplay(app.grid);
+	app.state = State::kPush;
+	app.extra = game.extras[game.player];
+	app.push = {};
+	app.move = {};
+	ResetColors(app);
+}
+
+void ApplyMove(Game& game, App& app) {
+	auto& extra = game.extras[game.player];
+	extra = game.grid.Push(app.push, extra);
+	if (IsValid(app.move)) {
+		// TODO: check if this is a valid move
+		auto target = app.target;
+		game.grid.UpdatePosition(game.player, app.move);
+		if (target != -1 && app.move == game.grid.Displays()[app.target]) {
+			game.grid.UpdateDisplay(target, {});
+		}
 	}
 }
 
+void Run(Game& game, App& app) {
+	while (app.window.isOpen()) {
+		HandleEvents(app);
+		Draw(app);
+		if (app.state == State::kDone) {
+			ApplyMove(game, app);
+			NextPlayer(game, app);
+		}
+	}
+}
+
+void InitGame(Game& game) {
+	game.displays = 3;
+	game.players = 4;
+	game.grid.Init(14, 8, game.displays, game.players);
+	game.grid.Randomize();
+
+	// players
+	game.extras.resize(game.players, Field(15));
+	game.grid.UpdatePosition(0, {0, 0});
+	game.grid.UpdatePosition(1, {0, 2});
+	game.grid.UpdatePosition(2, {0, 1});
+	game.grid.UpdatePosition(3, {0, 3});
+
+	// displays
+	game.grid.UpdateDisplay(0, {13, 5});
+	game.grid.UpdateDisplay(1, {4, 6});
+	game.grid.UpdateDisplay(2, {7, 1});
+}
 
 int main() {
-	App app;
-	app.grid.Init(14, 8, 3, 4);
-	app.grid.Randomize();
-	app.grid.UpdatePosition(0, {0, 0});
-	app.grid.UpdatePosition(1, {0, 2});
-	app.grid.UpdatePosition(2, {0, 1});
-	app.grid.UpdatePosition(3, {0, 3});
-
-	app.grid.UpdateDisplay(0, {13, 5});
-	app.grid.UpdateDisplay(1, {4, 6});
-	app.grid.UpdateDisplay(2, {7, 1});
-
+	Game game;
 	sf::ContextSettings settings;
 	settings.antialiasingLevel = 8;
 
+	App app;
 	app.window.create(
 		sf::VideoMode(1600, 1000), "Labirintus",
 		sf::Style::Default,
 		settings
 	);
 
-	ResetColors(app);
+	InitGame(game);
+	NextPlayer(game, app);
 	AdjustView(app);
-	Run(app);
+	Run(game, app);
 
 	return 0;
 }
