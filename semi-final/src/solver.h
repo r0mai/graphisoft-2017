@@ -17,7 +17,7 @@ public:
 	void end(const std::string& message);
 private:
 
-	ClientResponse MVPAI();
+	ClientResponse DoEagerTaxicab();
 
 	std::vector<std::string> ClientResponseToStrings(
 		const ClientResponse& response) const;

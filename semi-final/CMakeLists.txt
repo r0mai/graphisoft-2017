@@ -17,6 +17,8 @@ add_executable(labyrinth
     src/FloodFill.cpp
     src/Util.cpp
     src/Grid.cpp
+    src/AI.cpp
+    src/EagerTaxicab.cpp
 )
 
 
@@ -25,6 +27,8 @@ add_executable(glabyrinth
     src/Util.cpp
     src/Gui.cpp
     src/Grid.cpp
+    src/AI.cpp
+    src/EagerTaxicab.cpp
 )
 
 add_executable(test-labyrinth
@@ -32,6 +36,8 @@ add_executable(test-labyrinth
     src/solver.cpp
     src/FloodFill.cpp
     src/Util.cpp
+    src/AI.cpp
+    src/EagerTaxicab.cpp
     src/Grid.cpp
 )
 

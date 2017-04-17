@@ -3,6 +3,8 @@
 #include <iostream>
 #include <sstream>
 
+#include "EagerTaxicab.h"
+
 void solver::init(const std::vector<std::string>& field_infos) {
 	std::cerr << "We got these field informations:" << std::endl;
 
@@ -89,16 +91,12 @@ std::vector<std::string> solver::process(const std::vector<std::string>& tick_in
 		return {};
 	}
 
-	return ClientResponseToStrings(MVPAI());
+	return ClientResponseToStrings(DoEagerTaxicab());
 }
 
-ClientResponse solver::MVPAI() {
-	ClientResponse response;
-	response.push.direction = {-1, 0};
-	response.push.field = extra_field_;
-	response.move.target = grid_.Positions()[player_index_];
-
-	return response;
+ClientResponse solver::DoEagerTaxicab() {
+	EagerTaxicab ai(grid_, player_index_, target_display_, extra_field_);
+	return ai.GetResponse();
 }
 
 std::vector<std::string> solver::ClientResponseToStrings(
