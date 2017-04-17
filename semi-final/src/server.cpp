@@ -254,7 +254,7 @@ private:
 		std::cerr << "All clients logged in, starting the round" << std::endl;
 		for (; currentTick < maxTicks; ++currentTick) {
 			std::cerr << "Tick: " << currentTick << std::endl;
-			updateClients(yield);
+			runTick(yield);
 		}
 		for (auto& player: players) {
 			auto& client = player.second;
@@ -265,23 +265,24 @@ private:
 		}
 	}
 
-	void updateClients(asio::yield_context yield) {
-		int playerTurn = 0;
-		for (auto& player: players) {
-			std::cout << grid << std::endl;
-			updateClient(playerTurn, player.second, yield);
-			for (auto& otherPlayer: players) {
-				if (&otherPlayer == &player) {
+	void runTick(asio::yield_context yield) {
+		for (int currentPlayer=0; currentPlayer<playerCount; ++currentPlayer) {
+			std::cerr << "Current player is: " << players.at(currentPlayer).getTeamName() << std::endl;
+			std::cerr << "Informing them, and awaiting there move" << std::endl;
+			updateCurrentClient(players.at(currentPlayer), yield);
+			evaluateClientInstruction(players.at(currentPlayer), yield);
+			for(int i=0; i<playerCount; ++i) {
+				if (i == currentPlayer) {
 					continue;
 				}
-				updateClient(playerTurn, otherPlayer.second, yield);
+				std::cerr << "    updating other team: " << players.at(i).getTeamName() << std::endl;
+				updateClient(players.at(i), currentPlayer, true, yield);
 			}
-			++playerTurn;
 		}
 	}
 
-	void updateClient(int playerTurn, Client& client, asio::yield_context yield)
-	{
+	void updateClient(Client& client, int originatingPlayer, bool sendOver,
+			asio::yield_context yield) {
 		client.writeMessage(Message<int>(Command::Tick, {currentTick}), yield);
 		const auto& fields = grid.Fields().GetFields();
 		std::vector<int> intFields;
@@ -310,23 +311,24 @@ private:
 					Message<int>(Command::Position,
 							{playerId, position.x, position.y}), yield);
 		}
-
 		client.writeMessage(
-				Message<int>(Command::Player, {playerTurn}), yield);
-		// TODO: What does this do?
-		if (playerTurn == client.getId()) {
-			client.writeMessage(
-					Message<std::string>(Command::Message, {"OK"}), yield);
-			client.writeMessage(
-					Message<int>(Command::Target, {client.getTarget()}), yield);
-			client.writeMessage(
-					Message<int>(Command::ExtraField, {client.getExtraField()}),
-					yield);
-			client.writeMessage(Message<int>(Command::Over, {}), yield);
-			evaluateClientInstruction(client, yield);
-		} else {
+				Message<int>(Command::Player, {originatingPlayer}), yield);
+		if (sendOver) {
 			client.writeMessage(Message<int>(Command::Over, {}), yield);
 		}
+	}
+
+	void updateCurrentClient(Client& client, asio::yield_context yield) {
+		// TODO: What does this do?
+		updateClient(client, client.getId(), false, yield);
+		client.writeMessage(
+				Message<std::string>(Command::Message, {"OK"}), yield);
+		client.writeMessage(
+				Message<int>(Command::Target, {client.getTarget()}), yield);
+		client.writeMessage(
+				Message<int>(Command::ExtraField, {client.getExtraField()}),
+				yield);
+		client.writeMessage(Message<int>(Command::Over, {}), yield);
 	}
 
 	void evaluateClientInstruction(Client& client, asio::yield_context yield) {
