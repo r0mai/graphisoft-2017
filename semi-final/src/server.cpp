@@ -257,6 +257,15 @@ private:
 		std::cerr << "All clients logged in, starting the round" << std::endl;
 		for (; currentTick < maxTicks; ++currentTick) {
 			std::cerr << "Tick: " << currentTick << std::endl;
+			const auto& displays = grid.Displays();
+			std::size_t displaysAvailable =
+					std::count_if(displays.begin(), displays.end(),
+							&IsValid);
+			if (displaysAvailable == 0) {
+				std::cerr << "Ending match due to all displays being collected"
+						<< std::endl;
+				break;
+			}
 			runTick(yield);
 		}
 		for (auto& player: players) {
