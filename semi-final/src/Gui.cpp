@@ -526,15 +526,15 @@ void Run(Game& game, App& app) {
 	}
 }
 
-void InitGame(Game& game) {
+void InitGame(Game& game, int players) {
 	game.displays = 6;
-	game.players = 4;
+	game.players = players;
 	game.grid.Init(14, 8, game.displays, game.players);
 	game.grid.Randomize();
 	game.extras.resize(game.players, Field(15));
 }
 
-void HotSeat() {
+void HotSeat(int players) {
 	srand(10371);
 
 	Game game;
@@ -548,7 +548,7 @@ void HotSeat() {
 		settings
 	);
 
-	InitGame(game);
+	InitGame(game, players);
 	NextPlayer(game, app);
 	AdjustView(app);
 	Run(game, app);
@@ -618,7 +618,7 @@ int main(int argc, char* argv[]) {
 	po::options_description desc{"Allowed Options"};
 	desc.add_options()
 		("help,h", "this help message")
-		("hotseat,s", "hotseat mode")
+		("hotseat,s", po::value<int>()->value_name("N"), "hotseat mode with N players")
 		("host,H", po::value<std::string>(), "hostname to connect, defaults to localhost")
 		("team,t", po::value<std::string>(), "teamname to use during login")
 		("password,p", po::value<std::string>(), "password to use for authentication");
@@ -660,7 +660,8 @@ int main(int argc, char* argv[]) {
 
 
 	if (is_hotseat) {
-		HotSeat();
+		int players = vm["hotseat"].as<int>();
+		HotSeat(players);
 	} else {
 		try {
 			platform_dep::enable_socket _;
