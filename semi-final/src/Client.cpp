@@ -60,7 +60,20 @@ void Client::SendMessages(const std::vector<std::string>& messages) {
 }
 
 std::vector<std::string> Client::ReceiveMessage() {
-	std::string buffer(512, '\0');
+	std::vector<std::string> result;
+	std::string buffer;
+
+	std::stringstream consumer(received_buffer_);
+	while(std::getline(consumer, buffer)) {
+		if(buffer == ".") {
+			received_buffer_ = consumer.str().substr(consumer.tellg());
+			return result;
+		} else if(!buffer.empty()) {
+			result.push_back(buffer);
+		}
+	}
+
+	buffer = std::string(512, '\0');
 
 	int received_bytes = recv(socket_handler_.get_handler(), &buffer[0], 512, 0);
 
@@ -73,19 +86,7 @@ std::vector<std::string> Client::ReceiveMessage() {
 		return std::vector<std::string>();
 	}
 
-	std::vector<std::string> result;
-
-	std::stringstream consumer(received_buffer_ + buffer.c_str());
-	while(std::getline(consumer, buffer)) {
-		if(buffer == ".") {
-			received_buffer_ = consumer.str().substr(consumer.tellg());
-			return result;
-		} else if(!buffer.empty()) {
-			result.push_back(buffer);
-		}
-	}
-
-	received_buffer_ = consumer.str();
+	received_buffer_ += buffer.c_str();
 	return ReceiveMessage();
 }
 
