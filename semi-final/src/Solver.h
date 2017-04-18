@@ -21,6 +21,7 @@ class Solver {
 public:
 	using Callback = std::function<void(const Response&)>;
 
+	virtual ~Solver() {}
 	virtual void Init(int player) = 0;
 	virtual void Shutdown() = 0;
 	virtual void Update(const Grid& grid, int player) = 0;

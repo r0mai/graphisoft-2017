@@ -17,6 +17,11 @@
 #include <cstdlib>
 #include <SFML/Graphics.hpp>
 #include <boost/program_options.hpp>
+#include <chrono>
+
+
+using Clock = std::chrono::steady_clock;
+using Duration = std::chrono::duration<double>;
 
 
 struct Game {
@@ -36,7 +41,14 @@ enum class State {
 	kPush,
 	kMove,
 	kDone,
-	kGameOver
+	kGameOver,
+	kAnimatePush
+};
+
+class Animation {
+public:
+	virtual ~Animation() {}
+	virtual bool Animate(Duration delta_time) = 0;
 };
 
 struct App {
@@ -52,9 +64,58 @@ struct App {
 	int self = 0;
 	int target = 0;
 
+	std::vector<float> row_delta;
+	std::vector<float> col_delta;
+
+	struct Anims {
+		Clock::time_point start_t;
+		std::unique_ptr<Animation> push;
+	} anim;
+
 	Response response;
 };
 
+class AnimatePush : public Animation {
+public:
+	AnimatePush(App& app, const Point& edge, Field extra, Duration duration)
+		: app_(app)
+		, duration_(duration)
+		, extra_(extra)
+		, edge_(edge)
+	{
+		dest_ = (edge.x == -1 || edge.y == -1 ? 1.f : -1.f);
+		if (edge.x == -1 || edge.x == app.grid.Width()) {
+			var_ = &app.row_delta[edge.y];
+		} else {
+			var_ = &app.col_delta[edge.x];
+		}
+	}
+
+	static void Add(App& app, const Point& push, Field extra, Duration duration) {
+		app.anim.push = std::make_unique<AnimatePush>(app, push, extra, duration);
+		app.anim.start_t = Clock::now();
+	}
+
+	bool Animate(Duration delta_time) override {
+		if (delta_time >= duration_) {
+			*var_ = 0.f;
+			app_.response.push.edge = edge_;
+			app_.response.push.field = extra_;
+			app_.extra = app_.grid.Push(edge_, extra_);
+			return false;
+		}
+		*var_ = dest_ * delta_time / duration_;
+		return true;
+	}
+
+private:
+	App& app_;
+	Field extra_;
+	Point edge_;
+	Duration duration_;
+	float* var_ = nullptr;
+	float dest_ = 0;
+};
 
 void AdjustView(App& app) {
 	auto size = app.window.getSize();
@@ -161,6 +222,17 @@ void UpdateColors(App& app) {
 #endif
 }
 
+void ProcessAnimations(App& app) {
+	auto current_t = Clock::now();
+	if (app.state == State::kAnimatePush) {
+		if (!app.anim.push->Animate(current_t - app.anim.start_t)) {
+			app.state = State::kMove;
+			app.anim.push.reset();
+			UpdateColors(app);
+		}
+	}
+}
+
 void HandleMouseMoved(App& app, const sf::Event::MouseMoveEvent& ev) {
 	auto pos = RoundToTile(WindowToView(app, {ev.x, ev.y}));
 	app.hover = pos;
@@ -169,11 +241,8 @@ void HandleMouseMoved(App& app, const sf::Event::MouseMoveEvent& ev) {
 void HandleMousePressed(App& app, const sf::Event::MouseButtonEvent& ev) {
 	auto pos = RoundToTile(WindowToView(app, {ev.x, ev.y}));
 	if (app.state == State::kPush && IsEdge(app, pos)) {
-		app.state = State::kMove;
-		app.response.push.edge = pos;
-		app.response.push.field = app.extra;
-		app.extra = app.grid.Push(pos, app.extra);
-		UpdateColors(app);
+		app.state = State::kAnimatePush;
+		AnimatePush::Add(app, pos, app.extra, Duration(0.15));
 	} else if (app.state == State::kMove && IsInside(app, pos) &&
 		app.colors.At(pos) == 1)
 	{
@@ -338,9 +407,9 @@ void DrawTile(App& app, const sf::Vector2f& pos, Field tile, int color_id=0) {
 	if (color_id == 0) {
 		color = sf::Color(0xf0, 0xf0, 0xe0);
 	} else if (color_id == 1) {
-		color = sf::Color(0x10, 0xee, 0x10);
+		color = sf::Color(0xc4, 0xf9, 0x4f);
 	} else if (color_id != 0) {
-		color = HSVtoRGB(std::fmod(color_id * 11.3456, 60), 0.9, 0.7);
+		color = HSVtoRGB(std::fmod(color_id * 11.3456, 60), 0.45, 1);
 	}
 	route.setFillColor(color);
 
@@ -379,6 +448,7 @@ void DrawPrincesses(App& app) {
 		}
 
 		bool self = !!(p.second & (1<<app.self));
+		sf::Vector2f delta{app.row_delta[pos.y], app.col_delta[pos.x]};
 
 		int k = -1;
 		for (int i = 0; i < 4; ++i) {
@@ -389,7 +459,7 @@ void DrawPrincesses(App& app) {
 			if (!!(p.second & (1<<i)) && i != app.self) {
 				auto color = colors[i];
 				auto dot = CreateDiamond(
-					sf::Vector2f(pos.x, pos.y) + float(k) * offset);
+					sf::Vector2f(pos.x, pos.y) + delta + float(k) * offset);
 
 				color.a = 0x80;
 				dot.setOutlineThickness(-0.01f);
@@ -405,7 +475,7 @@ void DrawPrincesses(App& app) {
 		}
 
 		if (self) {
-			auto dot = CreateDiamond(sf::Vector2f(pos.x, pos.y));
+			auto dot = CreateDiamond(sf::Vector2f(pos.x, pos.y) + delta);
 			dot.setOutlineThickness(0.01f);
 			dot.setOutlineColor(sf::Color(0, 0, 0, 0x80));
 			dot.setFillColor(colors[app.self]);
@@ -424,11 +494,13 @@ void DrawPrincesses(App& app) {
 	}
 }
 
+
 void DrawDisplays(App& app) {
 	int index = 0;
 	for (const auto& pos : app.grid.Displays()) {
 		if (IsValid(pos)) {
-			auto dot = CreateSquare(sf::Vector2f(pos.x, pos.y));
+			sf::Vector2f delta{app.row_delta[pos.y], app.col_delta[pos.x]};
+			auto dot = CreateSquare(sf::Vector2f(pos.x, pos.y) + delta);
 			dot.setOutlineThickness(0.01f);
 			dot.setOutlineColor(sf::Color(0, 0, 0, 0x60));
 			dot.setFillColor(
@@ -457,7 +529,8 @@ void Draw(App& app) {
 	for (int y = 0; y < size.y; ++y) {
 		for (int x = 0; x < size.x; ++x) {
 			auto color_id = app.colors.At(x, y);
-			DrawTile(app, sf::Vector2f(x, y), app.grid.At(x, y), color_id);
+			sf::Vector2f pos(app.row_delta[y] + x, app.col_delta[x] + y);
+			DrawTile(app, pos, app.grid.At(x, y), color_id);
 		}
 	}
 
@@ -534,7 +607,9 @@ void ApplyMove(Game& game, App& app) {
 void Run(Game& game, App& app) {
 	while (app.window.isOpen()) {
 		HandleEvents(app);
+		ProcessAnimations(app);
 		Draw(app);
+
 		if (app.state == State::kDone) {
 			ApplyMove(game, app);
 			NextPlayer(game, app);
@@ -546,32 +621,43 @@ void Run(Game& game, App& app) {
 }
 
 void InitGame(Game& game, int players) {
-	game.displays = 6;
+	int w = 14, h = 8;
+	int max_d = w * h / 4;
+
+	game.displays = std::min(20, max_d);
 	game.players = players;
-	game.grid.Init(14, 8, game.displays, game.players);
+	game.grid.Init(w, h, game.displays, game.players);
 	game.grid.Randomize();
 	game.extras.resize(game.players, Field(15));
 	game.scores.resize(players);
 	game.remain = game.displays;
 }
 
-void HotSeat(int players) {
-	srand(10371);
-
-	Game game;
+void InitApp(const Game& game, App& app) {
 	sf::ContextSettings settings;
 	settings.antialiasingLevel = 8;
 
-	App app;
 	app.window.create(
 		sf::VideoMode(1600, 1000), "Labirintus",
 		sf::Style::Default,
 		settings
 	);
 
-	InitGame(game, players);
-	NextPlayer(game, app);
+	app.grid = game.grid;
+	app.row_delta.resize(app.grid.Height());
+	app.col_delta.resize(app.grid.Width());
+
 	AdjustView(app);
+}
+
+void HotSeat(int players) {
+	Game game;
+	App app;
+
+	srand(10371);
+	InitGame(game, players);
+	InitApp(game, app);
+	NextPlayer(game, app);
 	Run(game, app);
 }
 
