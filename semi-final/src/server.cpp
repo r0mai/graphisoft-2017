@@ -272,6 +272,7 @@ private:
 		for (int currentPlayer=0; currentPlayer<playerCount; ++currentPlayer) {
 			std::cerr << "Current player is: " << players.at(currentPlayer).getTeamName() << std::endl;
 			std::cerr << "Informing them, and awaiting there move" << std::endl;
+			std::cout << grid << std::endl;
 			updateCurrentClient(players.at(currentPlayer), yield);
 			evaluateClientInstruction(players.at(currentPlayer), yield);
 			for(int i=0; i<playerCount; ++i) {
