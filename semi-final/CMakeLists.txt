@@ -11,8 +11,8 @@ find_package(Boost 1.58 REQUIRED system context coroutine program_options)
 include_directories(${Boost_INCLUDE_DIRS})
 link_directories(${Boost_LIBRARY_DIRS})
 
-add_executable(labyrinth
-    src/main.cpp
+
+add_library(liblabyrinth STATIC
     src/Client.cpp
     src/FloodFill.cpp
     src/Util.cpp
@@ -20,22 +20,16 @@ add_executable(labyrinth
     src/EagerTaxicab.cpp
 )
 
+add_executable(labyrinth
+    src/main.cpp
+)
 
 add_executable(glabyrinth
-    src/FloodFill.cpp
-    src/Util.cpp
     src/Gui.cpp
-    src/Grid.cpp
-    src/Client.cpp
-    src/EagerTaxicab.cpp
 )
 
 add_executable(test-labyrinth
     src/test.cpp
-    src/FloodFill.cpp
-    src/Util.cpp
-    src/EagerTaxicab.cpp
-    src/Grid.cpp
 )
 
 add_executable(server
@@ -51,12 +45,20 @@ target_include_directories(glabyrinth PRIVATE
     ${BOOST_INCLUDEDIR}
 )
 target_link_libraries(glabyrinth
+    liblabyrinth
     ${SFML_LIBRARIES}
     ${Boost_PROGRAM_OPTIONS_LIBRARY}
 )
 
+target_link_libraries(test-labyrinth
+    liblabyrinth
+)
+
 target_include_directories(labyrinth PRIVATE ${BOOST_INCLUDEDIR})
-target_link_libraries(labyrinth ${Boost_PROGRAM_OPTIONS_LIBRARY})
+target_link_libraries(labyrinth
+    liblabyrinth
+    ${Boost_PROGRAM_OPTIONS_LIBRARY}
+)
 
 target_include_directories(server PRIVATE ${BOOST_INCLUDEDIR})
 target_link_libraries(server
