@@ -310,17 +310,14 @@ void Client::Run(Solver& solver) {
 
 	while (socket_handler_.valid()) {
 		boost::optional<std::vector<std::string>> input = CheckForMessage();
-		if (socket_handler_.valid()) {
-			if (input) {
-				firstUpdateReady = true;
-				if (!Process(*input, solver)) {
-					break;
-				}
-			} else {
-				if (firstUpdateReady) {
-					solver.Idle();
-				}
+		if (!input && firstUpdateReady) {
+			solver.Idle();
+		} else if (input && socket_handler_.valid()) {
+			firstUpdateReady = true;
+			if (!Process(*input, solver)) {
+				break;
 			}
+
 			if (opponent_) {
 				continue;
 			}
