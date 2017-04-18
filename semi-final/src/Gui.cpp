@@ -152,10 +152,11 @@ void ResetColors(App& app) {
 
 void UpdateColors(App& app) {
 	auto pos = app.grid.Positions()[app.self];
-#if 1
+#if 0
 	app.colors = FloodFill(app.grid.Fields(), pos);
 #else
-	app.colors = FullFloodFill(app.grid.Fields());
+	app.colors = FullFloodFill(app.grid.Fields(), 2);
+	FloodFillTo(app.colors, app.grid.Fields(), pos, 1);
 #endif
 }
 
@@ -173,7 +174,7 @@ void HandleMousePressed(App& app, const sf::Event::MouseButtonEvent& ev) {
 		app.extra = app.grid.Push(pos, app.extra);
 		UpdateColors(app);
 	} else if (app.state == State::kMove && IsInside(app, pos) &&
-		app.colors.At(pos) != 0)
+		app.colors.At(pos) == 1)
 	{
 		app.state = State::kDone;
 		app.response.move = pos;
@@ -362,8 +363,12 @@ void DrawTile(App& app, const sf::Vector2f& pos, Field tile, int color_id=0) {
 		sf::Color(0x80, 0x00, 0x26),
 	};
 
-	sf::Color color = sf::Color(0xf0, 0xf0, 0xe0);
-	if (color_id != 0) {
+	sf::Color color;
+	if (color_id == 0) {
+		color = sf::Color(0xf0, 0xf0, 0xe0);
+	} else if (color_id == 1) {
+		color = sf::Color(0x10, 0xee, 0x10);
+	} else if (color_id != 0) {
 		auto mod = color_id % colors.size();
 		if (mod < colors.size()) {
 			color = colors[mod];

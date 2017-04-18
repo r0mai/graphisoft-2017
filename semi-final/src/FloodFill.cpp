@@ -65,13 +65,13 @@ void FloodFillTo(
 	}
 }
 
-Matrix<int> FullFloodFill(const Matrix<Field>& fields) {
+Matrix<int> FullFloodFill(const Matrix<Field>& fields, int start_index) {
 	auto width = fields.Width();
 	auto height = fields.Height();
 
 	Matrix<int> fill_map{width, height, 0};
 
-	int color = 1;
+	int color = start_index;
 	for (int x = 0; x < fields.Width(); ++x) {
 		for (int y = 0; y < fields.Height(); ++y) {
 			if (fill_map.At(x, y) == 0) {

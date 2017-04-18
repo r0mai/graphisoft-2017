@@ -15,4 +15,4 @@ void FloodFillTo(
 	int fill_value = 1);
 
 // coordinates with the same integer value are reachable from each other
-Matrix<int> FullFloodFill(const Matrix<Field>& fields);
+Matrix<int> FullFloodFill(const Matrix<Field>& fields, int start_index = 1);
