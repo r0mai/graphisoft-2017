@@ -67,11 +67,34 @@ void Grid::Init(int width, int height, int displays, int players) {
 }
 
 void Grid::Randomize() {
+	int fx[] = {1, 3, 3, 3, 1};		// frequencies of different tiles
+	int kx[] = {1, 3, 7, 5, 15};	// tiles
+
+	int ftotal = 0;
+	for (auto f : fx) {
+		ftotal += f;
+	}
+
 	auto width = fields_.Width();
 	auto height = fields_.Height();
 	for (int x = 0; x < width; ++x) {
 		for (int y = 0; y < height; ++y) {
-			fields_.At(x, y) = Field(1 + (rand() % 15));
+			// random tile weighted w/ frequency
+			int rnd = rand() % ftotal;
+			int k = 0;
+			for (auto f : fx) {
+				if (rnd < f) { break; }
+				rnd -= f;
+				++k;
+			}
+
+			// random rotate
+			Field cc = Field(kx[k]);
+			for (int i = rand() % 4; i-- > 0;) {
+				cc = RotateLeft(cc);
+			}
+
+			fields_.At(x, y) = cc;
 		}
 	}
 
