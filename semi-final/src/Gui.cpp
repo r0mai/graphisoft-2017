@@ -21,18 +21,21 @@
 struct Game {
 	Grid grid;
 	std::vector<Field> extras;
+	std::vector<int> scores;
 	int tick = -1;
 	int player = -1;
 
 	int players = 0;
 	int displays = 0;
+	int remain = 0;
 };
 
 enum class State {
 	kOpponent,
 	kPush,
 	kMove,
-	kDone
+	kDone,
+	kGameOver
 };
 
 struct App {
@@ -510,7 +513,14 @@ void ApplyMove(Game& game, App& app) {
 		if (target != -1 &&
 			app.response.move == game.grid.Displays()[app.target])
 		{
+			--game.remain;
+			++game.scores[game.player];
 			game.grid.UpdateDisplay(target, {});
+			std::cerr << "SCORES:";
+			for (auto x : game.scores) {
+				std::cerr << " " << x;
+			}
+			std::cerr << std::endl;
 		}
 	}
 }
@@ -522,6 +532,9 @@ void Run(Game& game, App& app) {
 		if (app.state == State::kDone) {
 			ApplyMove(game, app);
 			NextPlayer(game, app);
+			if (game.remain == 0) {
+				app.state = State::kGameOver;
+			}
 		}
 	}
 }
@@ -532,6 +545,8 @@ void InitGame(Game& game, int players) {
 	game.grid.Init(14, 8, game.displays, game.players);
 	game.grid.Randomize();
 	game.extras.resize(game.players, Field(15));
+	game.scores.resize(players);
+	game.remain = game.displays;
 }
 
 void HotSeat(int players) {
