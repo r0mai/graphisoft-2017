@@ -30,7 +30,7 @@
 #include <cmath>
 #include <algorithm>
 
-
+#include "Hsv2rgb.h"
 
 /*! \brief Convert RGB to HSV color space
 
@@ -134,4 +134,10 @@ void HSVtoRGB(float fH, float fS, float fV, float& fR, float& fG, float& fB) {
   fR += fM;
   fG += fM;
   fB += fM;
+}
+
+sf::Color HSVtoRGB(float fH, float fS, float fV) {
+	float r, g, b;
+	HSVtoRGB(fH, fS, fV, r, g, b);
+	return sf::Color{sf::Uint8(r * 255), sf::Uint8(g * 255), sf::Uint8(b * 255)};
 }
