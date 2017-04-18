@@ -84,14 +84,13 @@ void HandleKeypress(App& app, const sf::Event::KeyEvent& ev) {
 			app.extra = RotateRight(app.extra);
 			break;
 		case sf::Keyboard::P:
-			// if (app.state == State::kPush) {
-			// 	EagerTaxicab ai(app.grid, app.self, app.target, app.extra);
-			// 	auto response = ai.GetResponse();
-			// 	app.push = response.push.direction;
-			// 	app.move = response.move.target;
-			// 	app.field = response.push.field;
-			// 	app.state = State::kDone;
-			// }
+			if (app.state == State::kPush) {
+				EagerTaxicab solver;
+				solver.Init(app.self);
+				app.response = solver.SyncTurn(
+					app.grid, app.self, app.target, app.extra);
+				app.state = State::kDone;
+			}
 		default:
 			break;
 	}
@@ -193,9 +192,9 @@ void HandleEvents(App& app) {
 			case sf::Event::MouseMoved:
 				HandleMouseMoved(app, event.mouseMove);
 				break;
-            case sf::Event::MouseButtonPressed:
-                HandleMousePressed(app, event.mouseButton);
-                break;
+			case sf::Event::MouseButtonPressed:
+				HandleMousePressed(app, event.mouseButton);
+				break;
 			default:
 				break;
 		}
@@ -615,13 +614,11 @@ private:
 
 
 int main(int argc, char* argv[]) {
-#if 0
-	HotSeat();
-#else
 	namespace po = boost::program_options;
 	po::options_description desc{"Allowed Options"};
 	desc.add_options()
 		("help,h", "this help message")
+		("hotseat,s", "hotseat mode")
 		("host,H", po::value<std::string>(), "hostname to connect, defaults to localhost")
 		("team,t", po::value<std::string>(), "teamname to use during login")
 		("password,p", po::value<std::string>(), "password to use for authentication");
@@ -633,6 +630,8 @@ int main(int argc, char* argv[]) {
 		std::cerr << "error: " << e.what() << std::endl;
 		return 1;
 	}
+
+	bool is_hotseat = vm.count("hotseat");
 
 	int port = 42500;
 	std::string host_name = "localhost";
@@ -659,13 +658,18 @@ int main(int argc, char* argv[]) {
 	// 0 means here: server choose randomly 1 to 10
 	int task_id = argc > 1 ? std::atoi(argv[1]) : 0;
 
-    try {
-    	platform_dep::enable_socket _;
-		InteractiveSolver solver;
-	    Client(host_name, port, team_name, password, task_id).Run(solver);
-    } catch(std::exception& e) {
-        std::cerr << "Exception thrown. what(): " << e.what() << std::endl;
-    }
-#endif
+
+	if (is_hotseat) {
+		HotSeat();
+	} else {
+		try {
+			platform_dep::enable_socket _;
+			InteractiveSolver solver;
+			Client(host_name, port, team_name, password, task_id).Run(solver);
+		} catch(std::exception& e) {
+			std::cerr << "Exception thrown. what(): " << e.what() << std::endl;
+		}
+	}
+
 	return 0;
 }
