@@ -57,6 +57,8 @@ public:
 		id(id), socket(std::move(socket)) {
 		std::cerr << "Client logged in from: "
 				<< this->socket.remote_endpoint() << std::endl;
+		asio::ip::tcp::no_delay option{true};
+		this->socket.set_option(option);
 	}
 
 	void setTeamName(std::string teamName) {
