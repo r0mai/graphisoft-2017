@@ -4,6 +4,7 @@
 #include <string>
 #include <sstream>
 #include <vector>
+#include <boost/optional.hpp>
 
 
 class Client {
@@ -20,7 +21,11 @@ private:
 
 	void SendMessages(const std::vector<std::string>& messages);
 	std::vector<std::string> FromResponse(const Response& response) const;
+	boost::optional<std::vector<std::string>> CheckForMessage();
 	std::vector<std::string> ReceiveMessage();
+
+	void BlockUntilMessageArrives();
+	void BlockUntilMessageCanBeSent();
 
 	platform_dep::tcp_socket socket_handler_;
 	std::string received_buffer_;

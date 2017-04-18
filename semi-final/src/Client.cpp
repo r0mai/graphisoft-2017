@@ -2,6 +2,8 @@
 #include <vector>
 #include <iostream>
 
+#include "fcntl.h"
+#include "string.h"
 
 Client::Client(
 	const std::string& host_name, int port,
@@ -30,6 +32,10 @@ Client::Client(
 			" error code: " + std::to_string(socketerrno));
 	}
 
+	int flags = ::fcntl(socket_handler_.get_handler(), F_GETFL, 0);
+	flags |= O_NONBLOCK;
+	::fcntl(socket_handler_.get_handler(), F_SETFL, flags);
+
 	std::vector<std::string> login_messages;
 
 	login_messages.push_back(std::string("LOGIN ") + team_name + " " + password);
@@ -49,17 +55,21 @@ void Client::SendMessages(const std::vector<std::string>& messages) {
 	}
 	message += ".\n";
 
+	std::cerr << "Will try to send: " << message << std::endl;
+	BlockUntilMessageCanBeSent();
+	std::cerr << "Sending message now" << std::endl;
 	int sent_bytes = send(socket_handler_.get_handler(), message.c_str(), message.size(), 0);
 
 	if(sent_bytes != (int)message.size()) {
 		std::cerr << "Warning: Cannot sent message properly: " << message << std::endl;
+		std::cerr << "errno is: " << ::strerror(errno) << std::endl;
 		std::cerr << sent_bytes << " byte sent from " <<
 			message.size() << ". Closing connection." << std::endl;
 		socket_handler_.invalidate();
 	}
 }
 
-std::vector<std::string> Client::ReceiveMessage() {
+boost::optional<std::vector<std::string>> Client::CheckForMessage() {
 	std::vector<std::string> result;
 	std::string buffer;
 
@@ -78,8 +88,14 @@ std::vector<std::string> Client::ReceiveMessage() {
 	int received_bytes = recv(socket_handler_.get_handler(), &buffer[0], 512, 0);
 
 	switch(received_bytes) {
-	case -1:
-		std::cerr << "Error: recv failed!" << std::endl;
+	case -1: {
+		auto error = errno;
+		if (error == EAGAIN || error == EWOULDBLOCK) {
+			return boost::none;
+		}
+		std::cerr << "Error: recv failed due to something other than blocking!"
+				<< std::endl;
+	}
 	case 0:
 		std::cerr << "Connection closed." << std::endl;
 		socket_handler_.invalidate();
@@ -87,7 +103,44 @@ std::vector<std::string> Client::ReceiveMessage() {
 	}
 
 	received_buffer_ += buffer.c_str();
-	return ReceiveMessage();
+	return CheckForMessage();
+}
+
+std::vector<std::string> Client::ReceiveMessage() {
+	auto messages = CheckForMessage();
+	if (messages) {
+		return *messages;
+	}
+	BlockUntilMessageArrives();
+	messages = CheckForMessage();
+	assert(messages && "Block released yet messages not ready");
+	return *messages;
+}
+
+void Client::BlockUntilMessageArrives() {
+	::fd_set fds;
+	FD_ZERO(&fds);
+	FD_SET(socket_handler_.get_handler(), &fds);
+	auto rc = ::select(socket_handler_.get_handler() + 1,
+			&fds, nullptr, nullptr, nullptr);
+	if (rc == EINTR) {
+		std::cerr << "Interrupted system call" << std::endl;
+		assert(false && "I haven't figured out what to do heere");
+	}
+	assert(rc > 0 && "Nothing apart from EINTR should come");
+}
+
+void Client::BlockUntilMessageCanBeSent() {
+	::fd_set fds;
+	FD_ZERO(&fds);
+	FD_SET(socket_handler_.get_handler(), &fds);
+	auto rc = ::select(socket_handler_.get_handler() + 1,
+			nullptr, &fds, nullptr, nullptr);
+	if (rc == EINTR) {
+		std::cerr << "Interrupted system call" << std::endl;
+		assert(false && "I haven't figured out what to do heere");
+	}
+	assert(rc > 0 && "Nothing apart from EINTR should come");
 }
 
 void Client::Init(const std::vector<std::string>& field_infos, Solver& solver) {
@@ -253,11 +306,20 @@ void Client::Run(Solver& solver) {
 		Init(msg, solver);
 	}
 
+	bool firstUpdateReady = false;
+
 	while (socket_handler_.valid()) {
-		msg = ReceiveMessage();
+		boost::optional<std::vector<std::string>> input = CheckForMessage();
 		if (socket_handler_.valid()) {
-			if (!Process(msg, solver)) {
-				break;
+			if (input) {
+				firstUpdateReady = true;
+				if (!Process(*input, solver)) {
+					break;
+				}
+			} else {
+				if (firstUpdateReady) {
+					solver.Idle();
+				}
 			}
 			if (opponent_) {
 				continue;
@@ -268,8 +330,11 @@ void Client::Run(Solver& solver) {
 			}
 
 			if (socket_handler_.valid()) {
-				msg = FromResponse(response_);
-				SendMessages(msg);
+				if (input) {
+					// response_ only set if we read something and processed it
+					msg = FromResponse(response_);
+					SendMessages(msg);
+				}
 			}
 		}
 	}
