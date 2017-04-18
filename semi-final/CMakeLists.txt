@@ -26,6 +26,7 @@ add_executable(labyrinth
 
 add_executable(glabyrinth
     src/Gui.cpp
+    src/Hsv2rgb.cpp
 )
 
 add_executable(test-labyrinth
