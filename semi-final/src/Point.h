@@ -2,6 +2,7 @@
 #include <tuple>
 #include <cstdlib>
 #include <ostream>
+#include <algorithm>
 
 struct Point {
 	Point() = default;
@@ -32,4 +33,20 @@ inline bool IsValid(const Point& p) {
 
 inline int TaxicabDistance(const Point& a, const Point& b) {
 	return std::labs(a.x - b.x) + std::labs(a.y - b.y);
+}
+
+// [] style clamp
+inline Point Clamp(const Point& p, const Point& min, const Point& max) {
+	return {
+		std::max(min.x, std::min(p.x, max.x)),
+		std::max(min.y, std::min(p.y, max.y))
+	};
+}
+
+// [) style clamp
+inline Point Clamp2(const Point& p, const Point& min, const Point& max) {
+	return {
+		std::max(min.x, std::min(p.x, max.x-1)),
+		std::max(min.y, std::min(p.y, max.y-1))
+	};
 }

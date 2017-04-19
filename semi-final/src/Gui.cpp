@@ -267,11 +267,18 @@ void ResetColors(App& app) {
 
 void UpdateColors(App& app) {
 	auto pos = app.grid.Positions()[app.self];
-#if 1
+#if 0
 	app.colors = FloodFill(app.grid.Fields(), pos);
-#else
+#elif 0
 	app.colors = FullFloodFill(app.grid.Fields(), 2);
 	FloodFillTo(app.colors, app.grid.Fields(), pos, 1);
+#else
+	auto super_fill = SuperFloodFill(app.grid, pos, app.extra);
+	for (int y = 0; y < super_fill.Height(); ++y) {
+		for (int x = 0; x < super_fill.Width(); ++x) {
+			app.colors.At(x, y) = super_fill.At(x, y).colored ? 1 : 0;
+		}
+	}
 #endif
 }
 
