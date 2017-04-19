@@ -24,10 +24,19 @@ using Clock = std::chrono::steady_clock;
 using Duration = std::chrono::duration<double>;
 
 
+struct Action {
+	int player = -1;
+	int display = -1;
+	Point push;
+	Point move;
+	Field field;
+};
+
 struct Game {
 	Grid grid;
 	std::vector<Field> extras;
 	std::vector<int> scores;
+	std::vector<Action> undo_stack;
 	int tick = -1;
 	int player = -1;
 
@@ -43,7 +52,8 @@ enum class State {
 	kDone,
 	kGameOver,
 	kAnimatePush,
-	kAnimateMove
+	kAnimateMove,
+	kUndo
 };
 
 class Animation {
@@ -193,6 +203,12 @@ void HandleKeypress(App& app, const sf::Event::KeyEvent& ev) {
 					app, rp.move, Duration(0.5));
 				app.state = State::kAnimatePush;
 			}
+		case sf::Keyboard::U:
+			if (app.state == State::kPush) {
+				app.state = State::kUndo;
+			}
+			break;
+
 		default:
 			break;
 	}
@@ -615,12 +631,7 @@ void Draw(App& app) {
 	window.display();
 }
 
-void NextPlayer(Game& game, App& app) {
-	game.player = (game.player + 1) % game.players;
-	if (game.player == 0) {
-		++game.tick;
-	}
-
+void ResetAppState(const Game& game, App& app) {
 	app.grid = game.grid;
 	app.self = game.player;
 	app.target = NextDisplay(app.grid);
@@ -631,17 +642,75 @@ void NextPlayer(Game& game, App& app) {
 	ResetColors(app);
 }
 
+void NextPlayer(Game& game, App& app) {
+	game.player = (game.player + 1) % game.players;
+	if (game.player == 0) {
+		++game.tick;
+	}
+	ResetAppState(game, app);
+}
+
+void UndoMove(Game& game, App& app) {
+	if (game.undo_stack.empty()) {
+		app.state = State::kPush;
+		return;
+	}
+
+	auto undo = game.undo_stack.back();
+	game.undo_stack.pop_back();
+
+	if (undo.display >= 0) {
+		auto pos = game.grid.Positions()[undo.player];
+		game.grid.UpdateDisplay(undo.display, pos);
+		++game.remain;
+		--game.scores[undo.player];
+	}
+	if (IsValid(undo.move)) {
+		game.grid.UpdatePosition(undo.player, undo.move);
+	}
+	game.extras[undo.player] = game.grid.Push(undo.push, undo.field);
+
+	if (game.player == 0) {
+		--game.tick;
+	}
+	game.player = undo.player;
+	ResetAppState(game, app);
+}
+
+Point ReversePush(const Grid& grid, const Point& pos) {
+	Point rev = pos;
+	if (rev.x == -1) {
+		rev.x = grid.Width();
+	} else if (rev.x == grid.Width()) {
+		rev.x = -1;
+	} else if (rev.y == -1) {
+		rev.y = grid.Height();
+	} else if (rev.y == grid.Height()) {
+		rev.y = -1;
+	}
+	return rev;
+}
+
 void ApplyMove(Game& game, App& app) {
 	auto& extra = game.extras[game.player];
 	auto& push = app.response.push;
 	extra = game.grid.Push(push.edge, push.field);
+
+	Action undo;
+	undo.player = game.player;
+	undo.field = extra;
+	undo.push = ReversePush(game.grid, push.edge);
+
 	if (IsValid(app.response.move)) {
 		// TODO: check if this is a valid move
+		undo.move = game.grid.Positions()[game.player];
+
 		auto target = app.target;
 		game.grid.UpdatePosition(game.player, app.response.move);
 		if (target != -1 &&
 			app.response.move == game.grid.Displays()[app.target])
 		{
+			undo.display = app.target;
 			--game.remain;
 			++game.scores[game.player];
 			game.grid.UpdateDisplay(target, {});
@@ -652,6 +721,8 @@ void ApplyMove(Game& game, App& app) {
 			std::cerr << std::endl;
 		}
 	}
+
+	game.undo_stack.push_back(undo);
 }
 
 void Run(Game& game, App& app) {
@@ -659,6 +730,10 @@ void Run(Game& game, App& app) {
 		HandleEvents(app);
 		ProcessAnimations(app);
 		Draw(app);
+
+		if (app.state == State::kUndo) {
+			UndoMove(game, app);
+		}
 
 		if (app.state == State::kDone) {
 			ApplyMove(game, app);
