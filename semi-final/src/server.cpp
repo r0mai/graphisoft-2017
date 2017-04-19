@@ -283,7 +283,6 @@ private:
 			std::cerr << "Informing them, and awaiting there move" << std::endl;
 			std::cout << grid << std::endl;
 			updateCurrentClient(players.at(currentPlayer), yield);
-			evaluateClientInstruction(players.at(currentPlayer), yield);
 			for(int i=0; i<playerCount; ++i) {
 				if (i == currentPlayer) {
 					continue;
@@ -291,6 +290,7 @@ private:
 				std::cerr << "    updating other team: " << players.at(i).getTeamName() << std::endl;
 				updateClient(players.at(i), currentPlayer, true, yield);
 			}
+			evaluateClientInstruction(players.at(currentPlayer), yield);
 		}
 	}
 
