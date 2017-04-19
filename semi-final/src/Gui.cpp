@@ -833,6 +833,8 @@ public:
 			ProcessAnimations(app_);
 
 			if (app_.state == State::kDone && callback_) {
+				CheckDisplay();
+
 				app_.state = State::kOpponent;
 				ResetColors(app_);
 				callback_(app_.response);
@@ -846,6 +848,17 @@ public:
 	}
 
 private:
+	void CheckDisplay() {
+		// app_.grid.UpdatePosition(app_.self, app_.response.move);
+		if (app_.target != -1 &&
+			app_.response.move == app_.grid.Displays()[app_.target])
+		{
+			app_.grid.UpdateDisplay(app_.target, {});
+			++score_;
+			std::cerr << "SCORE = " << score_ << std::endl;
+		}
+	}
+
 	void ResetGrid(const Grid& grid) {
 		app_.grid = grid;
 		if (!has_grid_) {
@@ -855,6 +868,7 @@ private:
 		}
 	}
 
+	int score_ = 0;
 	bool has_grid_ = false;
 	App app_;
 	Callback callback_;
