@@ -152,7 +152,7 @@ void Client::Init(const std::vector<std::string>& field_infos, Solver& solver) {
 
 	int width = -1;
 	int height = -1;
-	int players = 4;
+	int players = 4; // max players
 	int displays = -1;
 
 	int level = -1;

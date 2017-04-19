@@ -52,6 +52,28 @@ int Grid::DisplayCount() const {
 	return displays_.size();
 }
 
+int Grid::ActiveDisplayCount() const {
+	int sum = 0;
+	for (auto x : displays_) {
+		if (IsValid(x)) {
+			++sum;
+		}
+	}
+	return sum;
+}
+
+int Grid::PlayerCount() const {
+	// note: positions_ might be initalized with more players than the
+	// actual player count
+	int sum = 0;
+	for (auto x : positions_) {
+		if (IsValid(x)) {
+			++sum;
+		}
+	}
+	return sum;
+}
+
 Point Grid::Size() const {
 	return {fields_.Width(), fields_.Height()};
 }

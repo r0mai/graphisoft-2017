@@ -801,9 +801,17 @@ public:
 		);
 	}
 
-	void Shutdown() override {}
+	void Shutdown() override {
+		std::cerr << "Final scores:" << std::endl;
+		for (int i = 0, ie = scores_.size(); i < ie; ++i) {
+			std::cerr << "Player " << i << ": " << scores_[i];
+			std::cerr << (app_.self == i ? " *" : "") << std::endl;
+		}
+
+	}
+
 	void Update(const Grid& grid, int player) override {
-		ResetGrid(grid);
+		ResetGrid(grid, player);
 
 		app_.target = -1;
 		app_.state = State::kOpponent;
@@ -814,7 +822,7 @@ public:
 	}
 
 	void Turn(const Grid& grid, int player, int target, Field field, Callback fn) override {
-		ResetGrid(grid);
+		ResetGrid(grid, player);
 
 		app_.target = target;
 		app_.state = State::kPush;
@@ -833,7 +841,7 @@ public:
 			ProcessAnimations(app_);
 
 			if (app_.state == State::kDone && callback_) {
-				CheckDisplay();
+				// CheckDisplay();
 
 				app_.state = State::kOpponent;
 				ResetColors(app_);
@@ -859,17 +867,48 @@ private:
 		}
 	}
 
-	void ResetGrid(const Grid& grid) {
+	void ResetGrid(const Grid& grid, int player) {
 		app_.grid = grid;
 		if (!has_grid_) {
 			has_grid_ = true;
 			app_.row_delta.resize(grid.Height());
 			app_.col_delta.resize(grid.Width());
+			scores_.resize(grid.PlayerCount());
+			displays_ = grid.ActiveDisplayCount();
 		}
+
+		auto displays = grid.ActiveDisplayCount();
+		if (displays < displays_) {
+			assert(displays == displays_ - 1);
+			displays_ = displays;
+			int player_count = grid.PlayerCount();
+			scores_[(player - 1 + player_count) % player_count] += 1;
+		}
+
+		UpdateTitle(player);
+	}
+
+	void UpdateTitle(int player) {
+		std::stringstream ss;
+
+		ss << "Player " << app_.self << " | Scores:";
+		for (int i = 0, ie = scores_.size(); i < ie; ++i) {
+			ss << " " << scores_[i];
+		}
+		ss << " | ";
+		if (player == app_.self) {
+			ss << " Your turn";
+		} else {
+			ss << " Waiting for Player " << player;
+		}
+
+		app_.window.setTitle(ss.str());
 	}
 
 	int score_ = 0;
 	bool has_grid_ = false;
+	int displays_ = 0;
+	std::vector<int> scores_;
 	App app_;
 	Callback callback_;
 };

@@ -12,7 +12,9 @@ class Grid {
 public:
 	int Width() const;
 	int Height() const;
+	int PlayerCount() const;
 	int DisplayCount() const;
+	int ActiveDisplayCount() const;
 	Point Size() const;
 	const Matrix<Field>& Fields() const;
 	const std::vector<Point>& Displays() const;
