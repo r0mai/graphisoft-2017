@@ -42,7 +42,8 @@ enum class State {
 	kMove,
 	kDone,
 	kGameOver,
-	kAnimatePush
+	kAnimatePush,
+	kAnimateMove
 };
 
 class Animation {
@@ -66,10 +67,12 @@ struct App {
 
 	std::vector<float> row_delta;
 	std::vector<float> col_delta;
+	sf::Vector2f player_delta;
 
 	struct Anims {
 		Clock::time_point start_t;
 		std::unique_ptr<Animation> push;
+		std::unique_ptr<Animation> move;
 	} anim;
 
 	Response response;
@@ -91,16 +94,9 @@ public:
 		}
 	}
 
-	static void Add(App& app, const Point& push, Field extra, Duration duration) {
-		app.anim.push = std::make_unique<AnimatePush>(app, push, extra, duration);
-		app.anim.start_t = Clock::now();
-	}
-
 	bool Animate(Duration delta_time) override {
 		if (delta_time >= duration_) {
 			*var_ = 0.f;
-			app_.response.push.edge = edge_;
-			app_.response.push.field = extra_;
 			app_.extra = app_.grid.Push(edge_, extra_);
 			return false;
 		}
@@ -115,6 +111,40 @@ private:
 	Duration duration_;
 	float* var_ = nullptr;
 	float dest_ = 0;
+};
+
+class AnimateMove : public Animation {
+public:
+	AnimateMove(App& app, Point move, Duration duration)
+		: app_(app)
+		, duration_(duration)
+		, move_(move)
+	{}
+
+	bool Animate(Duration delta_time) override {
+		if (!is_initialized_) {
+			auto current = app_.grid.Positions()[app_.self];
+			delta_ = sf::Vector2f(move_.x - current.x, move_.y - current.y);
+			is_initialized_ = true;
+		}
+
+		if (delta_time >= duration_) {
+			app_.player_delta = {};
+			app_.grid.UpdatePosition(app_.self, move_);
+			return false;
+		}
+		auto ratio = delta_time / duration_;
+		app_.player_delta.x = delta_.x * ratio;
+		app_.player_delta.y = delta_.y * ratio;
+		return true;
+	}
+
+private:
+	App& app_;
+	Point move_;
+	sf::Vector2f delta_;
+	Duration duration_;
+	bool is_initialized_ = false;
 };
 
 void AdjustView(App& app) {
@@ -152,9 +182,16 @@ void HandleKeypress(App& app, const sf::Event::KeyEvent& ev) {
 			if (app.state == State::kPush) {
 				EagerTaxicab solver;
 				solver.Init(app.self);
-				app.response = solver.SyncTurn(
+				auto rp = solver.SyncTurn(
 					app.grid, app.self, app.target, app.extra);
-				app.state = State::kDone;
+
+				app.response = rp;
+				app.anim.start_t = Clock::now();
+				app.anim.push = std::make_unique<AnimatePush>(
+					app, rp.push.edge, rp.push.field, Duration(0.15));
+				app.anim.move = std::make_unique<AnimateMove>(
+					app, rp.move, Duration(0.5));
+				app.state = State::kAnimatePush;
 			}
 		default:
 			break;
@@ -214,7 +251,7 @@ void ResetColors(App& app) {
 
 void UpdateColors(App& app) {
 	auto pos = app.grid.Positions()[app.self];
-#if 0
+#if 1
 	app.colors = FloodFill(app.grid.Fields(), pos);
 #else
 	app.colors = FullFloodFill(app.grid.Fields(), 2);
@@ -226,9 +263,17 @@ void ProcessAnimations(App& app) {
 	auto current_t = Clock::now();
 	if (app.state == State::kAnimatePush) {
 		if (!app.anim.push->Animate(current_t - app.anim.start_t)) {
-			app.state = State::kMove;
+			app.state = app.anim.move ? State::kAnimateMove : State::kMove;
+			app.anim.start_t = current_t; // for next animation
 			app.anim.push.reset();
 			UpdateColors(app);
+		}
+	} else if (app.state == State::kAnimateMove) {
+		if (!app.anim.move->Animate(current_t - app.anim.start_t)) {
+			app.state = State::kDone;
+			app.anim.start_t = current_t; // for next animation
+			app.anim.move.reset();
+			ResetColors(app);
 		}
 	}
 }
@@ -241,14 +286,18 @@ void HandleMouseMoved(App& app, const sf::Event::MouseMoveEvent& ev) {
 void HandleMousePressed(App& app, const sf::Event::MouseButtonEvent& ev) {
 	auto pos = RoundToTile(WindowToView(app, {ev.x, ev.y}));
 	if (app.state == State::kPush && IsEdge(app, pos)) {
+		app.response.push.edge = pos;
+		app.response.push.field = app.extra;
 		app.state = State::kAnimatePush;
-		AnimatePush::Add(app, pos, app.extra, Duration(0.15));
+		app.anim.push = std::make_unique<AnimatePush>(app, pos, app.extra, Duration(0.15));
+		app.anim.start_t = Clock::now();
 	} else if (app.state == State::kMove && IsInside(app, pos) &&
 		app.colors.At(pos) == 1)
 	{
-		app.state = State::kDone;
 		app.response.move = pos;
-		app.grid.UpdatePosition(app.self, pos);
+		app.state = State::kAnimateMove;
+		app.anim.move = std::make_unique<AnimateMove>(app, pos, Duration(0.5));
+		app.anim.start_t = Clock::now();
 		ResetColors(app);
 	}
 }
@@ -475,7 +524,8 @@ void DrawPrincesses(App& app) {
 		}
 
 		if (self) {
-			auto dot = CreateDiamond(sf::Vector2f(pos.x, pos.y) + delta);
+			auto dp = sf::Vector2f(pos.x, pos.y) + delta + app.player_delta;
+			auto dot = CreateDiamond(dp);
 			dot.setOutlineThickness(0.01f);
 			dot.setOutlineColor(sf::Color(0, 0, 0, 0x80));
 			dot.setFillColor(colors[app.self]);
