@@ -803,18 +803,19 @@ public:
 
 	void Shutdown() override {}
 	void Update(const Grid& grid, int player) override {
-		app_.grid = grid;
+		ResetGrid(grid);
+
 		app_.target = -1;
 		app_.state = State::kOpponent;
-		app_.extra = Field(15);	// FIXME
+		app_.extra = Field(15);	// FIXME: opponent's field should be calculated
 
-		// FIXME:
 		ResetColors(app_);
 		Draw(app_);
 	}
 
 	void Turn(const Grid& grid, int player, int target, Field field, Callback fn) override {
-		app_.grid = grid;
+		ResetGrid(grid);
+
 		app_.target = target;
 		app_.state = State::kPush;
 		app_.extra = field;
@@ -825,7 +826,12 @@ public:
 
 	void Idle() override {
 		if (app_.window.isOpen()) {
+			if (!has_grid_) {
+				return;
+			}
 			HandleEvents(app_);
+			ProcessAnimations(app_);
+
 			if (app_.state == State::kDone && callback_) {
 				app_.state = State::kOpponent;
 				ResetColors(app_);
@@ -840,6 +846,16 @@ public:
 	}
 
 private:
+	void ResetGrid(const Grid& grid) {
+		app_.grid = grid;
+		if (!has_grid_) {
+			has_grid_ = true;
+			app_.row_delta.resize(grid.Height());
+			app_.col_delta.resize(grid.Width());
+		}
+	}
+
+	bool has_grid_ = false;
 	App app_;
 	Callback callback_;
 };
