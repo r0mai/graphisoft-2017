@@ -32,6 +32,7 @@ void FloodFillExtend(
 	Matrix<int>& fill_matrix,
 	Matrix<Direction>& direction_matrix,
 	const Matrix<Field>& fields,
+	int origin_value = 1,
 	int fill_value = 1);
 
 // coordinates with the same integer value are reachable from each other

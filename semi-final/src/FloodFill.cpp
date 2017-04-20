@@ -39,53 +39,52 @@ void FloodFillPoints(
 	auto width = fields.Width();
 	auto height = fields.Height();
 
-	// zero origins back, so stuff don't break later
-	for (auto& p : origins) {
-		fill_matrix.At(p) = 0;
-	}
-
 	while (!origins.empty()) {
 		Point p = origins.back();
 		origins.pop_back();
-
-		// this check is performed in the ifs below as well,
-		// but the values behind origins can be already set
-		fill_matrix.At(p) = fill_value;
 
 		if (p.x + 1 < width &&
 			IsEastOpen(fields.At(p)) &&
 			IsWestOpen(fields.At(p.x + 1, p.y)))
 		{
-			if (fill_matrix.At({p.x + 1, p.y}) != fill_value) {
-				origins.push_back({p.x + 1, p.y});
-				direction_matrix.At({p.x + 1, p.y}) = Direction::Right;
+			auto u = Point{p.x + 1, p.y};
+			if (fill_matrix.At(u) == 0) {
+				origins.push_back(u);
+				direction_matrix.At(u) = Direction::Right;
+				fill_matrix.At(u) = fill_value;
 			}
 		}
 		if (p.x - 1 >= 0 &&
 			IsWestOpen(fields.At(p)) &&
 			IsEastOpen(fields.At(p.x - 1, p.y)))
 		{
-			if (fill_matrix.At({p.x - 1, p.y}) != fill_value) {
-				origins.push_back({p.x - 1, p.y});
-				direction_matrix.At({p.x - 1, p.y}) = Direction::Left;
+			auto u = Point{p.x - 1, p.y};
+			if (fill_matrix.At(u) == 0) {
+				origins.push_back(u);
+				direction_matrix.At(u) = Direction::Left;
+				fill_matrix.At(u) = fill_value;
 			}
 		}
 		if (p.y + 1 < height &&
 			IsSouthOpen(fields.At(p)) &&
 			IsNorthOpen(fields.At(p.x, p.y + 1)))
 		{
-			if (fill_matrix.At({p.x, p.y + 1}) != fill_value) {
-				origins.push_back({p.x, p.y + 1});
-				direction_matrix.At({p.x, p.y + 1}) = Direction::Up;
+			auto u = Point{p.x, p.y + 1};
+			if (fill_matrix.At(u) == 0) {
+				origins.push_back(u);
+				direction_matrix.At(u) = Direction::Up;
+				fill_matrix.At(u) = fill_value;
 			}
 		}
 		if (p.y - 1 >= 0 &&
 			IsNorthOpen(fields.At(p)) &&
 			IsSouthOpen(fields.At(p.x, p.y - 1)))
 		{
-			if (fill_matrix.At({p.x, p.y - 1}) != fill_value) {
-				origins.push_back({p.x, p.y - 1});
-				direction_matrix.At({p.x, p.y - 1}) = Direction::Down;
+			auto u = Point{p.x, p.y - 1};
+			if (fill_matrix.At(u) == 0) {
+				origins.push_back(u);
+				direction_matrix.At(u) = Direction::Down;
+				fill_matrix.At(u) = fill_value;
 			}
 		}
 	}
@@ -95,12 +94,13 @@ void FloodFillExtend(
 	Matrix<int>& fill_matrix,
 	Matrix<Direction>& direction_matrix,
 	const Matrix<Field>& fields,
+	int origin_value,
 	int fill_value)
 {
 	std::vector<Point> origins;
 	for (int x = 0; x < fields.Width(); ++x) {
 		for (int y = 0; y < fields.Height(); ++y) {
-			if (fill_matrix.At(x, y) == fill_value) {
+			if (fill_matrix.At(x, y) == origin_value) {
 				origins.push_back({x, y});
 			}
 		}
@@ -136,12 +136,14 @@ void SuperFloodFillInternal(
 	int depth,
 	int max_depth)
 {
-	FloodFillExtend(fill_matrix, direction_matrix, grid.Fields(), 1);
+	FloodFillExtend(fill_matrix, direction_matrix, grid.Fields(), depth-1, depth);
+
+	std::cout << fill_matrix << std::endl;
 
 	for (int y = 0; y < grid.Height(); ++y) {
 		for (int x = 0; x < grid.Width(); ++x) {
 			auto& m = chain.At(x, y);
-			if (!m.colored && fill_matrix.At(x, y) == 1) {
+			if (!m.colored && fill_matrix.At(x, y) != 0) {
 				m.colored = true;
 				m.pushes = pushes;
 			}
@@ -186,7 +188,7 @@ Matrix<MoveChain> SuperFloodFill(
 	std::vector<PushVariation> pushes;
 
 	SuperFloodFillInternal(
-		grid, extra, pushes, chain, fill_matrix, direction_matrix, 0, 1);
+		grid, extra, pushes, chain, fill_matrix, direction_matrix, 2, 3);
 
 	return chain;
 }
