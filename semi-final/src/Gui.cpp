@@ -263,17 +263,19 @@ int NextDisplay(const Grid& grid) {
 
 void ResetColors(App& app) {
 	app.colors = Matrix<int>(app.grid.Width(), app.grid.Height(), 0);
+	auto pos = app.grid.Positions()[app.self];
+	app.colors = StupidFloodFill(app.grid, pos, app.extra);
 }
 
 void UpdateColors(App& app) {
 	auto pos = app.grid.Positions()[app.self];
-#if 0
+#if 1
 	app.colors = FloodFill(app.grid.Fields(), pos);
 #elif 0
 	app.colors = FullFloodFill(app.grid.Fields(), 2);
 	FloodFillTo(app.colors, app.grid.Fields(), pos, 1);
 #else
-	app.colors = StupidFloodFill(app.grid, pos, app.extra);
+	// app.colors = StupidFloodFill(app.grid, pos, app.extra);
 #endif
 }
 
@@ -476,7 +478,7 @@ void DrawTile(App& app, const sf::Vector2f& pos, Field tile, int color_id=0) {
 	} else if (color_id == 1) {
 		color = sf::Color(0xc4, 0xf9, 0x4f);
 	} else if (color_id != 0) {
-		color = HSVtoRGB(std::fmod(color_id * 11.3456, 60), 0.45, 1);
+		color = HSVtoRGB(360 + 60 - 15 * color_id, 0.8, 1);
 	}
 	route.setFillColor(color);
 

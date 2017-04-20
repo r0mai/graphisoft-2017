@@ -2,6 +2,7 @@
 
 #include <stack>
 #include <cassert>
+#include <chrono>
 
 #include "Util.h"
 
@@ -126,51 +127,54 @@ void StupidFloodFillInternal(
 		return new_value;
 	};
 
-
 	if (depth >= max_depth) {
 		return;
 	}
 
 	auto bounds = Grow(GetBounds(colors), grid.Size());
 	auto varitions = GetPushVariations(bounds, grid.Size(), extra);
-	auto colors_copy = colors;
-	auto merged_colors = colors;
+	auto original_colors = colors;
 
 	for (auto& variation : varitions) {
 		pushes.push_back(variation);
 		auto new_extra = grid.Push(variation.edge, variation.tile);
-		colors.Rotate(variation.edge);
-		colors_copy.Rotate(variation.edge);
+		auto local_colors = original_colors;
+		auto current_colors = original_colors;
+		local_colors.Rotate(variation.edge);
+		current_colors.Rotate(variation.edge);
 
-		auto new_colors = colors_copy;
-		FloodFillExtend(new_colors, grid.Fields(), depth+1);
+		FloodFillExtend(current_colors, grid.Fields(), depth+1);
 
 		changed = false;
-		MergeMatrices(merged_colors, new_colors, fn);
+		MergeMatrices(local_colors, current_colors, fn);
 
-		if (changed) {
-			std::cout << variation.edge << " and " << variation.tile << std::endl;
-			std::cout << colors << std::endl;
-		}
+		StupidFloodFillInternal(grid, new_extra, local_colors, pushes, depth+1, max_depth);
 
-		StupidFloodFillInternal(grid, new_extra, colors, pushes, depth+1, max_depth);
-
-		colors_copy.RotateBack(variation.edge);
-		colors.RotateBack(variation.edge);
+		local_colors.RotateBack(variation.edge);
+		MergeMatrices(colors, local_colors, fn);
 		grid.Push(variation.opposite_edge, new_extra);
 		pushes.pop_back();
 	}
 }
 
 Matrix<int> StupidFloodFill(Grid grid, const Point& origin, Field extra) {
+	using Clock = std::chrono::steady_clock;
+	using Duration = std::chrono::duration<double>;
 	auto width = grid.Width();
 	auto height = grid.Height();
 
+	auto start_t = Clock::now();
 	Matrix<int> colors(width, height);
 	FloodFillTo(colors, grid.Fields(), origin, 1);
 
 	std::vector<PushVariation> pushes;
 	StupidFloodFillInternal(grid, extra, colors, pushes, 1, 3);
+	auto end_t = Clock::now();
+
+	std::cerr
+		<< "Delta T: "
+		<< std::chrono::duration_cast<std::chrono::milliseconds>(end_t - start_t).count()
+		<< " ms" << std::endl;
 
 	return colors;
 }
