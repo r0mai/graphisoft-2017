@@ -47,6 +47,7 @@ public:
 
 	T Push(const Point& pos, T value);
 	void Rotate(const Point& pos);
+	void RotateBack(const Point& pos);
 
 private:
 	int width_;
@@ -108,4 +109,19 @@ void Matrix<T>::Rotate(const Point& pos) {
 		opposite.y = 0;
 	}
 	Push(pos, At(opposite));
+}
+
+template<typename T>
+void Matrix<T>::RotateBack(const Point& pos) {
+	Point opposite = pos;
+	if (pos.x == -1) {
+		opposite.x = width_;
+	} else if (pos.x == width_) {
+		opposite.x = -1;
+	} else if (pos.y == -1) {
+		opposite.y = height_;
+	} else if (pos.y == height_) {
+		opposite.y = -1;
+	}
+	Rotate(opposite);
 }
