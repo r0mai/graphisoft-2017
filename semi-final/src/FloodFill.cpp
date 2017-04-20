@@ -116,6 +116,17 @@ void StupidFloodFillInternal(
 	int depth,
 	int max_depth)
 {
+	bool changed = false;
+	auto fn = [&changed](int base, int stuff) {
+		int new_value = base;
+		if (base == 0) { new_value = stuff; }
+		else if (stuff == 0) { new_value = base; }
+		else { new_value = std::min(base, stuff); }
+		if (new_value != base) { changed = true; }
+		return new_value;
+	};
+
+
 	if (depth >= max_depth) {
 		return;
 	}
@@ -123,6 +134,7 @@ void StupidFloodFillInternal(
 	auto bounds = Grow(GetBounds(colors), grid.Size());
 	auto varitions = GetPushVariations(bounds, grid.Size(), extra);
 	auto colors_copy = colors;
+	auto merged_colors = colors;
 
 	for (auto& variation : varitions) {
 		pushes.push_back(variation);
@@ -133,15 +145,13 @@ void StupidFloodFillInternal(
 		auto new_colors = colors_copy;
 		FloodFillExtend(new_colors, grid.Fields(), depth+1);
 
-		bool changed = false;
-		MergeMatrices(colors, new_colors, [&changed](int base, int stuff) {
-			int new_value = base;
-			if (base == 0) { new_value = stuff; }
-			else if (stuff == 0) { new_value = base; }
-			else { new_value = std::min(base, stuff); }
-			if (new_value != base) { changed = true; }
-			return new_value;
-		});
+		changed = false;
+		MergeMatrices(merged_colors, new_colors, fn);
+
+		if (changed) {
+			std::cout << variation.edge << " and " << variation.tile << std::endl;
+			std::cout << colors << std::endl;
+		}
 
 		StupidFloodFillInternal(grid, new_extra, colors, pushes, depth+1, max_depth);
 
@@ -160,7 +170,7 @@ Matrix<int> StupidFloodFill(Grid grid, const Point& origin, Field extra) {
 	FloodFillTo(colors, grid.Fields(), origin, 1);
 
 	std::vector<PushVariation> pushes;
-	StupidFloodFillInternal(grid, extra, colors, pushes, 1, 2);
+	StupidFloodFillInternal(grid, extra, colors, pushes, 1, 3);
 
 	return colors;
 }
