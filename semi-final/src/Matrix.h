@@ -4,6 +4,7 @@
 #include <vector>
 #include <cassert>
 #include <ostream>
+#include <algorithm>
 
 template<typename T>
 class Matrix {
@@ -48,6 +49,10 @@ public:
 	T Push(const Point& pos, T value);
 	void Rotate(const Point& pos);
 	void RotateBack(const Point& pos);
+
+	void Fill(const T& value) {
+		std::fill(fields_.begin(), fields_.end(), value);
+	}
 
 private:
 	int width_;

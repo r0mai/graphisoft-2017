@@ -2,6 +2,7 @@
 
 #include "Point.h"
 #include "Field.h"
+#include "Bounds.h"
 
 #include <vector>
 
@@ -21,4 +22,6 @@ struct PushVariation {
 	Field tile;
 };
 
+std::vector<PushVariation> GetPushVariations(
+	const Bounds& bounds, const Point& field_size, Field extra);
 std::vector<PushVariation> GetPushVariations(const Point& field_size, Field extra);

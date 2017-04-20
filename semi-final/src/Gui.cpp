@@ -267,11 +267,13 @@ void ResetColors(App& app) {
 
 void UpdateColors(App& app) {
 	auto pos = app.grid.Positions()[app.self];
-#if 1
+#if 0
 	app.colors = FloodFill(app.grid.Fields(), pos);
-#else
+#elif 0
 	app.colors = FullFloodFill(app.grid.Fields(), 2);
 	FloodFillTo(app.colors, app.grid.Fields(), pos, 1);
+#else
+	app.colors = StupidFloodFill(app.grid, pos, app.extra);
 #endif
 }
 

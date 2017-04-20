@@ -40,7 +40,15 @@ std::vector<Field> GetRotations(Field tile) {
 	return rotations;
 }
 
-std::vector<PushVariation> GetPushVariations(const Point& field_size, Field extra) {
+std::vector<PushVariation> GetPushVariations(
+	const Point& field_size, Field extra)
+{
+	return GetPushVariations({{0, 0}, field_size}, field_size, extra);
+}
+
+std::vector<PushVariation> GetPushVariations(
+	const Bounds& bounds, const Point& field_size, Field extra)
+{
 	int w = field_size.x;
 	int h = field_size.y;
 
@@ -49,7 +57,7 @@ std::vector<PushVariation> GetPushVariations(const Point& field_size, Field extr
 
 	auto rotations = GetRotations(extra);
 
-	for (int x = 0; x < w; ++x) {
+	for (int x = bounds.mins.x; x < bounds.maxs.x; ++x) {
 		for (Field f : rotations) {
 			{
 				v.tile = f;
@@ -65,7 +73,7 @@ std::vector<PushVariation> GetPushVariations(const Point& field_size, Field extr
 			}
 		}
 	}
-	for (int y = 0; y < h; ++y) {
+	for (int y = bounds.mins.y; y < bounds.maxs.y; ++y) {
 		for (Field f : rotations) {
 			{
 				v.tile = f;
