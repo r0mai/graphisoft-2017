@@ -137,12 +137,11 @@ void StupidFloodFillInternal(
 		MergeMatrices(colors, new_colors, [&changed](int base, int stuff) {
 			int new_value = base;
 			if (base == 0) { new_value = stuff; }
+			else if (stuff == 0) { new_value = base; }
 			else { new_value = std::min(base, stuff); }
 			if (new_value != base) { changed = true; }
 			return new_value;
 		});
-		std::cout << variation.edge << " and " << variation.tile << std::endl;
-		std::cout << new_colors << std::endl;
 
 		StupidFloodFillInternal(grid, new_extra, colors, pushes, depth+1, max_depth);
 
