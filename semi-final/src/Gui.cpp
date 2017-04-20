@@ -200,7 +200,7 @@ void HandleKeypress(App& app, const sf::Event::KeyEvent& ev) {
 				app.anim.push = std::make_unique<AnimatePush>(
 					app, rp.push.edge, rp.push.field, Duration(0.15));
 				app.anim.move = std::make_unique<AnimateMove>(
-					app, rp.move, Duration(0.5));
+					app, rp.move, Duration(0.25));
 				app.state = State::kAnimatePush;
 			}
 		case sf::Keyboard::U:
@@ -312,7 +312,7 @@ void HandleMousePressed(App& app, const sf::Event::MouseButtonEvent& ev) {
 	{
 		app.response.move = pos;
 		app.state = State::kAnimateMove;
-		app.anim.move = std::make_unique<AnimateMove>(app, pos, Duration(0.5));
+		app.anim.move = std::make_unique<AnimateMove>(app, pos, Duration(0.25));
 		app.anim.start_t = Clock::now();
 		ResetColors(app);
 	}
