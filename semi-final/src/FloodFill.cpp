@@ -117,13 +117,11 @@ void StupidFloodFillInternal(
 	int depth,
 	int max_depth)
 {
-	bool changed = false;
-	auto fn = [&changed](int base, int stuff) {
+	auto fn = [](int base, int stuff) {
 		int new_value = base;
 		if (base == 0) { new_value = stuff; }
 		else if (stuff == 0) { new_value = base; }
 		else { new_value = std::min(base, stuff); }
-		if (new_value != base) { changed = true; }
 		return new_value;
 	};
 
@@ -145,7 +143,6 @@ void StupidFloodFillInternal(
 
 		FloodFillExtend(current_colors, grid.Fields(), depth+1);
 
-		changed = false;
 		MergeMatrices(local_colors, current_colors, fn);
 
 		StupidFloodFillInternal(grid, new_extra, local_colors, pushes, depth+1, max_depth);
