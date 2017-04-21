@@ -197,10 +197,10 @@ void HandleKeypress(App& app, const sf::Event::KeyEvent& ev) {
 
 				app.response = rp;
 				app.anim.start_t = Clock::now();
-				app.anim.push = std::make_unique<AnimatePush>(
-					app, rp.push.edge, rp.push.field, Duration(0.15));
-				app.anim.move = std::make_unique<AnimateMove>(
-					app, rp.move, Duration(0.25));
+				app.anim.push.reset(new AnimatePush(
+					app, rp.push.edge, rp.push.field, Duration(0.15)));
+				app.anim.move.reset(new AnimateMove(
+					app, rp.move, Duration(0.25)));
 				app.state = State::kAnimatePush;
 			}
 		case sf::Keyboard::U:
