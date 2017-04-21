@@ -273,6 +273,7 @@ private:
 			std::cout << "Team: " << client.getTeamName() << " scored: "
 					<< client.getScore() << std::endl;
 			client.addMessage(Message<int>(Command::End, {client.getScore()}));
+			client.addMessage(Message<int>(Command::Over, {}));
 			client.sendMessages(yield);
 		}
 	}
