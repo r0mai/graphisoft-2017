@@ -83,9 +83,10 @@ boost::optional<std::vector<std::string>> Client::CheckForMessage() {
 		}
 	}
 
-	buffer = std::string(512, '\0');
+	int buf_size = 4096;
+	buffer = std::string(buf_size, '\0');
 
-	int received_bytes = recv(socket_handler_.get_handler(), &buffer[0], 512, 0);
+	int received_bytes = recv(socket_handler_.get_handler(), &buffer[0], buf_size, 0);
 
 	switch(received_bytes) {
 	case -1: {

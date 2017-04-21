@@ -11,19 +11,25 @@ int main(int argc, char** argv) {
 	namespace po = boost::program_options;
 	po::options_description desc{"Allowed Options"};
 	desc.add_options()
-		("help", "this help message")
-		("host", po::value<std::string>(), "hostname to connect to, defaults to localhost")
-		("teamname", po::value<std::string>(), "teamname to use during login")
-		("password", po::value<std::string>(), "password to use for authentication")
-		("level", po::value<int>(), "request level (defaults to random)") ;
+		("help,h", "this help message")
+		("host,H", po::value<std::string>(), "hostname to connect to, defaults to localhost")
+		("teamname,t", po::value<std::string>(), "teamname to use during login")
+		("password,p", po::value<std::string>(), "password to use for authentication")
+		("level,l", po::value<int>(), "request level (defaults to random)") ;
 
 	po::variables_map vm;
-	po::store(po::parse_command_line(argc, argv, desc), vm);
-	po::notify(vm);
+	try {
+		po::store(po::parse_command_line(argc, argv, desc), vm);
+		po::notify(vm);
+	} catch(std::exception& e) {
+		std::cerr << "error: " << e.what() << std::endl;
+		return 1;
+	}
+
 	/* config area */
 	std::string host_name = "localhost";
 	const unsigned short port = 42500;
-	std::string team_name = "taxicab";
+	std::string team_name = "the_hypnotoad";
 	std::string password = "******";
 	int level = 0;
 
