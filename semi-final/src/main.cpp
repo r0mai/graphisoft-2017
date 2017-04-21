@@ -14,7 +14,9 @@ int main(int argc, char** argv) {
 		("help", "this help message")
 		("host", po::value<std::string>(), "hostname to connect to, defaults to localhost")
 		("teamname", po::value<std::string>(), "teamname to use during login")
-		("password", po::value<std::string>(), "password to use for authentication");
+		("password", po::value<std::string>(), "password to use for authentication")
+		("level", po::value<int>(), "request level (defaults to random)") ;
+
 	po::variables_map vm;
 	po::store(po::parse_command_line(argc, argv, desc), vm);
 	po::notify(vm);
@@ -23,6 +25,7 @@ int main(int argc, char** argv) {
 	const unsigned short port = 42500;
 	std::string team_name = "taxicab";
 	std::string password = "******";
+	int level = 0;
 
 	if (vm.count("help")) {
 		std::cout << desc << std::endl;
@@ -41,15 +44,16 @@ int main(int argc, char** argv) {
 		password = vm["password"].as<std::string>();
 	}
 
-	// 0 means here: server choose randomly 1 to 10
-	const int task_id = argc > 1 ? std::atoi(argv[1]) : 0;
+	if (vm.count("level")) {
+		level = vm["level"].as<int>();
+	}
 
 	try {
 		platform_dep::enable_socket _;
 		EagerTaxicab solver;
 
 		Client(host_name.c_str(), port, team_name.c_str(),
-				password.c_str(), task_id).Run(solver);
+				password.c_str(), level).Run(solver);
 
 	} catch(std::exception& e) {
 		std::cerr << "Exception throwed. what(): " << e.what() << std::endl;
