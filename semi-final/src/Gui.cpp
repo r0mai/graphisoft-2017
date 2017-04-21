@@ -309,14 +309,14 @@ void HandleMousePressed(App& app, const sf::Event::MouseButtonEvent& ev) {
 		app.response.push.edge = pos;
 		app.response.push.field = app.extra;
 		app.state = State::kAnimatePush;
-		app.anim.push = std::make_unique<AnimatePush>(app, pos, app.extra, Duration(0.15));
+		app.anim.push.reset(new AnimatePush(app, pos, app.extra, Duration(0.15)));
 		app.anim.start_t = Clock::now();
 	} else if (app.state == State::kMove && IsInside(app, pos) &&
 		app.colors.At(pos) == 1)
 	{
 		app.response.move = pos;
 		app.state = State::kAnimateMove;
-		app.anim.move = std::make_unique<AnimateMove>(app, pos, Duration(0.25));
+		app.anim.move.reset(new AnimateMove(app, pos, Duration(0.25)));
 		app.anim.start_t = Clock::now();
 		ResetColors(app);
 	}
