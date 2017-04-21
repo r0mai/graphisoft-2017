@@ -19,6 +19,7 @@ add_library(liblabyrinth STATIC
     src/Grid.cpp
     src/EagerTaxicab.cpp
     src/Bounds.cpp
+    src/InputParser.cpp
 )
 
 add_executable(labyrinth

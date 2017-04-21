@@ -7,7 +7,8 @@
 
 Client::Client(
 	const std::string& host_name, int port,
-	const std::string& team_name, const std::string& password, int task_id) {
+	const std::string& team_name, const std::string& password,
+	const std::string& filename, int level) {
 
 	if(!socket_handler_.valid()) {
 		throw std::runtime_error("Error: Cannot open a socket!");
@@ -19,6 +20,7 @@ Client::Client(
 		throw std::runtime_error("Error: Cannot find host: " + host_name);
 	}
 
+	output_.open(filename);
 	sockaddr_in socket_address;
 	socket_address.sin_family = AF_INET;
 	socket_address.sin_port = htons(port);
@@ -40,8 +42,8 @@ Client::Client(
 
 	login_messages.push_back(std::string("LOGIN ") + team_name + " " + password);
 
-	if(1 <= task_id && task_id <= 10) {
-		login_messages.push_back("LEVEL " + std::to_string(task_id));
+	if(1 <= level && level <= 10) {
+		login_messages.push_back("LEVEL " + std::to_string(level));
 	}
 
 	SendMessages(login_messages);
@@ -144,121 +146,57 @@ void Client::BlockUntilMessageCanBeSent() {
 	assert(rc > 0 && "Nothing apart from EINTR should come");
 }
 
-void Client::Init(const std::vector<std::string>& field_infos, Solver& solver) {
+void Client::Init(const std::vector<std::string>& info_lines, Solver& solver) {
 	std::cerr << "We got these field informations:" << std::endl;
 
-	for (auto& info : field_infos) {
-		std::cerr << info << std::endl;
+	for (auto& line : info_lines) {
+		std::cerr << line << std::endl;
 	}
+	SaveInput(info_lines);
 
-	int width = -1;
-	int height = -1;
-	int players = 4; // max players
-	int displays = -1;
-
-	int level = -1;
-	int max_tick = -1;
-
-	for (auto& info : field_infos) {
-		std::stringstream ss(info);
-		std::string command;
-		ss >> command;
-		if (command == "MESSAGE") {
-			// nothing to do with this
-		} else if (command == "LEVEL") {
-			ss >> level;
-		} else if (command == "SIZE") {
-			ss >> width >> height;
-		} else if (command == "DISPLAYS") {
-			ss >> displays;
-		} else if (command == "PLAYER") {
-			ss >> player_index_;
-		} else if (command == "MAXTICK") {
-			ss >> max_tick;
-		} else {
-			std::cerr << "WARNING: unhandled command: " << command << std::endl;
-		}
-	}
-
-	assert(width > 0);
-	assert(height > 0);
-	assert(displays >= 0);
-	assert(max_tick > 0);
-	assert(player_index_ >= 0);
-
-	grid_.Init(width, height, displays, players);
-	solver.Init(player_index_);
+	auto info = parser_.ParseInit(info_lines);
+	solver.Init(info.player);
 }
 
-bool Client::Process(const std::vector<std::string>& tick_infos, Solver& solver) {
-	if (tick_infos.size() == 1 && tick_infos[0].find("END") == 0) {
-		std::cerr << "We got the end message: " << tick_infos[0] << std::endl;
+bool Client::Process(const std::vector<std::string>& info_lines, Solver& solver) {
+	SaveInput(info_lines);
+
+	auto info = parser_.ParseTurn(info_lines);
+
+	if (info.end) {
+		std::cerr << "We got the end message: " << info_lines[0] << std::endl;
 		solver.Shutdown();
 		return false;
 	}
 	std::cerr << "We got these tick informations:" << std::endl;
 
-	for (auto& info : tick_infos) {
-		std::cerr << info << std::endl;
+	for (auto& line : info_lines) {
+		std::cerr << line << std::endl;
 	}
 
-	int current_tick = -1;
-	int current_player = -1;
-	int target_display = -1;
-	int extra_field = -1;
+	grid_ = info.grid;
+	opponent_ = info.opponent;
 
-	grid_.ResetDisplays();
-	for (auto& info : tick_infos) {
-		std::stringstream ss(info);
-		std::string command;
-		ss >> command;
-		if (command == "MESSAGE") {
-			// nothing to do with this
-		} else if (command == "TICK") {
-			ss >> current_tick;
-		} else if (command == "FIELDS") {
-			std::vector<Field> fields(grid_.Width() * grid_.Height());
-			for (Field& f : fields) {
-				ss >> f;
-			}
-			grid_.UpdateFields(std::move(fields));
-		} else if (command == "DISPLAY") {
-			int index;
-			Point p;
-			ss >> index >> p.x >> p.y;
-			grid_.UpdateDisplay(index, p);
-		} else if (command == "POSITION") {
-			int index;
-			Point p;
-			ss >> index >> p.x >> p.y;
-			grid_.UpdatePosition(index, p);
-		} else if (command == "PLAYER") {
-			ss >> current_player;
-		} else if (command == "TARGET") {
-			ss >> target_display;
-		} else if (command == "EXTRAFIELD") {
-			ss >> extra_field;
-		}
-	}
-
-	assert(current_tick >= 0);
-	assert(current_player >= 0);
-	opponent_ = (player_index_ != current_player);
-
-	if (player_index_ != current_player) {
-		solver.Update(grid_, current_player);
+	if (opponent_) {
+		solver.Update(grid_, info.player);
 	} else {
-		assert(target_display >= 0);
-		assert(extra_field > 0);
-
 		wait_ = true;
-		solver.Turn(grid_, current_player, target_display, Field(extra_field),
+		solver.Turn(grid_, info.player, info.target, info.extra,
 			[&](const Response& response) {
 				wait_ = false;
 				response_ = response;
 			});
 	}
 	return true;
+}
+
+void Client::SaveInput(const std::vector<std::string>& lines) {
+	if (output_.is_open()) {
+		for (const auto& line : lines) {
+			output_ << line << std::endl;
+		}
+		output_ << ".\n";
+	}
 }
 
 std::vector<std::string> Client::FromResponse(const Response& response) const {

@@ -33,8 +33,6 @@ Response EagerTaxicab::GetResponse() {
 		grid_.Push(variation.opposite_edge, new_extra);
 	}
 
-	std::cout << "Push direction " << best_response.push.edge << std::endl;
-
 	return best_response;
 }
 

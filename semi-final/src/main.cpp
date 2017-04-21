@@ -15,7 +15,8 @@ int main(int argc, char** argv) {
 		("host,H", po::value<std::string>(), "hostname to connect to, defaults to localhost")
 		("teamname,t", po::value<std::string>(), "teamname to use during login")
 		("password,p", po::value<std::string>(), "password to use for authentication")
-		("level,l", po::value<int>(), "request level (defaults to random)") ;
+		("level,l", po::value<int>(), "request level (defaults to random)")
+		("output,o", po::value<std::string>(), "file to save server messages");
 
 	po::variables_map vm;
 	try {
@@ -31,6 +32,7 @@ int main(int argc, char** argv) {
 	const unsigned short port = 42500;
 	std::string team_name = "the_hypnotoad";
 	std::string password = "******";
+	std::string filename;
 	int level = 0;
 
 	if (vm.count("help")) {
@@ -54,12 +56,15 @@ int main(int argc, char** argv) {
 		level = vm["level"].as<int>();
 	}
 
+	if (vm.count("output")) {
+		filename = vm["output"].as<std::string>();
+	}
+
 	try {
 		platform_dep::enable_socket _;
 		EagerTaxicab solver;
 
-		Client(host_name.c_str(), port, team_name.c_str(),
-				password.c_str(), level).Run(solver);
+		Client(host_name, port, team_name, password, filename, level).Run(solver);
 
 	} catch(std::exception& e) {
 		std::cerr << "Exception throwed. what(): " << e.what() << std::endl;

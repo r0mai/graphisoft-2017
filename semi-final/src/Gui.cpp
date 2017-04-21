@@ -960,10 +960,6 @@ int main(int argc, char* argv[]) {
 		password = vm["password"].as<std::string>();
 	}
 
-	// 0 means here: server choose randomly 1 to 10
-	int task_id = argc > 1 ? std::atoi(argv[1]) : 0;
-
-
 	if (is_hotseat) {
 		int players = vm["hotseat"].as<int>();
 		HotSeat(players);
@@ -971,7 +967,7 @@ int main(int argc, char* argv[]) {
 		try {
 			platform_dep::enable_socket _;
 			InteractiveSolver solver;
-			Client(host_name, port, team_name, password, task_id).Run(solver);
+			Client(host_name, port, team_name, password).Run(solver);
 		} catch(std::exception& e) {
 			std::cerr << "Exception thrown. what(): " << e.what() << std::endl;
 		}
