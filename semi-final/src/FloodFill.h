@@ -3,6 +3,7 @@
 #include "Field.h"
 #include "Matrix.h"
 #include "Grid.h"
+#include "Util.h"
 
 // will contain 1 where origin is reachable (0 otherwise)
 Matrix<int> FloodFill(
@@ -11,18 +12,21 @@ Matrix<int> FloodFill(
 
 void FloodFillTo(
 	Matrix<int>& fill_matrix,
+	Matrix<Point>& parents,
 	const Matrix<Field>& fields,
 	const Point& origin,
 	int fill_value = 1);
 
 void FloodFillTo(
 	Matrix<int>& fill_matrix,
+	Matrix<Point>& parents,
 	const Matrix<Field>& fields,
 	std::vector<Point> origins,
 	int fill_value = 1);
 
 void FloodFillExtend(
 	Matrix<int>& fill_matrix,
+	Matrix<Point>& parents,
 	const Matrix<Field>& fields,
 	int fill_value = 1);
 
@@ -30,7 +34,12 @@ void FloodFillExtend(
 Matrix<int> FullFloodFill(const Matrix<Field>& fields, int start_index = 1);
 
 
-Matrix<int> StupidFloodFill(Grid grid, const Point& origin, Field extra);
+Matrix<int> StupidFloodFill(
+	Matrix<Point>& parents,
+	Matrix<std::vector<PushVariation>>& push_matrix,
+	Grid grid,
+	const Point& origin,
+	Field extra);
 
 template<typename F>
 void MergeMatrices(Matrix<int>& base, const Matrix<int>& stuff, F fn) {
@@ -40,3 +49,5 @@ void MergeMatrices(Matrix<int>& base, const Matrix<int>& stuff, F fn) {
 		}
 	}
 }
+
+void ShiftMatrixCoordinates(Matrix<Point>& parents, const Point& edge);

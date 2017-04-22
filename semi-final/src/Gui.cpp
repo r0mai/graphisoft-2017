@@ -281,9 +281,19 @@ int NextDisplay(const Grid& grid) {
 
 void ResetColors(App& app) {
 	app.colors = Matrix<int>(app.grid.Width(), app.grid.Height(), 0);
-#if 0
+#if 1
 	auto pos = app.grid.Positions()[app.self];
-	app.colors = StupidFloodFill(app.grid, pos, app.extra);
+	Matrix<Point> parents(app.grid.Width(), app.grid.Height());
+	Matrix<std::vector<PushVariation>> push_matrix(app.grid.Width(), app.grid.Height());
+	app.colors = StupidFloodFill(parents, push_matrix, app.grid, pos, app.extra);
+
+	for (auto target : app.grid.Displays()) {
+		std::cout << "Target " << target << ": ";
+		for (auto& push : push_matrix.At(target)) {
+			std::cout << push << ", ";
+		}
+		std::cout << std::endl;
+	}
 #endif
 }
 
