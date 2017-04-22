@@ -25,6 +25,9 @@
 using Clock = std::chrono::steady_clock;
 using Duration = std::chrono::duration<double>;
 
+const Duration kPushDuration = Duration(0.15);
+const Duration kMoveDuration = Duration(0.15);
+
 const sf::Color g_player_colors[] = {
 	sf::Color(0xff, 0, 0),
 	sf::Color(0x20, 0xcf, 0),
@@ -221,11 +224,9 @@ void ApplySolver(App& app, Solver& solver) {
 	app.state = State::kAnimatePush;
 	app.anim.start_t = Clock::now();
 	app.anim.push.reset(new AnimatePush(
-		app, rp.push.edge, rp.push.field, Duration(0.15),
-		State::kAnimateMove));
+		app, rp.push.edge, rp.push.field, kPushDuration, State::kAnimateMove));
 	app.anim.move.reset(new AnimateMove(
-		app, rp.move, Duration(0.25),
-		State::kDone));
+		app, rp.move, kMoveDuration, State::kDone));
 }
 
 void HandleKeypress(App& app, const sf::Event::KeyEvent& ev) {
@@ -386,7 +387,7 @@ void HandleMousePressed(App& app, const sf::Event::MouseButtonEvent& ev) {
 		app.response.push.field = app.extra;
 		app.state = State::kAnimatePush;
 		app.anim.push.reset(new AnimatePush(
-			app, pos, app.extra, Duration(0.15), State::kMove));
+			app, pos, app.extra, kPushDuration, State::kMove));
 		app.anim.start_t = Clock::now();
 	} else if (app.state == State::kMove && IsInside(app, pos) &&
 		app.colors.At(pos) == 1)
@@ -394,7 +395,7 @@ void HandleMousePressed(App& app, const sf::Event::MouseButtonEvent& ev) {
 		app.response.move = pos;
 		app.state = State::kAnimateMove;
 		app.anim.move.reset(new AnimateMove(
-			app, pos, Duration(0.25), State::kDone));
+			app, pos, kMoveDuration, State::kDone));
 		app.anim.start_t = Clock::now();
 		ResetColors(app);
 	}
@@ -817,10 +818,10 @@ void AnimateReplay(Game& game, App& app) {
 	app.anim.start_t = Clock::now();
 
 	app.anim.push.reset(new AnimatePush(
-		app, delta.edge, delta.extra, Duration(0.15), State::kAnimateMove));
+		app, delta.edge, delta.extra, kPushDuration, State::kAnimateMove));
 
 	app.anim.move.reset(new AnimateMove(
-		app, delta.move, Duration(0.25), State::kReplayDone));
+		app, delta.move, kMoveDuration, State::kReplayDone));
 }
 
 void AdvanceReplay(Game& game, App& app, int advance) {

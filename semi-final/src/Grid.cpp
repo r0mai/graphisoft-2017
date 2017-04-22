@@ -94,7 +94,7 @@ bool Grid::IsNeighbor(int player, int display) const {
 
 	return
 		(dx == 0 && (dy == 1 || dy == Height() - 1)) ||
-		(dy == 0 && (dx == 1 || dx == Width() - 1o));
+		(dy == 0 && (dx == 1 || dx == Width() - 1));
 }
 
 void Grid::Init(int width, int height, int displays, int players) {
