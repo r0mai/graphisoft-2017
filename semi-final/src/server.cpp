@@ -180,10 +180,10 @@ private:
 
 class Game {
 public:
-	Game(int maxPlayers, int maxTicks) :
+	Game(int maxPlayers, int maxTicks, int width, int height) :
 		maxPlayers(maxPlayers), maxTicks(maxTicks)
 	{
-		grid.Init(6, 7, 4, maxPlayers);
+		grid.Init(width, height, 4, maxPlayers);
 		grid.Randomize();
 	}
 
@@ -418,7 +418,10 @@ int main(int argc, const char** argv) {
 	desc.add_options()
 			("help", "this help message")
 			("players", po::value<int>(), "players to wait for before starting, defaults to 4")
-			("ticks", po::value<int>(), "ticks to run the game for, defaults to 10");
+			("ticks", po::value<int>(), "ticks to run the game for, defaults to 10")
+			("width", po::value<int>(), "width of maps, defaults to 6")
+			("height", po::value<int>(), "height of maps, defaults to 6")
+			;
 	po::variables_map vm;
 	po::store(po::parse_command_line(argc, argv, desc), vm);
 	po::notify(vm);
@@ -434,9 +437,17 @@ int main(int argc, const char** argv) {
 	if (vm.count("ticks")) {
 		maxTicks = vm["ticks"].as<int>();
 	}
+	int width = 6;
+	if (vm.count("width")) {
+		width = vm["width"].as<int>();
+	}
+	int height = 6;
+	if (vm.count("height")) {
+		height = vm["height"].as<int>();
+	}
 	for (;;) {
 		std::cerr << "Starting new game" << std::endl;
-		server::Game game{playersToWaitFor, maxTicks};
+		server::Game game{playersToWaitFor, maxTicks, width, height};
 		game.run();
 	}
 }
