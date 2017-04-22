@@ -133,10 +133,11 @@ void UpwindSailer::Turn(
 		response.push.edge =
 				getEdgeForRelativePush(grid, player, *direction);
 		this->grid.Push(response.push.edge, field);
-		const auto& position = grid.Positions()[player];
-		if (FloodFill(grid.Fields(), position).At(grid.Displays()[target])) {
+		const auto& position = this->grid.Positions()[player];
+		const auto& display = this->grid.Displays()[target];
+		if (FloodFill(this->grid.Fields(), position).At(display)) {
 			// Target is reachable
-			response.move = grid.Displays()[target];
+			response.move = display;
 		}
 	} else {
 		// Already on same row/column as target
