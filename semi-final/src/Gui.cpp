@@ -3,6 +3,7 @@
 #include "Util.h"
 #include "FloodFill.h"
 #include "EagerTaxicab.h"
+#include "UpwindSailer.h"
 #include "Solver.h"
 #include "Client.h"
 #include "Hsv2rgb.h"
@@ -211,6 +212,22 @@ void AdjustView(App& app) {
 	app.window.setView(sf::View(sf::FloatRect(-dx, -dy, w, h)));
 }
 
+void ApplySolver(App& app, Solver& solver) {
+	solver.Init(app.self);
+	auto rp = solver.SyncTurn(
+		app.grid, app.self, app.target, app.extra);
+
+	app.response = rp;
+	app.state = State::kAnimatePush;
+	app.anim.start_t = Clock::now();
+	app.anim.push.reset(new AnimatePush(
+		app, rp.push.edge, rp.push.field, Duration(0.15),
+		State::kAnimateMove));
+	app.anim.move.reset(new AnimateMove(
+		app, rp.move, Duration(0.25),
+		State::kDone));
+}
+
 void HandleKeypress(App& app, const sf::Event::KeyEvent& ev) {
 	switch (ev.code) {
 		case sf::Keyboard::Space:
@@ -227,20 +244,15 @@ void HandleKeypress(App& app, const sf::Event::KeyEvent& ev) {
 		case sf::Keyboard::P:
 			if (app.state == State::kPush) {
 				EagerTaxicab solver;
-				solver.Init(app.self);
-				auto rp = solver.SyncTurn(
-					app.grid, app.self, app.target, app.extra);
-
-				app.response = rp;
-				app.state = State::kAnimatePush;
-				app.anim.start_t = Clock::now();
-				app.anim.push.reset(new AnimatePush(
-					app, rp.push.edge, rp.push.field, Duration(0.15),
-					State::kAnimateMove));
-				app.anim.move.reset(new AnimateMove(
-					app, rp.move, Duration(0.25),
-					State::kDone));
+				ApplySolver(app, solver);
 			}
+			break;
+		case sf::Keyboard::K:
+			if (app.state == State::kPush) {
+				UpwindSailer solver;
+				ApplySolver(app, solver);
+			}
+			break;
 		case sf::Keyboard::U:
 			if (app.state == State::kPush) {
 				app.state = State::kUndo;
