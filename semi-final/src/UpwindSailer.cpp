@@ -122,28 +122,29 @@ void UpwindSailer::Update(const Grid&, int) {
 }
 
 void UpwindSailer::Turn(
-		const Grid& grid, int player, int target, Field field, Callback fn) {
+		const Grid& newGrid, int player, int target, Field field, Callback fn) {
 	(void)player;
 	assert(player == this->player);
-	this->grid = grid;
+	this->grid = newGrid;
 	this->target_display = target;
 	boost::optional<Direction> direction = inchCloser(grid, player, target);
 	Response response{{{-1, -1}, field}, {-1, -1}};
 	if (direction) {
 		response.push.edge =
 				getEdgeForRelativePush(grid, player, *direction);
-		this->grid.Push(response.push.edge, field);
-		const auto& position = this->grid.Positions()[player];
-		const auto& display = this->grid.Displays()[target];
-		if (FloodFill(this->grid.Fields(), position).At(display)) {
-			// Target is reachable
-			response.move = display;
-		}
 	} else {
 		// Already on same row/column as target
 		boost::optional<Direction> evasion = evade(grid, player, target);
 		assert(evasion);
 		response.push.edge = getEdgeForRelativePush(grid, player, *evasion);
+	}
+	// TODO: Put field in in such a way that it is useful
+	grid.Push(response.push.edge, field);
+	const auto& position = grid.Positions()[player];
+	const auto& display = grid.Displays()[target];
+	if (FloodFill(grid.Fields(), position).At(display)) {
+		// Target is reachable
+		response.move = display;
 	}
 	fn(response);
 }
