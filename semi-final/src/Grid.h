@@ -19,6 +19,7 @@ public:
 	const Matrix<Field>& Fields() const;
 	const std::vector<Point>& Displays() const;
 	const std::vector<Point>& Positions() const;
+	bool IsNeighbor(int player, int display) const;
 
 	void Init(int width, int height, int displays, int players);
 	void Randomize();
@@ -30,6 +31,7 @@ public:
 	Field Push(const Point& pos, Field t);
 	Field Push(int c, int p, int k, Field t);
 
+
 	struct Delta {
 		Point edge;
 		Field extra = Field(0);
@@ -37,11 +39,13 @@ public:
 		bool scored = false;
 	};
 
-	// Calculates the move that led from {grid, extra} to this.
+	// @return 	the move that led from {grid, extra} to this.
 	Delta Diff(const Grid& grid, Field extra, int player) const;
 
-	// Calculates the tile that is missing after extra was pushed to grid.
+	// @return	the tile that is missing after extra was pushed to grid
 	Field TileDiff(const Grid& grid, Field extra) const;
+
+	// @return 	true if a single display got deactivated compared to the other
 	bool ScoreDiff(const Grid& grid) const;
 
 private:

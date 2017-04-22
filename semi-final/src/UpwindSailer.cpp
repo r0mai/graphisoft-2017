@@ -1,6 +1,7 @@
 #include "UpwindSailer.h"
 
 #include "FloodFill.h"
+#include "Util.h"
 
 #include <boost/optional.hpp>
 
@@ -105,9 +106,96 @@ Point getEdgeForRelativePush(const Grid& grid,
 			assert(false);
 	}
 
-
 	return Point{x, y};
 }
+
+Response::Push solveEdge(const Grid& grid, int player, int target, Field field) {
+	auto playerPos = grid.Positions()[player];
+	auto targetPos = grid.Displays()[target];
+	auto size = grid.Size();
+
+	if (playerPos.x == targetPos.x) {
+		auto x = playerPos.x;
+		auto yMin = std::min(playerPos.y, targetPos.y);
+		auto yMax = std::max(playerPos.y, targetPos.y);
+		auto split = (yMin == 0 && yMax == size.y - 1);
+
+		if (!split) {
+			if (yMin == 0) {
+				return {Point{x, size.y}, SouthFacing(field)};
+			} else {
+				return {Point{x, -1}, NorthFacing(field)};
+			}
+		} else {
+			if (IsNorthOpen(grid.At(x, yMin))) {
+				return {Point{x, -1}, SouthFacing(field)};
+			} else {
+				return {Point{x, size.y}, NorthFacing(field)};
+			}
+		}
+	}
+
+	if (playerPos.y == targetPos.y) {
+		auto y = playerPos.y;
+		auto xMin = std::min(playerPos.x, targetPos.x);
+		auto xMax = std::max(playerPos.x, targetPos.x);
+		auto split = (xMin == 0 && xMax == size.x - 1);
+
+		if (!split) {
+			if (xMin == 0) {
+				return {Point{size.x, y}, EastFacing(field)};
+			} else {
+				return {Point{-1, y}, WestFacing(field)};
+			}
+		} else {
+			if (IsWestOpen(grid.At(xMin, y))) {
+				return {Point{-1, y}, EastFacing(field)};
+			} else {
+				return {Point{size.x, y}, WestFacing(field)};
+			}
+		}
+	}
+
+	assert(false && "Should not be here");
+	return {};
+}
+
+
+Response::Push unwrap(const Grid& grid, int player, int target, Field field) {
+	assert(grid.IsNeighbor(player, target));
+	auto playerPos = grid.Positions()[player];
+	auto targetPos = grid.Displays()[target];
+	auto size = grid.Size();
+	Response::Push push;
+	push.field = field;
+
+	if (playerPos.x == targetPos.x) {
+		auto backDistance = std::min(playerPos.y, targetPos.y);
+		auto forwDistance = size.y - 1 - std::max(playerPos.y, targetPos.y);
+
+		if (backDistance == 0 || forwDistance == 0) {
+			push = solveEdge(grid, player, target, field);
+		} else {
+			push.edge.x = playerPos.x;
+			push.edge.y = (forwDistance < backDistance ? -1 : size.y);
+		}
+	} else if (playerPos.y == targetPos.y) {
+		auto backDistance = std::min(playerPos.x, targetPos.x);
+		auto forwDistance = size.x - 1 - std::max(playerPos.x, targetPos.x);
+
+		if (backDistance == 0 || forwDistance == 0) {
+			push = solveEdge(grid, player, target, field);
+		} else {
+			push.edge.y = playerPos.y;
+			push.edge.x = (forwDistance < backDistance ? -1 : size.x);
+		}
+	} else {
+		assert(false && "Something went wrong");
+	}
+
+	return push;
+}
+
 
 } // anonymous namespace
 
@@ -127,19 +215,24 @@ void UpwindSailer::Turn(
 	assert(player == this->player);
 	this->grid = newGrid;
 	this->target_display = target;
+
+	Response response;
+	response.push.field = field;
 	boost::optional<Direction> direction = inchCloser(grid, player, target);
-	Response response{{{-1, -1}, field}, {-1, -1}};
+
 	if (direction) {
 		response.push.edge =
 				getEdgeForRelativePush(grid, player, *direction);
+	} else if (grid.IsNeighbor(player, target)) {
+		response.push = unwrap(grid, player, target, field);
 	} else {
 		// Already on same row/column as target
 		boost::optional<Direction> evasion = evade(grid, player, target);
 		assert(evasion);
 		response.push.edge = getEdgeForRelativePush(grid, player, *evasion);
 	}
-	// TODO: Put field in in such a way that it is useful
-	grid.Push(response.push.edge, field);
+
+	grid.Push(response.push.edge, response.push.field);
 	const auto& position = grid.Positions()[player];
 	const auto& display = grid.Displays()[target];
 	if (FloodFill(grid.Fields(), position).At(display)) {

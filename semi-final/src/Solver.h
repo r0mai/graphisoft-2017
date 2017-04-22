@@ -8,7 +8,7 @@
 
 
 struct Response {
-	struct {
+	struct Push {
 		Point edge;
 		Field field;
 	} push;

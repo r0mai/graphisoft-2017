@@ -33,6 +33,34 @@ Field Normalize(Field tile) {
 	return Field(normalized[tile]);
 }
 
+Field NorthFacing(Field tile) {
+	while (!IsNorthOpen(tile)) {
+		tile = RotateLeft(tile);
+	}
+	return tile;
+}
+
+Field SouthFacing(Field tile) {
+	while (!IsSouthOpen(tile)) {
+		tile = RotateLeft(tile);
+	}
+	return tile;
+}
+
+Field WestFacing(Field tile) {
+	while (!IsWestOpen(tile)) {
+		tile = RotateLeft(tile);
+	}
+	return tile;
+}
+
+Field EastFacing(Field tile) {
+	while (!IsEastOpen(tile)) {
+		tile = RotateLeft(tile);
+	}
+	return tile;
+}
+
 std::vector<Field> GetRotations(Field tile) {
 	assert(int(tile) >= 1 && int(tile) <= 15);
 	std::vector<Field> rotations;

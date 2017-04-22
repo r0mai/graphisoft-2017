@@ -15,6 +15,11 @@ Field RotateLeft(Field tile);
 Field RotateRight(Field tile);
 Field Normalize(Field tile);
 
+Field NorthFacing(Field tile);
+Field SouthFacing(Field tile);
+Field WestFacing(Field tile);
+Field EastFacing(Field tile);
+
 std::vector<Field> GetRotations(Field tile);
 
 struct PushVariation {

@@ -82,6 +82,21 @@ const std::vector<Point>& Grid::Displays() const {
 	return displays_;
 }
 
+bool Grid::IsNeighbor(int player, int display) const {
+	if (!IsValid(displays_[display])) {
+		return false;
+	}
+
+	auto p = positions_[player];
+	auto q = displays_[display];
+	auto dx = std::abs(p.x - q.x);
+	auto dy = std::abs(p.y - q.y);
+
+	return
+		(dx == 0 && (dy == 1 || dy == Height())) ||
+		(dy == 0 && (dx == 1 || dx == Width()));
+}
+
 void Grid::Init(int width, int height, int displays, int players) {
 	fields_ = Matrix<Field>(width, height, Field(0));
 	displays_.resize(displays, {-1, -1});
