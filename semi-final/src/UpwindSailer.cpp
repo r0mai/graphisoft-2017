@@ -34,7 +34,7 @@ boost::optional<Direction> inchCloser(const Grid& grid, int player, int target)
 	auto dy = displayPosition.y - playerPosition.y;
 
 	// Prefer large distances to arrive at the diagonal
-	if (dx <= dy) {
+	if (std::abs(dx) >= std::abs(dy)) {
 		return Direction{dx>0?1:-1, 0};
 	} else {
 		return Direction{0, dy>0?1:-1};
