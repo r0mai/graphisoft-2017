@@ -92,3 +92,8 @@ std::vector<PushVariation> GetPushVariations(
 
 	return variations;
 }
+
+std::ostream& operator<<(std::ostream& os, const PushVariation& push) {
+	os << "(" << push.edge << ", " << push.tile << ")";
+	return os;
+}

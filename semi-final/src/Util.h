@@ -25,3 +25,5 @@ struct PushVariation {
 std::vector<PushVariation> GetPushVariations(
 	const Bounds& bounds, const Point& field_size, Field extra);
 std::vector<PushVariation> GetPushVariations(const Point& field_size, Field extra);
+
+std::ostream& operator<<(std::ostream& os, const PushVariation& push);
