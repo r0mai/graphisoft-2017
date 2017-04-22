@@ -1,5 +1,7 @@
 #include "UpwindSailer.h"
 
+#include "FloodFill.h"
+
 #include <boost/optional.hpp>
 
 namespace {
@@ -128,9 +130,14 @@ void UpwindSailer::Turn(
 	boost::optional<Direction> direction = inchCloser(grid, player, target);
 	Response response{{{-1, -1}, field}, {-1, -1}};
 	if (direction) {
-		// TODO: See if we can move closer by using our GOTO
 		response.push.edge =
 				getEdgeForRelativePush(grid, player, *direction);
+		this->grid.Push(response.push.edge, field);
+		const auto& position = grid.Positions()[player];
+		if (FloodFill(grid.Fields(), position).At(grid.Displays()[target])) {
+			// Target is reachable
+			response.move = grid.Displays()[target];
+		}
 	} else {
 		// Already on same row/column as target
 		boost::optional<Direction> evasion = evade(grid, player, target);
