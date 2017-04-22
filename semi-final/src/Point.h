@@ -26,8 +26,10 @@ inline bool IsValid(const Point& p) {
 	return p.x != -1 || p.y != -1;
 }
 
-inline int TaxicabDistance(const Point& a, const Point& b) {
-	return std::labs(a.x - b.x) + std::labs(a.y - b.y);
+inline int TaxicabDistance(const Point& a, const Point& b, const Point& size) {
+	auto dx = std::abs(a.x - b.x);
+	auto dy = std::abs(a.y - b.y);
+	return std::min(dx, size.x - dx) + std::min(dy, size.y - dy);
 }
 
 inline std::ostream& operator<<(std::ostream& os, const Point& p) {

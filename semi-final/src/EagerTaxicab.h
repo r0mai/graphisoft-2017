@@ -17,6 +17,6 @@ private:
 
 	Grid grid_;
 	Field extra_;
-	int player_;
-	int target_display_;
+	int player_ = -1;
+	int target_ = -1;
 };
