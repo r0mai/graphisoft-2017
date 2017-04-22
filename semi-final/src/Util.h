@@ -27,3 +27,12 @@ std::vector<PushVariation> GetPushVariations(
 std::vector<PushVariation> GetPushVariations(const Point& field_size, Field extra);
 
 std::ostream& operator<<(std::ostream& os, const PushVariation& push);
+
+template<typename F>
+void ForEachPoint(const Point& size, F fn) {
+	for (int y = 0; y < size.y; ++y) {
+		for (int x = 0; x < size.x; ++x) {
+			fn(Point{x, y});
+		}
+	}
+}
