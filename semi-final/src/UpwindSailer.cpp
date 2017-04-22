@@ -211,11 +211,16 @@ void UpwindSailer::Update(const Grid&, int) {
 
 void UpwindSailer::Turn(
 		const Grid& newGrid, int player, int target, Field field, Callback fn) {
-	(void)player;
-	assert(player == this->player);
-	this->grid = newGrid;
-	this->target_display = target;
+	auto response = UpwindSailerStep(newGrid, player, target, field);
+	fn(response);
+}
 
+void UpwindSailer::Idle() {
+}
+
+
+Response UpwindSailerStep(const Grid& newGrid, int player, int target, Field field) {
+	auto grid = newGrid;
 	Response response;
 	response.push.field = field;
 	boost::optional<Direction> direction = inchCloser(grid, player, target);
@@ -239,8 +244,5 @@ void UpwindSailer::Turn(
 		// Target is reachable
 		response.move = display;
 	}
-	fn(response);
-}
-
-void UpwindSailer::Idle() {
+	return response;
 }

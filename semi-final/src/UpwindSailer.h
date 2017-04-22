@@ -15,3 +15,5 @@ private:
 	int player;
 	int target_display;
 };
+
+Response UpwindSailerStep(const Grid& newGrid, int player, int target, Field field);

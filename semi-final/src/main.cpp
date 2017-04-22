@@ -1,4 +1,5 @@
 #include "EagerTaxicab.h"
+#include "UpwindSailer.h"
 #include "Client.h"
 #include <iostream>
 #include <vector>
@@ -62,8 +63,11 @@ int main(int argc, char** argv) {
 
 	try {
 		platform_dep::enable_socket _;
+#if 0
+		UpwindSailer solver;
+#else
 		EagerTaxicab solver;
-
+#endif
 		Client(host_name, port, team_name, password, filename, level).Run(solver);
 
 	} catch(std::exception& e) {
