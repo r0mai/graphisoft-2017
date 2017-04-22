@@ -39,7 +39,18 @@ boost::optional<Direction> inchCloser(const Grid& grid, int player, int target)
 	} else {
 		return Direction{0, dy>0?1:-1};
 	}
+}
 
+boost::optional<Direction> evade(const Grid& grid, int player, int target)
+{
+	const auto& playerPosition = grid.Positions()[player];
+	if (areWeAndTargetInSameRow(grid, player, target)) {
+		return Direction{0, playerPosition.x == grid.Height() -1?-1:1};
+	}
+	if (areWeAndTargetInSameColumn(grid, player, target)) {
+		return Direction{playerPosition.y == grid.Width() -1?-1:1, 0};
+	}
+	return boost::none;
 }
 
 Point getEdgeForRelativePush(const Grid& grid,
@@ -105,16 +116,18 @@ void UpwindSailer::Turn(
 	this->grid = grid;
 	this->target_display = target;
 	boost::optional<Direction> direction = inchCloser(grid, player, target);
+	Response response{{{-1, -1}, field}, {-1, -1}};
 	if (direction) {
 		// TODO: See if we can move closer by using our GOTO
-		Response response{{{-1, -1}, field}, {-1, -1}};
 		response.push.edge =
 				getEdgeForRelativePush(grid, player, *direction);
-		fn(response);
 	} else {
 		// Already on same row/column as target
-		std::cerr << "On same row/column" << std::endl;
+		boost::optional<Direction> evasion = evade(grid, player, target);
+		assert(evasion);
+		response.push.edge = getEdgeForRelativePush(grid, player, *evasion);
 	}
+	fn(response);
 }
 
 void UpwindSailer::Idle() {
