@@ -54,6 +54,13 @@ public:
 		std::fill(fields_.begin(), fields_.end(), value);
 	}
 
+	bool operator==(const Matrix& other) {
+		return
+			width_ == other.width_ &&
+			height_ == other.height_ &&
+			fields_ == other.fields_;
+	}
+
 private:
 	int width_;
 	int height_;

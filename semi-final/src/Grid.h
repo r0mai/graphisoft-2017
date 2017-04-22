@@ -30,6 +30,20 @@ public:
 	Field Push(const Point& pos, Field t);
 	Field Push(int c, int p, int k, Field t);
 
+	struct Delta {
+		Point edge;
+		Field extra = Field(0);
+		Point move;
+		bool scored = false;
+	};
+
+	// Calculates the move that led from {grid, extra} to this.
+	Delta Diff(const Grid& grid, Field extra, int player) const;
+
+	// Calculates the tile that is missing after extra was pushed to grid.
+	Field TileDiff(const Grid& grid, Field extra) const;
+	bool ScoreDiff(const Grid& grid) const;
+
 private:
 	std::vector<Point> displays_;
 	std::vector<Point> positions_;

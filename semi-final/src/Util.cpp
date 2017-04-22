@@ -26,6 +26,13 @@ Field RotateRight(Field tile) {
     return Field(((tile & 1) << 3) + (tile >> 1));
 }
 
+Field Normalize(Field tile) {
+	static const int normalized[] = {
+		0, 1, 1, 3, 1, 5, 3, 7, 1, 3, 5, 7, 3, 7, 7, 15
+	};
+	return Field(normalized[tile]);
+}
+
 std::vector<Field> GetRotations(Field tile) {
 	assert(int(tile) >= 1 && int(tile) <= 15);
 	std::vector<Field> rotations;

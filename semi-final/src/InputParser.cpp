@@ -2,6 +2,10 @@
 #include "Point.h"
 #include <sstream>
 
+InputParser::InputParser()
+	: extras_(4, Field(15))
+	, scores_(4, 0)
+{}
 
 FieldInfo InputParser::ParseInit(const std::vector<std::string>& info_lines) {
 	FieldInfo info;
@@ -81,6 +85,10 @@ TurnInfo InputParser::ParseTurn(const std::vector<std::string>& info_lines) {
 		}
 	}
 
+	if (info.extra == Field(0)) {
+		info.extra = extras_[info.player];
+	}
+
 	assert(info.tick >= 0);
 	assert(info.player >= 0);
 	info.opponent = info.player != field_info_.player;
@@ -88,8 +96,22 @@ TurnInfo InputParser::ParseTurn(const std::vector<std::string>& info_lines) {
 		assert(info.target >= 0);
 		assert(info.extra > 0);
 	}
+
+	if (prev_turn_.tick >= 0) {
+		auto& prev_extra = extras_[prev_turn_.player];
+		prev_extra = info.grid.TileDiff(prev_turn_.grid, prev_extra);
+		auto scored = info.grid.ScoreDiff(prev_turn_.grid);
+		if (scored) {
+			++scores_[prev_turn_.player];
+		}
+	}
+	info.scores = scores_;
+
+	prev_turn_ = info;
 	return info;
 }
+
+
 
 std::vector<std::string> InputParser::FromStream(std::istream& stream) {
 	std::vector<std::string> lines;

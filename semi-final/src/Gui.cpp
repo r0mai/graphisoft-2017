@@ -24,6 +24,20 @@
 using Clock = std::chrono::steady_clock;
 using Duration = std::chrono::duration<double>;
 
+const sf::Color g_player_colors[] = {
+	sf::Color(0xff, 0, 0),
+	sf::Color(0x20, 0xcf, 0),
+	sf::Color(0xff, 0xef, 0x30),
+	sf::Color(0x60, 0x40, 0xff),
+};
+
+std::string g_player_names[] = {
+	"Red",
+	"Green",
+	"Yellow",
+	"Blue"
+};
+
 
 struct Action {
 	int player = -1;
@@ -59,6 +73,7 @@ enum class State {
 	kAnimateMove,
 	kUndo,
 	kReplay,
+	kReplayDone,
 	kReplayNext,
 	kReplayBack
 };
@@ -67,6 +82,7 @@ class Animation {
 public:
 	virtual ~Animation() {}
 	virtual bool Animate(Duration delta_time) = 0;
+	virtual State EndState() const = 0;
 };
 
 struct App {
@@ -97,11 +113,12 @@ struct App {
 
 class AnimatePush : public Animation {
 public:
-	AnimatePush(App& app, const Point& edge, Field extra, Duration duration)
+	AnimatePush(App& app, const Point& edge, Field extra, Duration duration, State state)
 		: app_(app)
 		, duration_(duration)
 		, extra_(extra)
 		, edge_(edge)
+		, end_state_(state)
 	{
 		dest_ = (edge.x == -1 || edge.y == -1 ? 1.f : -1.f);
 		if (edge.x == -1 || edge.x == app.grid.Width()) {
@@ -121,10 +138,15 @@ public:
 		return true;
 	}
 
+	State EndState() const override {
+		return end_state_;
+	}
+
 private:
 	App& app_;
 	Field extra_;
 	Point edge_;
+	State end_state_;
 	Duration duration_;
 	float* var_ = nullptr;
 	float dest_ = 0;
@@ -132,15 +154,17 @@ private:
 
 class AnimateMove : public Animation {
 public:
-	AnimateMove(App& app, Point move, Duration duration)
+	AnimateMove(App& app, Point move, Duration duration, State state)
 		: app_(app)
 		, duration_(duration)
 		, move_(move)
+		, end_state_(state)
 	{}
 
 	bool Animate(Duration delta_time) override {
 		if (!is_initialized_) {
 			auto current = app_.grid.Positions()[app_.self];
+			if (move_ == Point{}) { move_ = current; }
 			delta_ = sf::Vector2f(move_.x - current.x, move_.y - current.y);
 			is_initialized_ = true;
 		}
@@ -156,10 +180,15 @@ public:
 		return true;
 	}
 
+	State EndState() const override {
+		return end_state_;
+	}
+
 private:
 	App& app_;
 	Point move_;
 	sf::Vector2f delta_;
+	State end_state_;
 	Duration duration_;
 	bool is_initialized_ = false;
 };
@@ -203,12 +232,14 @@ void HandleKeypress(App& app, const sf::Event::KeyEvent& ev) {
 					app.grid, app.self, app.target, app.extra);
 
 				app.response = rp;
+				app.state = State::kAnimatePush;
 				app.anim.start_t = Clock::now();
 				app.anim.push.reset(new AnimatePush(
-					app, rp.push.edge, rp.push.field, Duration(0.15)));
+					app, rp.push.edge, rp.push.field, Duration(0.15),
+					State::kAnimateMove));
 				app.anim.move.reset(new AnimateMove(
-					app, rp.move, Duration(0.25)));
-				app.state = State::kAnimatePush;
+					app, rp.move, Duration(0.25),
+					State::kDone));
 			}
 		case sf::Keyboard::U:
 			if (app.state == State::kPush) {
@@ -279,6 +310,19 @@ int NextDisplay(const Grid& grid) {
 	return -1;
 }
 
+void UpdateTitle(const std::vector<int>& scores, int player, int current, sf::RenderWindow& window) {
+	std::stringstream ss;
+
+	ss << "Player " << player << " |";
+	for (int i = 0, ie = scores.size(); i < ie; ++i) {
+		ss << " " << g_player_names[i] << ": " << scores[i];
+	}
+	ss << " | ";
+	ss << " Player " << current << " turn";
+
+	window.setTitle(ss.str());
+}
+
 void ResetColors(App& app) {
 	app.colors = Matrix<int>(app.grid.Width(), app.grid.Height(), 0);
 #if 0
@@ -303,14 +347,14 @@ void ProcessAnimations(App& app) {
 	auto current_t = Clock::now();
 	if (app.state == State::kAnimatePush) {
 		if (!app.anim.push->Animate(current_t - app.anim.start_t)) {
-			app.state = app.anim.move ? State::kAnimateMove : State::kMove;
+			app.state = app.anim.push->EndState();
 			app.anim.start_t = current_t; // for next animation
 			app.anim.push.reset();
 			UpdateColors(app);
 		}
 	} else if (app.state == State::kAnimateMove) {
 		if (!app.anim.move->Animate(current_t - app.anim.start_t)) {
-			app.state = State::kDone;
+			app.state = app.anim.move->EndState();
 			app.anim.start_t = current_t; // for next animation
 			app.anim.move.reset();
 			ResetColors(app);
@@ -329,14 +373,16 @@ void HandleMousePressed(App& app, const sf::Event::MouseButtonEvent& ev) {
 		app.response.push.edge = pos;
 		app.response.push.field = app.extra;
 		app.state = State::kAnimatePush;
-		app.anim.push.reset(new AnimatePush(app, pos, app.extra, Duration(0.15)));
+		app.anim.push.reset(new AnimatePush(
+			app, pos, app.extra, Duration(0.15), State::kMove));
 		app.anim.start_t = Clock::now();
 	} else if (app.state == State::kMove && IsInside(app, pos) &&
 		app.colors.At(pos) == 1)
 	{
 		app.response.move = pos;
 		app.state = State::kAnimateMove;
-		app.anim.move.reset(new AnimateMove(app, pos, Duration(0.25)));
+		app.anim.move.reset(new AnimateMove(
+			app, pos, Duration(0.25), State::kDone));
 		app.anim.start_t = Clock::now();
 		ResetColors(app);
 	}
@@ -514,13 +560,6 @@ void DrawDot(App& app, const sf::Vector2f& pos, bool active=false) {
 }
 
 void DrawPrincesses(App& app) {
-	static const sf::Color colors[] = {
-		sf::Color(0xff, 0, 0),
-		sf::Color(0x20, 0xcf, 0),
-		sf::Color(0xff, 0xef, 0x30),
-		sf::Color(0x60, 0x40, 0xff),
-	};
-
 	std::map<Point, int> pos_map;
 
 	int i = 0;
@@ -546,7 +585,7 @@ void DrawPrincesses(App& app) {
 
 		for (int i = 0; i < 4; ++i) {
 			if (!!(p.second & (1<<i)) && i != app.self) {
-				auto color = colors[i];
+				auto color = g_player_colors[i];
 				auto dot = CreateDiamond(
 					sf::Vector2f(pos.x, pos.y) + delta + float(k) * offset);
 
@@ -568,7 +607,7 @@ void DrawPrincesses(App& app) {
 			auto dot = CreateDiamond(dp);
 			dot.setOutlineThickness(0.01f);
 			dot.setOutlineColor(sf::Color(0, 0, 0, 0x80));
-			dot.setFillColor(colors[app.self]);
+			dot.setFillColor(g_player_colors[app.self]);
 			app.window.draw(dot);
 		}
 	}
@@ -579,7 +618,7 @@ void DrawPrincesses(App& app) {
 		auto dot = CreateDiamond(sf::Vector2f(size.x + 1, -1));
 		dot.setOutlineThickness(0.01f);
 		dot.setOutlineColor(sf::Color(0, 0, 0, 0x80));
-		dot.setFillColor(colors[app.self]);
+		dot.setFillColor(g_player_colors[app.self]);
 		app.window.draw(dot);
 	}
 }
@@ -749,22 +788,49 @@ void ApplyMove(Game& game, App& app) {
 	game.undo_stack.push_back(undo);
 }
 
-void AdvanceReplay(Game& game, App& app, int advance) {
-	game.replay_index = std::max(0, std::min(
-		game.replay_index + advance,
-		int(game.replay_stack.size() - 1)));
+void AnimateReplay(Game& game, App& app) {
+	auto current = game.replay_index;
+	auto next = game.replay_index + 1;
 
-	const auto& info = game.replay_stack[game.replay_index];
+	if (next == game.replay_stack.size()) {
+		app.state = State::kReplay;
+		return;
+	}
+
+	const auto& src = game.replay_stack[current];
+	const auto& dst = game.replay_stack[next];
+	auto delta = dst.grid.Diff(src.grid, src.extra, src.player);
+
+	app.state = State::kAnimatePush;
+	app.anim.start_t = Clock::now();
+
+	app.anim.push.reset(new AnimatePush(
+		app, delta.edge, delta.extra, Duration(0.15), State::kAnimateMove));
+
+	app.anim.move.reset(new AnimateMove(
+		app, delta.move, Duration(0.25), State::kReplayDone));
+}
+
+void AdvanceReplay(Game& game, App& app, int advance) {
+	app.state = State::kReplay;
+	auto next = game.replay_index + advance;
+
+	if (next < 0 || next >= game.replay_stack.size()) {
+		return;
+	}
+
+	auto& info = game.replay_stack[next];
+	game.replay_index = next;
 
 	game.player = info.player;
 	game.tick = info.tick;
 	game.grid = info.grid;
 
-	app.state = State::kReplay;
 	app.grid = game.grid;
 	app.self = game.player;
 	app.target = info.target;
 	app.extra = info.extra;
+	UpdateTitle(info.scores, 0, info.player, app.window);
 
 	ResetColors(app);
 }
@@ -788,6 +854,10 @@ void Run(Game& game, App& app) {
 		}
 
 		if (app.state == State::kReplayNext) {
+			AnimateReplay(game, app);
+		}
+
+		if (app.state == State::kReplayDone) {
 			AdvanceReplay(game, app, 1);
 		}
 
@@ -846,6 +916,7 @@ void Replay(const std::string& filename) {
 	App app;
 	Game game;
 	TurnInfo turn;
+
 	while (!(turn = parser.ParseTurn(parser.FromStream(input))).end) {
 		game.replay_stack.push_back(std::move(turn));
 	}
@@ -854,7 +925,6 @@ void Replay(const std::string& filename) {
 	game.players = 4;
 	game.grid.Init(info.width, info.height, game.displays, game.players);
 
-	// fixme: these are not used now
 	game.extras.resize(game.players, Field(15));
 	game.scores.resize(game.players);
 	game.remain = game.displays;

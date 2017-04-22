@@ -217,6 +217,127 @@ Field Grid::Push(int c, int p, int k, Field t) {
 	}
 }
 
+Grid::Delta Grid::Diff(const Grid& grid, Field extra, int player) const {
+	auto size = Size();
+	std::vector<std::pair<Point, Field>> candidates;
+	extra = Normalize(extra);
+	Field tile;
+
+	for (int x = 0; x < size.x; ++x) {
+		if (Normalize(tile = At(x, 0)) == extra) {
+			candidates.push_back({{x, -1}, tile});
+		}
+		if (Normalize(tile = At(x, size.y - 1)) == extra) {
+			candidates.push_back({{x, size.y}, tile});
+		}
+	}
+
+	for (int y = 0; y < size.y; ++y) {
+		if (Normalize(tile = At(0, y)) == extra) {
+			candidates.push_back({{-1, y}, tile});
+		}
+		if (Normalize(tile = At(size.x - 1, y)) == extra) {
+			candidates.push_back({{size.x, y}, tile});
+		}
+	}
+
+
+	for (const auto& cc : candidates) {
+		auto copy = grid;
+		tile = copy.Push(cc.first, cc.second);
+		if (copy.fields_ == fields_) {
+			int disappeared = 0;
+			int last_disappeared = -1;
+			bool mismatch = false;
+			for (int i = 0, ie = displays_.size(); i < ie; ++i) {
+				auto dpos = displays_[i];
+				auto cpos = copy.displays_[i];
+				if (!IsValid(cpos)) {
+					assert(!IsValid(dpos));
+					continue;
+				}
+				if (IsValid(dpos) && cpos != dpos) {
+					mismatch = true;
+					break;
+				}
+				if (!IsValid(dpos)) {
+					++disappeared;
+					last_disappeared = i;
+				}
+			}
+
+			assert(disappeared <= 1);
+			if (mismatch) {
+				continue;
+			}
+
+			int moved = 0;
+			int last_moved = -1;
+			for (int i = 0, ie = positions_.size(); i < ie; ++i) {
+				if (positions_[i] != copy.positions_[i]) {
+					++moved;
+					last_moved = i;
+				}
+			}
+			if (moved > 1 || (moved == 1 && last_moved != player)) {
+				continue;
+			}
+
+			if (last_disappeared >= 0) {
+				assert(positions_[player] == copy.displays_[last_disappeared]);
+			}
+
+			Delta delta;
+			delta.edge = cc.first;
+			delta.extra = cc.second;
+			delta.scored = disappeared > 0;
+			if (moved == 1) {
+				delta.move = positions_[player];
+			}
+			return delta;
+		}
+	}
+
+	assert(false && "Grids could not move to each other");
+	return {};
+}
+
+Field Grid::TileDiff(const Grid& grid, Field extra) const {
+	std::vector<int> tiles(16);
+	for (auto t : grid.fields_.GetFields()) {
+		++tiles[t];
+	}
+	++tiles[extra];
+	for (auto t : fields_.GetFields()) {
+		--tiles[t];
+	}
+
+	int nonzero = 0;
+	int missing = -1;
+	int tile = -1;
+	for (auto x : tiles) {
+		++tile;
+		if (x != 0) {
+			assert(x == 1);
+			++nonzero;
+			missing = tile;
+		}
+	}
+	assert(nonzero == 1);
+	return Field(missing);
+}
+
+bool Grid::ScoreDiff(const Grid& grid) const {
+	for (int i = 0, ie = displays_.size(); i < ie; ++i) {
+		if (IsValid(grid.displays_[i]) && !IsValid(displays_[i])) {
+			return true;
+		}
+	}
+	return false;
+}
+
+
+
 namespace {
 
 struct ConsoleChar {

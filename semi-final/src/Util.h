@@ -13,6 +13,7 @@ bool IsEastOpen(Field type);
 
 Field RotateLeft(Field tile);
 Field RotateRight(Field tile);
+Field Normalize(Field tile);
 
 std::vector<Field> GetRotations(Field tile);
 
