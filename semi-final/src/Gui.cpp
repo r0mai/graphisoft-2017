@@ -4,6 +4,7 @@
 #include "FloodFill.h"
 #include "EagerTaxicab.h"
 #include "UpwindSailer.h"
+#include "SuperFill.h"
 #include "Solver.h"
 #include "Client.h"
 #include "Hsv2rgb.h"
@@ -220,6 +221,11 @@ void ApplySolver(App& app, Solver& solver) {
 	auto rp = solver.SyncTurn(
 		app.grid, app.self, app.target, app.extra);
 
+	if (rp.push.edge == Point{}) {
+		std::cerr << "Invalid push" << std::endl;
+		return;
+	}
+
 	app.response = rp;
 	app.state = State::kAnimatePush;
 	app.anim.start_t = Clock::now();
@@ -251,6 +257,12 @@ void HandleKeypress(App& app, const sf::Event::KeyEvent& ev) {
 		case sf::Keyboard::K:
 			if (app.state == State::kPush) {
 				UpwindSailer solver;
+				ApplySolver(app, solver);
+			}
+			break;
+		case sf::Keyboard::L:
+			if (app.state == State::kPush) {
+				SuperSolver solver;
 				ApplySolver(app, solver);
 			}
 			break;

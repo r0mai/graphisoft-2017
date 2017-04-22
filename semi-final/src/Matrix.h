@@ -42,6 +42,16 @@ public:
 		fields_ = std::move(fields);
 	}
 
+	void ForeachField(std::function<void(const Point&, T&)> func) {
+		Point p;
+		for (p.y = 0; p.y < height_; ++p.y) {
+			int offset = p.y * width_;
+			for (p.x = 0; p.x < width_; ++p.x) {
+				func(p, fields_[p.x + offset]);
+			}
+		}
+	}
+
 	const std::vector<T>& GetFields() const {
 		return fields_;
 	}

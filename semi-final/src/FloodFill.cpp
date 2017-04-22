@@ -6,6 +6,20 @@
 
 #include "Util.h"
 
+namespace {
+
+template<typename F>
+void MergeMatrices(Matrix<int>& base, const Matrix<int>& other, F fn) {
+	for (int y = 0; y < base.Height(); ++y) {
+		for (int x = 0; x < base.Width(); ++x) {
+			base.At(x, y) = fn(base.At(x, y), other.At(x, y));
+		}
+	}
+}
+
+
+} // namespace
+
 Matrix<int> FloodFill(
 	const Matrix<Field>& fields,
 	const Point& origin)
@@ -75,23 +89,6 @@ void FloodFillTo(
 	}
 }
 
-void FloodFillExtend(
-	Matrix<int>& fill_matrix,
-	const Matrix<Field>& fields,
-	int fill_value)
-{
-	std::vector<Point> origins;
-	for (int y = 0; y < fields.Height(); ++y) {
-		for (int x = 0; x < fields.Width(); ++x) {
-			if (fill_matrix.At(x, y) != 0) {
-				origins.emplace_back(x, y);
-			}
-			fill_matrix.At(x, y) = 0;
-		}
-	}
-	FloodFillTo(fill_matrix, fields, origins, fill_value);
-}
-
 Matrix<int> FullFloodFill(const Matrix<Field>& fields, int start_index) {
 	auto width = fields.Width();
 	auto height = fields.Height();
@@ -107,6 +104,23 @@ Matrix<int> FullFloodFill(const Matrix<Field>& fields, int start_index) {
 		}
 	}
 	return fill_map;
+}
+
+void FloodFillExtend(
+	Matrix<int>& fill_matrix,
+	const Matrix<Field>& fields,
+	int fill_value)
+{
+	std::vector<Point> origins;
+	for (int y = 0; y < fields.Height(); ++y) {
+		for (int x = 0; x < fields.Width(); ++x) {
+			if (fill_matrix.At(x, y) != 0) {
+				origins.emplace_back(x, y);
+			}
+			fill_matrix.At(x, y) = 0;
+		}
+	}
+	FloodFillTo(fill_matrix, fields, origins, fill_value);
 }
 
 void StupidFloodFillInternal(
