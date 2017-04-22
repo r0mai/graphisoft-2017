@@ -90,3 +90,16 @@ TurnInfo InputParser::ParseTurn(const std::vector<std::string>& info_lines) {
 	}
 	return info;
 }
+
+std::vector<std::string> InputParser::FromStream(std::istream& stream) {
+	std::vector<std::string> lines;
+	std::string line;
+	while (std::getline(stream, line)) {
+		if (line == ".") {
+			break;
+		} else {
+			lines.push_back(line);
+		}
+	}
+	return lines;
+}

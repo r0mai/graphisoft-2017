@@ -30,6 +30,8 @@ struct TurnInfo {
 
 class InputParser {
 public:
+	std::vector<std::string> FromStream(std::istream& stream);
+
 	FieldInfo ParseInit(const std::vector<std::string>& lines);
 	TurnInfo ParseTurn(const std::vector<std::string>& lines);
 

@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <cmath>
 #include <sstream>
+#include <fstream>
 #include <cstdlib>
 #include <SFML/Graphics.hpp>
 #include <boost/program_options.hpp>
@@ -37,6 +38,9 @@ struct Game {
 	std::vector<Field> extras;
 	std::vector<int> scores;
 	std::vector<Action> undo_stack;
+	std::vector<TurnInfo> replay_stack;
+	int replay_index = -1;
+
 	int tick = -1;
 	int player = -1;
 
@@ -53,7 +57,10 @@ enum class State {
 	kGameOver,
 	kAnimatePush,
 	kAnimateMove,
-	kUndo
+	kUndo,
+	kReplay,
+	kReplayNext,
+	kReplayBack
 };
 
 class Animation {
@@ -209,6 +216,17 @@ void HandleKeypress(App& app, const sf::Event::KeyEvent& ev) {
 			}
 			break;
 
+		case sf::Keyboard::B:
+			if (app.state == State::kReplay) {
+				app.state = State::kReplayBack;
+			}
+			break;
+		case sf::Keyboard::N:
+			if (app.state == State::kReplay) {
+				app.state = State::kReplayNext;
+			}
+			break;
+
 		default:
 			break;
 	}
@@ -263,8 +281,10 @@ int NextDisplay(const Grid& grid) {
 
 void ResetColors(App& app) {
 	app.colors = Matrix<int>(app.grid.Width(), app.grid.Height(), 0);
+#if 0
 	auto pos = app.grid.Positions()[app.self];
 	app.colors = StupidFloodFill(app.grid, pos, app.extra);
+#endif
 }
 
 void UpdateColors(App& app) {
@@ -729,6 +749,26 @@ void ApplyMove(Game& game, App& app) {
 	game.undo_stack.push_back(undo);
 }
 
+void AdvanceReplay(Game& game, App& app, int advance) {
+	game.replay_index = std::max(0, std::min(
+		game.replay_index + advance,
+		int(game.replay_stack.size() - 1)));
+
+	const auto& info = game.replay_stack[game.replay_index];
+
+	game.player = info.player;
+	game.tick = info.tick;
+	game.grid = info.grid;
+
+	app.state = State::kReplay;
+	app.grid = game.grid;
+	app.self = game.player;
+	app.target = info.target;
+	app.extra = info.extra;
+
+	ResetColors(app);
+}
+
 void Run(Game& game, App& app) {
 	while (app.window.isOpen()) {
 		HandleEvents(app);
@@ -746,17 +786,25 @@ void Run(Game& game, App& app) {
 				app.state = State::kGameOver;
 			}
 		}
+
+		if (app.state == State::kReplayNext) {
+			AdvanceReplay(game, app, 1);
+		}
+
+		if (app.state == State::kReplayBack) {
+			AdvanceReplay(game, app, -1);
+		}
 	}
 }
 
 void InitGame(Game& game, int players) {
 	int w = 14, h = 8;
 	int max_d = w * h / 4;
-
 	game.displays = std::min(20, max_d);
 	game.players = players;
 	game.grid.Init(w, h, game.displays, game.players);
 	game.grid.Randomize();
+
 	game.extras.resize(game.players, Field(15));
 	game.scores.resize(players);
 	game.remain = game.displays;
@@ -787,6 +835,32 @@ void HotSeat(int players) {
 	InitGame(game, players);
 	InitApp(game, app);
 	NextPlayer(game, app);
+	Run(game, app);
+}
+
+void Replay(const std::string& filename) {
+	InputParser parser;
+	std::ifstream input(filename);
+	auto info = parser.ParseInit(parser.FromStream(input));
+
+	App app;
+	Game game;
+	TurnInfo turn;
+	while (!(turn = parser.ParseTurn(parser.FromStream(input))).end) {
+		game.replay_stack.push_back(std::move(turn));
+	}
+
+	game.displays = info.displays;
+	game.players = 4;
+	game.grid.Init(info.width, info.height, game.displays, game.players);
+
+	// fixme: these are not used now
+	game.extras.resize(game.players, Field(15));
+	game.scores.resize(game.players);
+	game.remain = game.displays;
+
+	InitApp(game, app);
+	AdvanceReplay(game, app, 1);
 	Run(game, app);
 }
 
@@ -926,7 +1000,8 @@ int main(int argc, char* argv[]) {
 		("hotseat,s", po::value<int>()->value_name("N"), "hotseat mode with N players")
 		("host,H", po::value<std::string>(), "hostname to connect, defaults to localhost")
 		("team,t", po::value<std::string>(), "teamname to use during login")
-		("password,p", po::value<std::string>(), "password to use for authentication");
+		("password,p", po::value<std::string>(), "password to use for authentication")
+		("replay,r", po::value<std::string>(), "replay from file");
 	po::variables_map vm;
 	try {
 		po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -937,11 +1012,13 @@ int main(int argc, char* argv[]) {
 	}
 
 	bool is_hotseat = vm.count("hotseat");
+	bool is_replay = false;
 
 	int port = 42500;
 	std::string host_name = "localhost";
 	std::string team_name = "the_hypnotoad";
 	std::string password = "******";
+	std::string filename;
 
 	if (vm.count("help")) {
 		std::cout << desc << std::endl;
@@ -960,9 +1037,16 @@ int main(int argc, char* argv[]) {
 		password = vm["password"].as<std::string>();
 	}
 
+	if (vm.count("replay")) {
+		filename = vm["replay"].as<std::string>();
+		is_replay = true;
+	}
+
 	if (is_hotseat) {
 		int players = vm["hotseat"].as<int>();
 		HotSeat(players);
+	} else if (is_replay) {
+		Replay(filename);
 	} else {
 		try {
 			platform_dep::enable_socket _;
