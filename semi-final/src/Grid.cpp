@@ -305,11 +305,11 @@ Grid::Delta Grid::Diff(const Grid& grid, Field extra, int player) const {
 Field Grid::TileDiff(const Grid& grid, Field extra) const {
 	std::vector<int> tiles(16);
 	for (auto t : grid.fields_.GetFields()) {
-		++tiles[t];
+		++tiles[Normalize(t)];
 	}
-	++tiles[extra];
+	++tiles[Normalize(extra)];
 	for (auto t : fields_.GetFields()) {
-		--tiles[t];
+		--tiles[Normalize(t)];
 	}
 
 	int nonzero = 0;
