@@ -257,16 +257,10 @@ private:
 		std::cerr << "All clients logged in, starting the round" << std::endl;
 		for (; currentTick < maxTicks; ++currentTick) {
 			std::cerr << "Tick: " << currentTick << std::endl;
-			const auto& displays = grid.Displays();
-			std::size_t displaysAvailable =
-					std::count_if(displays.begin(), displays.end(),
-							&IsValid);
-			if (displaysAvailable == 0) {
-				std::cerr << "Ending match due to all displays being collected"
-						<< std::endl;
+			bool over = runTick(yield);
+			if (over) {
 				break;
 			}
-			runTick(yield);
 		}
 		for (auto& player: players) {
 			auto& client = player.second;
@@ -278,11 +272,20 @@ private:
 		}
 	}
 
-	void runTick(asio::yield_context yield) {
+	bool runTick(asio::yield_context yield) {
 		for (int currentPlayer=0; currentPlayer<playerCount; ++currentPlayer) {
 			std::cerr << "Current player is: " << players.at(currentPlayer).getTeamName() << std::endl;
 			std::cerr << "Informing them, and awaiting there move" << std::endl;
 			std::cout << grid << std::endl;
+			const auto& displays = grid.Displays();
+			std::size_t displaysAvailable =
+					std::count_if(displays.begin(), displays.end(),
+							&IsValid);
+			if (displaysAvailable == 0) {
+				std::cerr << "Ending match due to all displays being collected"
+						<< std::endl;
+				return true;
+			}
 			updateCurrentClient(players.at(currentPlayer), yield);
 			for(int i=0; i<playerCount; ++i) {
 				if (i == currentPlayer) {
@@ -293,6 +296,7 @@ private:
 			}
 			evaluateClientInstruction(players.at(currentPlayer), yield);
 		}
+		return false;
 	}
 
 	void updateClient(Client& client, int originatingPlayer, bool sendOver,
