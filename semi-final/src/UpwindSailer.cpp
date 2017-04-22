@@ -30,8 +30,19 @@ boost::optional<Direction> inchCloser(const Grid& grid, int player, int target)
 	const auto& playerPosition = grid.Positions()[player];
 	const auto& displayPosition = grid.Displays()[target];
 
-	auto dx = displayPosition.x - playerPosition.x;
-	auto dy = displayPosition.y - playerPosition.y;
+	auto dx = std::abs(displayPosition.x - playerPosition.x);
+	auto dy = std::abs(displayPosition.y - playerPosition.y);
+
+	dx = std::min(dx, grid.Width() - dx);
+	dy = std::min(dy, grid.Height() - dy);
+
+	if ((playerPosition.x + dx) % grid.Width() != displayPosition.x) {
+		dx = -dx;
+	}
+
+	if ((playerPosition.y + dy) % grid.Height() != displayPosition.y) {
+		dy = -dy;
+	}
 
 	// Prefer large distances to arrive at the diagonal
 	if (std::abs(dx) >= std::abs(dy)) {
