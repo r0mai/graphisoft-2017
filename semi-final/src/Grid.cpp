@@ -93,8 +93,8 @@ bool Grid::IsNeighbor(int player, int display) const {
 	auto dy = std::abs(p.y - q.y);
 
 	return
-		(dx == 0 && (dy == 1 || dy == Height())) ||
-		(dy == 0 && (dx == 1 || dx == Width()));
+		(dx == 0 && (dy == 1 || dy == Height() - 1)) ||
+		(dy == 0 && (dx == 1 || dx == Width() - 1o));
 }
 
 void Grid::Init(int width, int height, int displays, int players) {
