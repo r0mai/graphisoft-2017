@@ -275,7 +275,7 @@ private:
 	bool runTick(asio::yield_context yield) {
 		for (int currentPlayer=0; currentPlayer<playerCount; ++currentPlayer) {
 			std::cerr << "Current player is: " << players.at(currentPlayer).getTeamName() << std::endl;
-			std::cerr << "Informing them, and awaiting there move" << std::endl;
+			std::cerr << "Informing them, and awaiting their move" << std::endl;
 			std::cout << grid << std::endl;
 			const auto& displays = grid.Displays();
 			std::size_t displaysAvailable =
