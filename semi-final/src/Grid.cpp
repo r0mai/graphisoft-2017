@@ -169,6 +169,10 @@ Field Grid::At(int x, int y) const {
 	return fields_.At(x, y);
 }
 
+Field Grid::At(const Point& pos) const {
+	return fields_.At(pos.x, pos.y);
+}
+
 const Matrix<Field>& Grid::Fields() const {
 	return fields_;
 }

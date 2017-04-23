@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <functional>
 #include <chrono>
+#include <set>
 #include <boost/optional.hpp>
 
 namespace {
@@ -68,135 +69,58 @@ void FloodFill(const FieldMatrix& matrix,
 	}
 }
 
-template<typename C, typename F>
-std::vector<std::pair<Point, C>> ExtractOrigins(Matrix<C>& area, F func)
+template<typename C>
+void RotateOrigins(const Point& edge, const Point& size,
+	std::vector<std::pair<Point, C>>& origins)
 {
-	std::vector<std::pair<Point, C>> origins;
-	area.ForeachField([&func, &origins](const Point& pos, C& cc) {
-		if (cc) {
-			origins.push_back({pos, func(cc)});
-			cc = C();
+	if (edge.x == -1) {
+		for (auto& origin : origins) {
+			auto& pos = origin.first;
+			if (pos.y == edge.y) {
+				pos.x = (pos.x + 1) % size.x;
+			}
 		}
-	});
-	return origins;
+	} else if (edge.x == size.x) {
+		for (auto& origin : origins) {
+			auto& pos = origin.first;
+			if (pos.y == edge.y) {
+				pos.x = (pos.x + size.x - 1) % size.x;
+			}
+		}
+	} else if (edge.y == -1) {
+		for (auto& origin : origins) {
+			auto& pos = origin.first;
+			if (pos.x == edge.x) {
+				pos.y = (pos.y + 1) % size.y;
+			}
+		}
+	} else if (edge.y == size.y) {
+		for (auto& origin : origins) {
+			auto& pos = origin.first;
+			if (pos.x == edge.x) {
+				pos.y = (pos.y + size.y - 1) % size.y;
+			}
+		}
+	}
 }
-
 
 
 struct SuperMove {
-	int depth = 0;
-	Point move;
-
 	SuperMove() = default;
-
-	// I don't know why aggregate initialization doesn't take care of this.
-	SuperMove(int depth, Point move) : depth(depth), move(std::move(move)) { }
+	SuperMove(int x, int y) : move(x, y) {}
+	SuperMove(const Point& pos) : move(pos) {}
 
 	operator bool() const {
-		return depth != 0;
+		return move.x != -1 && move.y != -1;
 	}
+
+	Point move;
 };
+
 
 using SuperMatrix = Matrix<SuperMove>;
 using SuperOrigin = std::pair<Point, SuperMove>;
-using InfluenceMatrix = Matrix<int>;
-using InfluenceOrigin = std::pair<Point, int>;
 
-
-void ExtractInfluence(const FieldMatrix& matrix,
-	const InfluenceMatrix& influence, int& row_bits, int& col_bits)
-{
-	auto width = matrix.Width();
-	auto height = matrix.Height();
-
-	for (auto y = 0; y < height; ++y) {
-		for (auto x = 0; x < width; ++x) {
-			if (!influence.At(x, y)) {
-				continue;
-			}
-
-			auto field = matrix.At(x, y);
-			row_bits |= 1 << y;
-			col_bits |= 1 << x;
-
-			if (x > 0 && IsWestOpen(field)) {
-				col_bits |= 1 << (x - 1);
-			}
-			if (x < width - 1 && IsEastOpen(field)) {
-				col_bits |= 1 << (x + 1);
-			}
-			if (y > 0 && IsNorthOpen(field)) {
-				row_bits |= 1 << (y - 1);
-			}
-			if (y < height - 1 && IsSouthOpen(field)) {
-				row_bits |= 1 << (y + 1);
-			}
-		}
-	}
-}
-
-void SuperFillInternal(Grid& grid, SuperMatrix& matrix, int target, Field extra,
-	int depth, int max_depth)
-{
-	SuperMatrix parent_matrix = matrix;
-	auto MergeWith = [](const SuperMatrix& base_matrix) {
-		auto fn = [&base_matrix](const Point& p, SuperMove& m) {
-			const auto& base = base_matrix.At(p);
-			if (base && (!m || base.depth < m.depth)) {
-				m = base;
-			}
-		};
-		return fn;
-	};
-
-	auto size = grid.Size();
-	std::vector<InfluenceOrigin> origins;
-	InfluenceMatrix influence(size.x, size.y, 0);
-	int row_bits = 0;
-	int col_bits = 0;
-
-	for (const auto& x : ExtractOrigins(matrix,
-		[](const SuperMove& m) { return m; }))
-	{
-		origins.emplace_back(x.first, 1);
-	}
-	origins.emplace_back(grid.Displays()[target], 1);
-
-	FloodFill(grid.Fields(), origins, influence);
-	ExtractInfluence(grid.Fields(), influence, row_bits, col_bits);
-
-	for (const auto& v : GetPushVariations(row_bits, col_bits, size, extra)) {
-		// apply push
-		parent_matrix.Rotate(v.edge);
-		auto field = grid.Push(v.edge, v.tile);
-		auto local_matrix = parent_matrix;
-
-		// collect origins
-		auto origins = ExtractOrigins(local_matrix,
-			[&depth](const SuperMove& m) {
-				return SuperMove{depth, m.move};
-			});
-
-		// fill with current color
-		FloodFill(grid.Fields(), origins, local_matrix);
-
-		// merge with parent
-		local_matrix.ForeachField(MergeWith(parent_matrix));
-
-		if (depth < max_depth) {
-			SuperFillInternal(grid, local_matrix, target, field,
-				depth + 1, max_depth);
-		}
-
-		// revert push
-		grid.Push(v.opposite_edge, field);
-		parent_matrix.RotateBack(v.edge);
-
-		// merge with output
-		local_matrix.RotateBack(v.edge);
-		matrix.ForeachField(MergeWith(local_matrix));
-	}
-}
 
 int Fitness(Grid& grid, int player, Field extra) {
 	auto size = grid.Size();
@@ -245,17 +169,15 @@ boost::optional<Response> SingleMove(
 		if (reachable.At(target_pos)) {
 			grid.UpdatePosition(player, target_pos);
 			grid.UpdateDisplay(target, {});
+
 			auto fitness = Fitness(grid, player, field);
-			grid.UpdateDisplay(target, target_pos);
-			grid.UpdatePosition(player, player_pos);
-
-			// std::cerr << "REACHABLE " << v.edge << " " << int(v.tile);
-			// std::cerr << " = " << fitness << std::endl;
-
 			if (fitness > best_fitness) {
 				best_fitness = fitness;
 				response = {{v.edge, v.tile}, target_pos};
 			}
+
+			grid.UpdateDisplay(target, target_pos);
+			grid.UpdatePosition(player, player_pos);
 		}
 
 		grid.Push(v.opposite_edge, field);
@@ -263,14 +185,121 @@ boost::optional<Response> SingleMove(
 	return response;
 }
 
-// boost::optional<Response> DoubleMove(
-// 	Grid& grid, int player, int target, Field extra)
-// {}
+boost::optional<Response> DoubleMove(
+	Grid& grid, int player, int target, Field extra)
+{
+	auto size = grid.Size();
+	boost::optional<Response> response;
+	int best_fitness = 0;
 
+	for (const auto& v : GetPushVariations(size, extra)) {
+		auto field = grid.Push(v.edge, v.tile);
+		auto player_pos = grid.Positions()[player];
+		auto target_pos = grid.Displays()[target];
+		Matrix<int> reachable(size.x, size.y, 0);
+		std::vector<SuperOrigin> origins;
+		std::set<Point> move_candidates;
+
+		FloodFill(grid.Fields(), {{player_pos, 1}}, reachable);
+		reachable.ForeachField([&](const Point& pos, int& cell) {
+			if (cell) {
+				origins.emplace_back(pos, pos);
+			}
+		});
+
+		for (const auto& v2 : GetPushVariations(size, field)) {
+			auto field2 = grid.Push(v2.edge, v2.tile);
+			auto player_pos2 = grid.Positions()[player];
+			auto target_pos2 = grid.Displays()[target];
+			Matrix<SuperMove> reachable2(size.x, size.y, {});
+			RotateOrigins(v2.edge, size, origins);
+			FloodFill(grid.Fields(), origins, reachable2);
+
+			auto cell = reachable2.At(target_pos2);
+			if (cell) {
+				move_candidates.insert(cell.move);
+			}
+
+			RotateOrigins(v2.opposite_edge, size, origins);
+			grid.Push(v2.opposite_edge, field2);
+		}
+
+		for (const auto& move : move_candidates) {
+			grid.UpdatePosition(player, move);
+
+			auto fitness = Fitness(grid, player, field);
+			if (fitness > best_fitness) {
+				auto opt_move = (move == player_pos ? Point{} : move);
+				best_fitness = fitness;
+				response = {{v.edge, v.tile}, opt_move};
+			}
+
+			grid.UpdatePosition(player, player_pos);
+		}
+
+		grid.Push(v.opposite_edge, field);
+	}
+	return response;
+}
+
+int ConvergeDistance(const Grid& grid, const Point& p, const Point& q) {
+	auto size = grid.Size();
+	auto dx = std::abs(p.x - q.x);
+	auto dy = std::abs(p.y - q.y);
+	auto evade = 0;
+
+	dx = std::min(dx, size.x - dx);
+	dy = std::min(dy, size.y - dy);
+
+	if ((dx == 0 && dy > 0) || (dy == 0 && dx > 1)) {
+		evade += 2;
+	}
+
+	return dx + dy + evade;
+}
+
+boost::optional<Response> ConvergeMove(
+	Grid& grid, int player, int target, Field extra)
+{
+	auto size = grid.Size();
+	boost::optional<Response> response;
+	int best_distance = std::numeric_limits<int>::max();
+
+	for (const auto& v : GetPushVariations(size, extra)) {
+		auto field = grid.Push(v.edge, v.tile);
+		auto player_pos = grid.Positions()[player];
+		auto target_pos = grid.Displays()[target];
+		Matrix<int> reachable(size.x, size.y, 0);
+
+		FloodFill(grid.Fields(), {{player_pos, 1}}, reachable);
+		reachable.ForeachField([&](const Point& pos, int& cell) {
+			if (cell) {
+				auto distance = ConvergeDistance(grid, pos, target_pos);
+				if (distance < best_distance) {
+					auto opt_move = (pos == player_pos ? Point{} : pos);
+					best_distance = distance;
+					response = {{v.edge, v.tile}, opt_move};
+				}
+			}
+		});
+
+		grid.Push(v.opposite_edge, field);
+	}
+
+	return response;
+}
+
+using Clock = std::chrono::steady_clock;
+
+void TimeStat(const std::string& info, Clock::time_point start_t) {
+	using MilliSec = std::chrono::milliseconds;
+	auto end_t = Clock::now();
+	std::cerr << info << " ";
+	std::cerr << std::chrono::duration_cast<MilliSec>(end_t - start_t).count();
+	std::cerr << " ms" << std::endl;
+}
 
 Response SuperFill(Grid grid, int player, int target, Field extra) {
-	using Clock = std::chrono::steady_clock;
-	using Duration = std::chrono::duration<double>;
 	auto start_t = Clock::now();
 	const int max_depth = 2;
 
@@ -284,79 +313,23 @@ Response SuperFill(Grid grid, int player, int target, Field extra) {
 
 	auto single_move = SingleMove(grid, player, target, extra);
 	if (single_move) {
-		auto end_t = Clock::now();
-		std::cerr
-			<< "SINGLEMOVE "
-			<< std::chrono::duration_cast<std::chrono::milliseconds>(end_t - start_t).count()
-			<< " ms" << std::endl;
-
+		// TimeStat("SINGLEMOVE", start_t);
 		return *single_move;
 	}
 
-	InfluenceMatrix influence(size.x, size.y, 0);
-	int row_bits = 0;
-	int col_bits = 0;
-
-	// influence
-	FloodFill(grid.Fields(), {{player_pos, 1}, {display_pos, 1}}, influence);
-	ExtractInfluence(grid.Fields(), influence, row_bits, col_bits);
-
-	for (const auto& v : GetPushVariations(row_bits, col_bits, size, extra)) {
-		auto field = grid.Push(v.edge, v.tile);
-		SuperOrigin origin;
-		SuperMatrix matrix(size.x, size.y);
-
-		player_pos = grid.Positions()[player];
-		display_pos = grid.Displays()[target];
-
-		origin.first = player_pos;
-		origin.second = {1, {}};
-		FloodFill(grid.Fields(), {origin}, matrix);
-
-		// fix move info
-		matrix.ForeachField([](const Point& p, SuperMove& m) {
-			if (m) { m.move = p; }
-		});
-		matrix.At(player_pos).move = {}; // means skip
-
-		SuperFillInternal(grid, matrix, target, field, 2, max_depth);
-
-		const auto& sm = matrix.At(display_pos);
-		if (sm && sm.depth < best) {
-			response.push.edge = v.edge;
-			response.push.field = v.tile;
-			response.move = sm.move;
-			best = sm.depth;
-		}
-
-		if (best > max_depth) {
-			matrix.ForeachField([&](const Point& p, SuperMove& m) {
-				if (!m || m.depth != 1) {
-					return;
-				}
-				auto dst = TaxicabDistance(p, display_pos, size);
-				if (dst < closest) {
-					response.push.edge = v.edge;
-					response.push.field = v.tile;
-					response.move = m.move;
-					closest = dst;
-				}
-			});
-		}
-
-		grid.Push(v.opposite_edge, field);
-
-		if (best == 1) {
-			break;
-		}
+	auto double_move = DoubleMove(grid, player, target, extra);
+	if (double_move) {
+		// TimeStat("DOUBLEMOVE", start_t);
+		return *double_move;
 	}
 
-	auto end_t = Clock::now();
-	std::cerr
-		<< "SUPERFILL "
-		<< std::chrono::duration_cast<std::chrono::milliseconds>(end_t - start_t).count()
-		<< " ms" << std::endl;
+	auto converge_move = ConvergeMove(grid, player, target, extra);
+	if (converge_move) {
+		TimeStat("CONVERGE", start_t);
+		return *converge_move;
+	}
 
+	assert(false && "Should not be here");
 	return response;
 }
 

@@ -28,6 +28,7 @@ public:
 	void UpdateDisplay(int index, const Point& pos);
 	void UpdatePosition(int player, const Point& pos);
 	Field At(int x, int y) const;
+	Field At(const Point& pos) const;
 	Field Push(const Point& pos, Field t);
 	Field Push(int c, int p, int k, Field t);
 
