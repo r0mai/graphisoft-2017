@@ -255,7 +255,7 @@ Response SuperFill(Grid grid, int player, int target, Field extra) {
 
 		if (best > max_depth) {
 			matrix.ForeachField([&](const Point& p, SuperMove& m) {
-				if (!m) {
+				if (!m || m.depth != 1) {
 					return;
 				}
 				auto dst = TaxicabDistance(p, display_pos, size);
