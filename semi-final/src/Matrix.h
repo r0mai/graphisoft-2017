@@ -5,6 +5,7 @@
 #include <cassert>
 #include <ostream>
 #include <algorithm>
+#include <functional>
 
 template<typename T>
 class Matrix {

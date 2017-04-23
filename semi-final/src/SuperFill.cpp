@@ -86,6 +86,11 @@ struct SuperMove {
 	int depth = 0;
 	Point move;
 
+	SuperMove() = default;
+
+	// I don't know why aggregate initialization doesn't take care of this.
+	SuperMove(int depth, Point move) : depth(depth), move(std::move(move)) { }
+
 	operator bool() const {
 		return depth != 0;
 	}
