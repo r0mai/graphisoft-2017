@@ -185,7 +185,7 @@ boost::optional<Response> SingleMove(
 	return response;
 }
 
-int Proximity(const Grid& grid, const Point& p, const Point& q, int penalty) {
+int Proximity(const Grid& grid, const Point& p, const Point& q) {
 	auto size = grid.Size();
 	auto dx = std::abs(p.x - q.x);
 	auto dy = std::abs(p.y - q.y);
@@ -195,13 +195,11 @@ int Proximity(const Grid& grid, const Point& p, const Point& q, int penalty) {
 
 	auto dst = dx + dy;
 
-	if ((dx == 0 && dy > 1) || (dy == 0 && dx > 1)) {
-		dst += penalty;
+	if (dx == 0) {
+		dst += dy;
+	} else if (dy == 0) {
+		dst += dx;
 	}
-
-	// dst *= 4;
-	// dst += 4 - OpenCount(grid.At(p));
-	// dst += 4 - OpenCount(grid.At(q));
 
 	return dst;
 }
@@ -279,7 +277,7 @@ boost::optional<Response> DoubleMove(
 		for (const auto& move : move_candidates) {
 			grid.UpdatePosition(player, move);
 
-			auto distance = Proximity(grid, move, target_pos, 3);
+			auto distance = Proximity(grid, move, target_pos);
 			if (distance < best_distance) {
 				auto opt_move = (move == player_pos ? Point{} : move);
 				best_distance = distance;
