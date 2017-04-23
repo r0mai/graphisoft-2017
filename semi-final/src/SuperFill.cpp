@@ -313,13 +313,13 @@ Response SuperFill(Grid grid, int player, int target, Field extra) {
 
 	auto single_move = SingleMove(grid, player, target, extra);
 	if (single_move) {
-		// TimeStat("SINGLEMOVE", start_t);
+		TimeStat("SINGLEMOVE", start_t);
 		return *single_move;
 	}
 
 	auto double_move = DoubleMove(grid, player, target, extra);
 	if (double_move) {
-		// TimeStat("DOUBLEMOVE", start_t);
+		TimeStat("DOUBLEMOVE", start_t);
 		return *double_move;
 	}
 
