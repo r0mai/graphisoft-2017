@@ -57,9 +57,9 @@ void Client::SendMessages(const std::vector<std::string>& messages) {
 	}
 	message += ".\n";
 
-	std::cerr << "Will try to send: " << message << std::endl;
+	// std::cerr << "Will try to send: " << message << std::endl;
 	BlockUntilMessageCanBeSent();
-	std::cerr << "Sending message now" << std::endl;
+	// std::cerr << "Sending message now" << std::endl;
 	int sent_bytes = send(socket_handler_.get_handler(), message.c_str(), message.size(), 0);
 
 	if(sent_bytes != (int)message.size()) {
@@ -147,11 +147,11 @@ void Client::BlockUntilMessageCanBeSent() {
 }
 
 void Client::Init(const std::vector<std::string>& info_lines, Solver& solver) {
-	std::cerr << "We got these field informations:" << std::endl;
+	// std::cerr << "We got these field informations:" << std::endl;
 
-	for (auto& line : info_lines) {
-		std::cerr << line << std::endl;
-	}
+	// for (auto& line : info_lines) {
+	// 	std::cerr << line << std::endl;
+	// }
 	SaveInput(info_lines);
 
 	auto info = parser_.ParseInit(info_lines);
@@ -168,11 +168,11 @@ bool Client::Process(const std::vector<std::string>& info_lines, Solver& solver)
 		solver.Shutdown();
 		return false;
 	}
-	std::cerr << "We got these tick informations:" << std::endl;
+	// std::cerr << "We got these tick informations:" << std::endl;
 
-	for (auto& line : info_lines) {
-		std::cerr << line << std::endl;
-	}
+	// for (auto& line : info_lines) {
+	// 	std::cerr << line << std::endl;
+	// }
 
 	grid_ = info.grid;
 	opponent_ = info.opponent;

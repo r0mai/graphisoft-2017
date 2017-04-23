@@ -235,6 +235,28 @@ void ApplySolver(App& app, Solver& solver) {
 		app, rp.move, kMoveDuration, State::kDone));
 }
 
+void ShowMoves(App& app) {
+	auto pos = app.grid.Positions()[app.self];
+	app.colors = StupidFloodFill(app.grid, pos, app.extra, false);
+}
+
+void ResetColors(App& app) {
+	app.colors = Matrix<int>(app.grid.Width(), app.grid.Height(), 0);
+#if 0
+	auto pos = app.grid.Positions()[app.self];
+	app.colors = StupidFloodFill(app.grid, pos, app.extra, false);
+#endif
+}
+
+void UpdateColors(App& app) {
+	auto pos = app.grid.Positions()[app.self];
+#if 1
+	app.colors = FloodFill(app.grid.Fields(), pos);
+#else
+	app.colors = StupidFloodFill(app.grid, pos, app.extra, true);
+#endif
+}
+
 void HandleKeypress(App& app, const sf::Event::KeyEvent& ev) {
 	switch (ev.code) {
 		case sf::Keyboard::Space:
@@ -247,6 +269,11 @@ void HandleKeypress(App& app, const sf::Event::KeyEvent& ev) {
 			break;
 		case sf::Keyboard::D:
 			app.extra = RotateRight(app.extra);
+			break;
+		case sf::Keyboard::I:
+			if (app.state == State::kPush || app.state == State::kReplay) {
+				ShowMoves(app);
+			}
 			break;
 		case sf::Keyboard::P:
 			if (app.state == State::kPush) {
@@ -346,23 +373,6 @@ void UpdateTitle(const std::vector<int>& scores, int player, int current, sf::Re
 	ss << " Player " << current << " turn";
 
 	window.setTitle(ss.str());
-}
-
-void ResetColors(App& app) {
-	app.colors = Matrix<int>(app.grid.Width(), app.grid.Height(), 0);
-#if 0
-	auto pos = app.grid.Positions()[app.self];
-	app.colors = StupidFloodFill(app.grid, pos, app.extra, false);
-#endif
-}
-
-void UpdateColors(App& app) {
-	auto pos = app.grid.Positions()[app.self];
-#if 1
-	app.colors = FloodFill(app.grid.Fields(), pos);
-#else
-	app.colors = StupidFloodFill(app.grid, pos, app.extra, true);
-#endif
 }
 
 void ProcessAnimations(App& app) {

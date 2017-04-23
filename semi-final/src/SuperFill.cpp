@@ -200,7 +200,6 @@ void SuperFillInternal(Grid& grid, SuperMatrix& matrix, int target, Field extra,
 
 int Fitness(Grid& grid, int player, Field extra) {
 	auto size = grid.Size();
-	auto open_count = OpenCount(extra);
 	int best_fitness = 0;
 
 	for (const auto& v : GetPushVariations(size, extra)) {
@@ -221,13 +220,13 @@ int Fitness(Grid& grid, int player, Field extra) {
 			filled_count += !!x;
 		}
 
-		int current_fitness = display_count * 4 + filled_count;
+		int current_fitness = display_count + filled_count;
 		best_fitness = std::max(best_fitness, current_fitness);
 		grid.Push(v.opposite_edge, field);
 	}
+
 	return best_fitness;
 }
-
 
 boost::optional<Response> SingleMove(
 	Grid& grid, int player, int target, Field extra)
@@ -263,6 +262,10 @@ boost::optional<Response> SingleMove(
 	}
 	return response;
 }
+
+// boost::optional<Response> DoubleMove(
+// 	Grid& grid, int player, int target, Field extra)
+// {}
 
 
 Response SuperFill(Grid grid, int player, int target, Field extra) {
