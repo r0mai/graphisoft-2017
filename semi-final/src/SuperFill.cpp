@@ -185,12 +185,54 @@ boost::optional<Response> SingleMove(
 	return response;
 }
 
+int Proximity(const Grid& grid, const Point& p, const Point& q, int penalty) {
+	auto size = grid.Size();
+	auto dx = std::abs(p.x - q.x);
+	auto dy = std::abs(p.y - q.y);
+
+	dx = std::min(dx, size.x - dx);
+	dy = std::min(dy, size.y - dy);
+
+	auto dst = dx + dy;
+
+	if ((dx == 0 && dy > 1) || (dy == 0 && dx > 1)) {
+		dst += penalty;
+	}
+
+	// dst *= 4;
+	// dst += 4 - OpenCount(grid.At(p));
+	// dst += 4 - OpenCount(grid.At(q));
+
+	return dst;
+}
+
+int BasicFitness(const Grid& grid, const Point& pos) {
+	auto size = grid.Size();
+	Matrix<int> reachable(size.x, size.y, 0);
+	FloodFill(grid.Fields(), {{pos, 1}}, reachable);
+
+	int display_count = 0;
+	int filled_count = 0;
+	for (const auto& display_pos : grid.Displays()) {
+		if (IsValid(display_pos) && reachable.At(display_pos)) {
+			++display_count;
+		}
+	}
+
+	for (auto x : reachable.GetFields()) {
+		filled_count += !!x;
+	}
+
+	return display_count + filled_count;
+}
+
 boost::optional<Response> DoubleMove(
 	Grid& grid, int player, int target, Field extra)
 {
 	auto size = grid.Size();
 	boost::optional<Response> response;
 	int best_fitness = 0;
+	int best_distance = std::numeric_limits<int>::max();
 
 	for (const auto& v : GetPushVariations(size, extra)) {
 		auto field = grid.Push(v.edge, v.tile);
@@ -209,7 +251,6 @@ boost::optional<Response> DoubleMove(
 
 		for (const auto& v2 : GetPushVariations(size, field)) {
 			auto field2 = grid.Push(v2.edge, v2.tile);
-			auto player_pos2 = grid.Positions()[player];
 			auto target_pos2 = grid.Displays()[target];
 			Matrix<SuperMove> reachable2(size.x, size.y, {});
 			RotateOrigins(v2.edge, size, origins);
@@ -217,45 +258,57 @@ boost::optional<Response> DoubleMove(
 
 			auto cell = reachable2.At(target_pos2);
 			if (cell) {
+				#if 0
+				auto fitness = BasicFitness(grid, target_pos2);
+				if (fitness > best_fitness) {
+					const auto& move = cell.move;
+					auto opt_move = (move == player_pos ? Point{} : move);
+					best_fitness = fitness;
+					response = {{v.edge, v.tile}, opt_move};
+				}
+				#else
 				move_candidates.insert(cell.move);
+				#endif
 			}
 
 			RotateOrigins(v2.opposite_edge, size, origins);
 			grid.Push(v2.opposite_edge, field2);
 		}
 
+		#if 1
 		for (const auto& move : move_candidates) {
 			grid.UpdatePosition(player, move);
 
-			auto fitness = Fitness(grid, player, field);
-			if (fitness > best_fitness) {
+			auto distance = Proximity(grid, move, target_pos, 3);
+			if (distance < best_distance) {
 				auto opt_move = (move == player_pos ? Point{} : move);
-				best_fitness = fitness;
+				best_distance = distance;
 				response = {{v.edge, v.tile}, opt_move};
 			}
 
 			grid.UpdatePosition(player, player_pos);
 		}
+		#endif
 
 		grid.Push(v.opposite_edge, field);
 	}
 	return response;
 }
 
-int ConvergeDistance(const Grid& grid, const Point& p, const Point& q) {
+int ConvergeDistance(const Grid& grid, const Point& p, const Point& q, int penalty) {
 	auto size = grid.Size();
 	auto dx = std::abs(p.x - q.x);
 	auto dy = std::abs(p.y - q.y);
-	auto evade = 0;
 
 	dx = std::min(dx, size.x - dx);
 	dy = std::min(dy, size.y - dy);
+	auto dst = dx + dy;
 
 	if ((dx == 0 && dy > 0) || (dy == 0 && dx > 1)) {
-		evade += 2;
+		dst += penalty;
 	}
 
-	return dx + dy + evade;
+	return dst;
 }
 
 boost::optional<Response> ConvergeMove(
@@ -274,7 +327,7 @@ boost::optional<Response> ConvergeMove(
 		FloodFill(grid.Fields(), {{player_pos, 1}}, reachable);
 		reachable.ForeachField([&](const Point& pos, int& cell) {
 			if (cell) {
-				auto distance = ConvergeDistance(grid, pos, target_pos);
+				auto distance = ConvergeDistance(grid, pos, target_pos, 3);
 				if (distance < best_distance) {
 					auto opt_move = (pos == player_pos ? Point{} : pos);
 					best_distance = distance;
