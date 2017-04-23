@@ -5,7 +5,6 @@
 #include <cassert>
 #include <ostream>
 #include <algorithm>
-#include <functional>
 
 template<typename T>
 class Matrix {
@@ -43,7 +42,8 @@ public:
 		fields_ = std::move(fields);
 	}
 
-	void ForeachField(std::function<void(const Point&, T&)> func) {
+	template<typename Func>
+	void ForeachField(Func func) {
 		Point p;
 		for (p.y = 0; p.y < height_; ++p.y) {
 			int offset = p.y * width_;
