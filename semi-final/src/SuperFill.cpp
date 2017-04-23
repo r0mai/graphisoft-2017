@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <functional>
 #include <chrono>
+#include <boost/optional.hpp>
 
 namespace {
 
@@ -197,16 +198,72 @@ void SuperFillInternal(Grid& grid, SuperMatrix& matrix, int target, Field extra,
 	}
 }
 
-void DumpMoves(const SuperMatrix& matrix) {
-	for (int y = 0; y < matrix.Height(); ++y) {
-		for (int x = 0; x < matrix.Width(); ++x) {
-			const auto& sm = matrix.At(x, y);
-			std::cout << " " << sm.depth;
-			// std::cout << ":" << sm.move;
+int Fitness(Grid& grid, int player, Field extra) {
+	auto size = grid.Size();
+	auto open_count = OpenCount(extra);
+	int best_fitness = 0;
+
+	for (const auto& v : GetPushVariations(size, extra)) {
+		auto field = grid.Push(v.edge, v.tile);
+		auto player_pos = grid.Positions()[player];
+		Matrix<int> reachable(size.x, size.y, 0);
+		FloodFill(grid.Fields(), {{player_pos, 1}}, reachable);
+
+		int display_count = 0;
+		int filled_count = 0;
+		for (const auto& display_pos : grid.Displays()) {
+			if (IsValid(display_pos) && reachable.At(display_pos)) {
+				++display_count;
+			}
 		}
-		std::cout << std::endl;
+
+		for (auto x : reachable.GetFields()) {
+			filled_count += !!x;
+		}
+
+		int current_fitness = display_count * 4 + filled_count;
+		best_fitness = std::max(best_fitness, current_fitness);
+		grid.Push(v.opposite_edge, field);
 	}
+	return best_fitness;
 }
+
+
+boost::optional<Response> SingleMove(
+	Grid& grid, int player, int target, Field extra)
+{
+	auto size = grid.Size();
+	int best_fitness = 0;
+	boost::optional<Response> response;
+
+	for (const auto& v : GetPushVariations(size, extra)) {
+		auto field = grid.Push(v.edge, v.tile);
+		auto player_pos = grid.Positions()[player];
+		auto target_pos = grid.Displays()[target];
+		Matrix<int> reachable(size.x, size.y, 0);
+
+		FloodFill(grid.Fields(), {{player_pos, 1}}, reachable);
+		if (reachable.At(target_pos)) {
+			grid.UpdatePosition(player, target_pos);
+			grid.UpdateDisplay(target, {});
+			auto fitness = Fitness(grid, player, field);
+			grid.UpdateDisplay(target, target_pos);
+			grid.UpdatePosition(player, player_pos);
+
+			// std::cerr << "REACHABLE " << v.edge << " " << int(v.tile);
+			// std::cerr << " = " << fitness << std::endl;
+
+			if (fitness > best_fitness) {
+				best_fitness = fitness;
+				response = {{v.edge, v.tile}, target_pos};
+			}
+		}
+
+		grid.Push(v.opposite_edge, field);
+	}
+	return response;
+}
+
 
 Response SuperFill(Grid grid, int player, int target, Field extra) {
 	using Clock = std::chrono::steady_clock;
@@ -221,6 +278,17 @@ Response SuperFill(Grid grid, int player, int target, Field extra) {
 	auto player_pos = grid.Positions()[player];
 	auto display_pos = grid.Displays()[target];
 	auto size = grid.Size();
+
+	auto single_move = SingleMove(grid, player, target, extra);
+	if (single_move) {
+		auto end_t = Clock::now();
+		std::cerr
+			<< "SINGLEMOVE "
+			<< std::chrono::duration_cast<std::chrono::milliseconds>(end_t - start_t).count()
+			<< " ms" << std::endl;
+
+		return *single_move;
+	}
 
 	InfluenceMatrix influence(size.x, size.y, 0);
 	int row_bits = 0;
@@ -282,7 +350,7 @@ Response SuperFill(Grid grid, int player, int target, Field extra) {
 
 	auto end_t = Clock::now();
 	std::cerr
-		<< "Superfill took "
+		<< "SUPERFILL "
 		<< std::chrono::duration_cast<std::chrono::milliseconds>(end_t - start_t).count()
 		<< " ms" << std::endl;
 

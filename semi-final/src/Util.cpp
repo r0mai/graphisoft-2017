@@ -26,6 +26,16 @@ Field RotateRight(Field tile) {
     return Field(((tile & 1) << 3) + (tile >> 1));
 }
 
+int OpenCount(Field tile) {
+	int k = 0;
+	k += !!(tile & 1);
+	k += !!(tile & 2);
+	k += !!(tile & 4);
+	k += !!(tile & 8);
+	return k;
+}
+
+
 Field Normalize(Field tile) {
 	static const int normalized[] = {
 		0, 1, 1, 3, 1, 5, 3, 7, 1, 3, 5, 7, 3, 7, 7, 15

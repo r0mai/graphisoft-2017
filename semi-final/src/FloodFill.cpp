@@ -144,7 +144,7 @@ void StupidFloodFillInternal(
 	}
 
 	auto bounds = Grow(GetBounds(colors), grid.Size());
-	auto varitions = GetPushVariations(bounds, grid.Size(), extra);
+	auto varitions = GetPushVariations(grid.Size(), extra);
 	auto original_colors = colors;
 
 	for (auto& variation : varitions) {
@@ -155,11 +155,11 @@ void StupidFloodFillInternal(
 		local_colors.Rotate(variation.edge);
 		current_colors.Rotate(variation.edge);
 
-		FloodFillExtend(current_colors, grid.Fields(), depth+1);
+		FloodFillExtend(current_colors, grid.Fields(), depth);
 
 		MergeMatrices(local_colors, current_colors, fn);
 
-		StupidFloodFillInternal(grid, new_extra, local_colors, pushes, depth+1, max_depth);
+		StupidFloodFillInternal(grid, new_extra, local_colors, pushes, depth + 1, max_depth);
 
 		local_colors.RotateBack(variation.edge);
 		MergeMatrices(colors, local_colors, fn);
@@ -168,24 +168,28 @@ void StupidFloodFillInternal(
 	}
 }
 
-Matrix<int> StupidFloodFill(Grid grid, const Point& origin, Field extra) {
+Matrix<int> StupidFloodFill(Grid grid, const Point& origin, Field extra, bool move_first) {
 	using Clock = std::chrono::steady_clock;
 	using Duration = std::chrono::duration<double>;
 	auto width = grid.Width();
 	auto height = grid.Height();
 
 	auto start_t = Clock::now();
-	Matrix<int> colors(width, height);
-	FloodFillTo(colors, grid.Fields(), origin, 1);
+	Matrix<int> colors(width, height, 0);
+	if (move_first) {
+		FloodFillTo(colors, grid.Fields(), origin, 1);
+	} else {
+		colors.At(origin) = 1;
+	}
 
 	std::vector<PushVariation> pushes;
-	StupidFloodFillInternal(grid, extra, colors, pushes, 1, 2);
+	StupidFloodFillInternal(grid, extra, colors, pushes, 2, 3);
 	auto end_t = Clock::now();
 
 	std::cerr
-		<< "Coloring took "
+		<< "COLORING "
 		<< std::chrono::duration_cast<std::chrono::milliseconds>(end_t - start_t).count()
-		<< " ms" << std::endl;
+		<< " ms" << (move_first ? " [move]" : " [push]") << std::endl;
 
 	return colors;
 }

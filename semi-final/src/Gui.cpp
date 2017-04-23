@@ -267,7 +267,7 @@ void HandleKeypress(App& app, const sf::Event::KeyEvent& ev) {
 			}
 			break;
 		case sf::Keyboard::U:
-			if (app.state == State::kPush) {
+			if (app.state == State::kPush || app.state == State::kGameOver) {
 				app.state = State::kUndo;
 			}
 			break;
@@ -350,9 +350,9 @@ void UpdateTitle(const std::vector<int>& scores, int player, int current, sf::Re
 
 void ResetColors(App& app) {
 	app.colors = Matrix<int>(app.grid.Width(), app.grid.Height(), 0);
-#if 1
+#if 0
 	auto pos = app.grid.Positions()[app.self];
-	app.colors = StupidFloodFill(app.grid, pos, app.extra);
+	app.colors = StupidFloodFill(app.grid, pos, app.extra, false);
 #endif
 }
 
@@ -360,11 +360,8 @@ void UpdateColors(App& app) {
 	auto pos = app.grid.Positions()[app.self];
 #if 1
 	app.colors = FloodFill(app.grid.Fields(), pos);
-#elif 0
-	app.colors = FullFloodFill(app.grid.Fields(), 2);
-	FloodFillTo(app.colors, app.grid.Fields(), pos, 1);
 #else
-	// app.colors = StupidFloodFill(app.grid, pos, app.extra);
+	app.colors = StupidFloodFill(app.grid, pos, app.extra, true);
 #endif
 }
 
@@ -372,17 +369,18 @@ void ProcessAnimations(App& app) {
 	auto current_t = Clock::now();
 	if (app.state == State::kAnimatePush) {
 		if (!app.anim.push->Animate(current_t - app.anim.start_t)) {
+			UpdateColors(app);
+			current_t = Clock::now();
 			app.state = app.anim.push->EndState();
 			app.anim.start_t = current_t; // for next animation
 			app.anim.push.reset();
-			UpdateColors(app);
 		}
 	} else if (app.state == State::kAnimateMove) {
 		if (!app.anim.move->Animate(current_t - app.anim.start_t)) {
 			app.state = app.anim.move->EndState();
 			app.anim.start_t = current_t; // for next animation
 			app.anim.move.reset();
-			ResetColors(app);
+			// ResetColors(app);
 		}
 	}
 }
@@ -404,12 +402,12 @@ void HandleMousePressed(App& app, const sf::Event::MouseButtonEvent& ev) {
 	} else if (app.state == State::kMove && IsInside(app, pos) &&
 		app.colors.At(pos) == 1)
 	{
+		ResetColors(app);
 		app.response.move = pos;
 		app.state = State::kAnimateMove;
 		app.anim.move.reset(new AnimateMove(
 			app, pos, kMoveDuration, State::kDone));
 		app.anim.start_t = Clock::now();
-		ResetColors(app);
 	}
 }
 
@@ -668,6 +666,12 @@ void DrawDisplays(App& app) {
 }
 
 void Draw(App& app) {
+	static State last_state = State(-1);
+	if (last_state != app.state) {
+		last_state = app.state;
+		// std::cerr << "STATE = " << int(last_state) << std::endl;
+	}
+
 	if (app.invalid) {
 		app.invalid = false;
 		AdjustView(app);
@@ -802,7 +806,7 @@ void ApplyMove(Game& game, App& app) {
 			--game.remain;
 			++game.scores[game.player];
 			game.grid.UpdateDisplay(target, {});
-			std::cerr << "SCORES:";
+			std::cerr << "SCORES ";
 			for (auto x : game.scores) {
 				std::cerr << " " << x;
 			}

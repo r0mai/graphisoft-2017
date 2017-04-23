@@ -24,5 +24,5 @@ void FloodFillTo(
 
 // coordinates with the same integer value are reachable from each other
 Matrix<int> FullFloodFill(const Matrix<Field>& fields, int start_index = 1);
-Matrix<int> StupidFloodFill(Grid grid, const Point& origin, Field extra);
+Matrix<int> StupidFloodFill(Grid grid, const Point& origin, Field extra, bool move_first);
 

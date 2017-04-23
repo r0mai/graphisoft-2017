@@ -22,6 +22,8 @@ Field EastFacing(Field tile);
 
 std::vector<Field> GetRotations(Field tile);
 
+int OpenCount(Field tile);
+
 struct PushVariation {
 	PushVariation() = default;
 	PushVariation(Point edge, Point opposite, Field tile)
