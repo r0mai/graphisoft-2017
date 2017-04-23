@@ -8,8 +8,6 @@
 
 namespace {
 
-int g_counter = 0;
-
 template<typename F>
 void MergeMatrices(Matrix<int>& base, const Matrix<int>& other, F fn) {
 	for (int y = 0; y < base.Height(); ++y) {
@@ -150,7 +148,6 @@ void StupidFloodFillInternal(
 	auto original_colors = colors;
 
 	for (auto& variation : varitions) {
-		++g_counter;
 		pushes.push_back(variation);
 		auto new_extra = grid.Push(variation.edge, variation.tile);
 		auto local_colors = original_colors;
@@ -185,9 +182,8 @@ Matrix<int> StupidFloodFill(Grid grid, const Point& origin, Field extra) {
 	StupidFloodFillInternal(grid, extra, colors, pushes, 1, 2);
 	auto end_t = Clock::now();
 
-	std::cerr << "CHECKED " << g_counter << std::endl;
 	std::cerr
-		<< "Delta T: "
+		<< "Coloring took "
 		<< std::chrono::duration_cast<std::chrono::milliseconds>(end_t - start_t).count()
 		<< " ms" << std::endl;
 

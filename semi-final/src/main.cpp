@@ -1,5 +1,6 @@
 #include "EagerTaxicab.h"
 #include "UpwindSailer.h"
+#include "SuperFill.h"
 #include "Client.h"
 #include <iostream>
 #include <vector>
@@ -66,7 +67,11 @@ int main(int argc, char** argv) {
 #if 0
 		UpwindSailer solver;
 #else
+#if 0
 		EagerTaxicab solver;
+#else
+		SuperSolver solver;
+#endif
 #endif
 		Client(host_name, port, team_name, password, filename, level).Run(solver);
 

@@ -10,8 +10,6 @@
 
 namespace {
 
-int g_counter = 0;
-
 using FieldMatrix = Matrix<Field>;
 
 template<typename F>
@@ -162,7 +160,6 @@ void SuperFillInternal(Grid& grid, SuperMatrix& matrix, int target, Field extra,
 	ExtractInfluence(grid.Fields(), influence, row_bits, col_bits);
 
 	for (const auto& v : GetPushVariations(row_bits, col_bits, size, extra)) {
-		++g_counter;
 		// apply push
 		parent_matrix.Rotate(v.edge);
 		auto field = grid.Push(v.edge, v.tile);
@@ -210,9 +207,12 @@ Response SuperFill(Grid grid, int player, int target, Field extra) {
 	using Clock = std::chrono::steady_clock;
 	using Duration = std::chrono::duration<double>;
 	auto start_t = Clock::now();
+	const int max_depth = 2;
 
 	Response response;
 	int best = std::numeric_limits<int>::max();
+	int closest = std::numeric_limits<int>::max();
+
 	auto player_pos = grid.Positions()[player];
 	auto display_pos = grid.Displays()[target];
 	auto size = grid.Size();
@@ -226,7 +226,6 @@ Response SuperFill(Grid grid, int player, int target, Field extra) {
 	ExtractInfluence(grid.Fields(), influence, row_bits, col_bits);
 
 	for (const auto& v : GetPushVariations(row_bits, col_bits, size, extra)) {
-		++g_counter;
 		auto field = grid.Push(v.edge, v.tile);
 		SuperOrigin origin;
 		SuperMatrix matrix(size.x, size.y);
@@ -240,13 +239,11 @@ Response SuperFill(Grid grid, int player, int target, Field extra) {
 
 		// fix move info
 		matrix.ForeachField([](const Point& p, SuperMove& m) {
-			if (m) {
-				m.move = p;
-			}
+			if (m) { m.move = p; }
 		});
 		matrix.At(player_pos).move = {}; // means skip
 
-		SuperFillInternal(grid, matrix, target, field, 2, 2);
+		SuperFillInternal(grid, matrix, target, field, 2, max_depth);
 
 		const auto& sm = matrix.At(display_pos);
 		if (sm && sm.depth < best) {
@@ -255,13 +252,32 @@ Response SuperFill(Grid grid, int player, int target, Field extra) {
 			response.move = sm.move;
 			best = sm.depth;
 		}
+
+		if (best > max_depth) {
+			matrix.ForeachField([&](const Point& p, SuperMove& m) {
+				if (!m) {
+					return;
+				}
+				auto dst = TaxicabDistance(p, display_pos, size);
+				if (dst < closest) {
+					response.push.edge = v.edge;
+					response.push.field = v.tile;
+					response.move = m.move;
+					closest = dst;
+				}
+			});
+		}
+
 		grid.Push(v.opposite_edge, field);
+
+		if (best == 1) {
+			break;
+		}
 	}
 
 	auto end_t = Clock::now();
-	std::cerr << "SUPERFILLED " << g_counter << std::endl;
 	std::cerr
-		<< "Delta T: "
+		<< "Superfill took "
 		<< std::chrono::duration_cast<std::chrono::milliseconds>(end_t - start_t).count()
 		<< " ms" << std::endl;
 
