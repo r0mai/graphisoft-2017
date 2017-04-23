@@ -23,6 +23,13 @@ Field EastFacing(Field tile);
 std::vector<Field> GetRotations(Field tile);
 
 struct PushVariation {
+	PushVariation() = default;
+	PushVariation(Point edge, Point opposite, Field tile)
+		: edge(edge)
+		, opposite_edge(opposite)
+		, tile(tile)
+	{}
+
 	Point edge;
 	Point opposite_edge;
 	Field tile;
@@ -30,6 +37,8 @@ struct PushVariation {
 
 std::vector<PushVariation> GetPushVariations(
 	const Bounds& bounds, const Point& field_size, Field extra);
+std::vector<PushVariation> GetPushVariations(
+	int row_bits, int col_bits, const Point& field_size, Field extra);
 std::vector<PushVariation> GetPushVariations(const Point& field_size, Field extra);
 
 std::ostream& operator<<(std::ostream& os, const PushVariation& push);

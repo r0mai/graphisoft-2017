@@ -4,40 +4,45 @@
 #include "Grid.h"
 #include "SuperFill.h"
 #include <limits>
-
+#include <cstdint>
+#include <functional>
+#include <chrono>
 
 namespace {
 
+int g_counter = 0;
+
 using FieldMatrix = Matrix<Field>;
-void ForeachNeighbors(const FieldMatrix& matrix, const Point& p,
-	std::function<void(const Point&)> func)
-{
+
+template<typename F>
+void ForeachNeighbors(const FieldMatrix& matrix, const Point& p, F func) {
 	int width = matrix.Width();
 	int height = matrix.Height();
+	Field field = matrix.At(p);
 
 	if (p.x + 1 < width &&
-		IsEastOpen(matrix.At(p)) &&
+		IsEastOpen(field) &&
 		IsWestOpen(matrix.At(p.x + 1, p.y)))
 	{
-		func({p.x + 1, p.y});
+		func(p.x + 1, p.y);
 	}
 	if (p.x - 1 >= 0 &&
-		IsWestOpen(matrix.At(p)) &&
+		IsWestOpen(field) &&
 		IsEastOpen(matrix.At(p.x - 1, p.y)))
 	{
-		func({p.x - 1, p.y});
+		func(p.x - 1, p.y);
 	}
 	if (p.y + 1 < height &&
-		IsSouthOpen(matrix.At(p)) &&
+		IsSouthOpen(field) &&
 		IsNorthOpen(matrix.At(p.x, p.y + 1)))
 	{
-		func({p.x, p.y + 1});
+		func(p.x, p.y + 1);
 	}
 	if (p.y - 1 >= 0 &&
-		IsNorthOpen(matrix.At(p)) &&
+		IsNorthOpen(field) &&
 		IsSouthOpen(matrix.At(p.x, p.y - 1)))
 	{
-		func({p.x, p.y - 1});
+		func(p.x, p.y - 1);
 	}
 }
 
@@ -56,13 +61,28 @@ void FloodFill(const FieldMatrix& matrix,
 			continue;
 		}
 		area.At(top.first) = top.second;
-		ForeachNeighbors(matrix, top.first, [&](const Point& p) {
-			stack.push_back({p, top.second});
+		ForeachNeighbors(matrix, top.first, [&](int x, int y) {
+			if (!bool(area.At(x, y))) {
+				stack.push_back({{x, y}, top.second});
+			}
 		});
 	}
 }
 
-} // namespace
+template<typename C, typename F>
+std::vector<std::pair<Point, C>> ExtractOrigins(Matrix<C>& area, F func)
+{
+	std::vector<std::pair<Point, C>> origins;
+	area.ForeachField([&func, &origins](const Point& pos, C& cc) {
+		if (cc) {
+			origins.push_back({pos, func(cc)});
+			cc = C();
+		}
+	});
+	return origins;
+}
+
+
 
 struct SuperMove {
 	int depth = 0;
@@ -75,8 +95,43 @@ struct SuperMove {
 
 using SuperMatrix = Matrix<SuperMove>;
 using SuperOrigin = std::pair<Point, SuperMove>;
+using InfluenceMatrix = Matrix<int>;
+using InfluenceOrigin = std::pair<Point, int>;
 
-void SuperFillInternal(Grid& grid, SuperMatrix& matrix, Field extra,
+
+void ExtractInfluence(const FieldMatrix& matrix,
+	const InfluenceMatrix& influence, int& row_bits, int& col_bits)
+{
+	auto width = matrix.Width();
+	auto height = matrix.Height();
+
+	for (auto y = 0; y < height; ++y) {
+		for (auto x = 0; x < width; ++x) {
+			if (!influence.At(x, y)) {
+				continue;
+			}
+
+			auto field = matrix.At(x, y);
+			row_bits |= 1 << y;
+			col_bits |= 1 << x;
+
+			if (x > 0 && IsWestOpen(field)) {
+				col_bits |= 1 << (x - 1);
+			}
+			if (x < width - 1 && IsEastOpen(field)) {
+				col_bits |= 1 << (x + 1);
+			}
+			if (y > 0 && IsNorthOpen(field)) {
+				row_bits |= 1 << (y - 1);
+			}
+			if (y < height - 1 && IsSouthOpen(field)) {
+				row_bits |= 1 << (y + 1);
+			}
+		}
+	}
+}
+
+void SuperFillInternal(Grid& grid, SuperMatrix& matrix, int target, Field extra,
 	int depth, int max_depth)
 {
 	SuperMatrix parent_matrix = matrix;
@@ -90,20 +145,34 @@ void SuperFillInternal(Grid& grid, SuperMatrix& matrix, Field extra,
 		return fn;
 	};
 
-	for (const auto& v : GetPushVariations(grid.Size(), extra)) {
+	auto size = grid.Size();
+	std::vector<InfluenceOrigin> origins;
+	InfluenceMatrix influence(size.x, size.y, 0);
+	int row_bits = 0;
+	int col_bits = 0;
+
+	for (const auto& x : ExtractOrigins(matrix,
+		[](const SuperMove& m) { return m; }))
+	{
+		origins.emplace_back(x.first, 1);
+	}
+	origins.emplace_back(grid.Displays()[target], 1);
+
+	FloodFill(grid.Fields(), origins, influence);
+	ExtractInfluence(grid.Fields(), influence, row_bits, col_bits);
+
+	for (const auto& v : GetPushVariations(row_bits, col_bits, size, extra)) {
+		++g_counter;
 		// apply push
 		parent_matrix.Rotate(v.edge);
 		auto field = grid.Push(v.edge, v.tile);
 		auto local_matrix = parent_matrix;
-		std::vector<SuperOrigin> origins;
 
 		// collect origins
-		local_matrix.ForeachField([&](const Point& p, SuperMove& m) {
-			if (m) {
-				origins.push_back({p, {depth, m.move}});
-				m.depth = 0;
-			}
-		});
+		auto origins = ExtractOrigins(local_matrix,
+			[&depth](const SuperMove& m) {
+				return SuperMove{depth, m.move};
+			});
 
 		// fill with current color
 		FloodFill(grid.Fields(), origins, local_matrix);
@@ -112,7 +181,8 @@ void SuperFillInternal(Grid& grid, SuperMatrix& matrix, Field extra,
 		local_matrix.ForeachField(MergeWith(parent_matrix));
 
 		if (depth < max_depth) {
-			SuperFillInternal(grid, local_matrix, field, depth + 1, max_depth);
+			SuperFillInternal(grid, local_matrix, target, field,
+				depth + 1, max_depth);
 		}
 
 		// revert push
@@ -129,37 +199,54 @@ void DumpMoves(const SuperMatrix& matrix) {
 	for (int y = 0; y < matrix.Height(); ++y) {
 		for (int x = 0; x < matrix.Width(); ++x) {
 			const auto& sm = matrix.At(x, y);
-			std::cout
-				<< " "
-				<< sm.depth
-				// << ":"
-				// << sm.move
-			;
+			std::cout << " " << sm.depth;
+			// std::cout << ":" << sm.move;
 		}
 		std::cout << std::endl;
 	}
 }
 
 Response SuperFill(Grid grid, int player, int target, Field extra) {
+	using Clock = std::chrono::steady_clock;
+	using Duration = std::chrono::duration<double>;
+	auto start_t = Clock::now();
+
 	Response response;
 	int best = std::numeric_limits<int>::max();
-	for (const auto& v : GetPushVariations(grid.Size(), extra)) {
+	auto player_pos = grid.Positions()[player];
+	auto display_pos = grid.Displays()[target];
+	auto size = grid.Size();
+
+	InfluenceMatrix influence(size.x, size.y, 0);
+	int row_bits = 0;
+	int col_bits = 0;
+
+	// influence
+	FloodFill(grid.Fields(), {{player_pos, 1}, {display_pos, 1}}, influence);
+	ExtractInfluence(grid.Fields(), influence, row_bits, col_bits);
+
+	for (const auto& v : GetPushVariations(row_bits, col_bits, size, extra)) {
+		++g_counter;
 		auto field = grid.Push(v.edge, v.tile);
 		SuperOrigin origin;
-		SuperMatrix matrix(grid.Width(), grid.Height());
+		SuperMatrix matrix(size.x, size.y);
 
-		auto player_pos = grid.Positions()[player];
-		auto display_pos = grid.Displays()[target];
+		player_pos = grid.Positions()[player];
+		display_pos = grid.Displays()[target];
+
 		origin.first = player_pos;
 		origin.second = {1, {}};
 		FloodFill(grid.Fields(), {origin}, matrix);
+
+		// fix move info
 		matrix.ForeachField([](const Point& p, SuperMove& m) {
 			if (m) {
 				m.move = p;
 			}
 		});
 		matrix.At(player_pos).move = {}; // means skip
-		SuperFillInternal(grid, matrix, field, 2, 2);
+
+		SuperFillInternal(grid, matrix, target, field, 2, 2);
 
 		const auto& sm = matrix.At(display_pos);
 		if (sm && sm.depth < best) {
@@ -170,8 +257,19 @@ Response SuperFill(Grid grid, int player, int target, Field extra) {
 		}
 		grid.Push(v.opposite_edge, field);
 	}
+
+	auto end_t = Clock::now();
+	std::cerr << "SUPERFILLED " << g_counter << std::endl;
+	std::cerr
+		<< "Delta T: "
+		<< std::chrono::duration_cast<std::chrono::milliseconds>(end_t - start_t).count()
+		<< " ms" << std::endl;
+
 	return response;
 }
+
+} // namespace
+
 
 void SuperSolver::Turn(const Grid& grid, int player, int target, Field field,
 	Callback fn)

@@ -350,7 +350,7 @@ void UpdateTitle(const std::vector<int>& scores, int player, int current, sf::Re
 
 void ResetColors(App& app) {
 	app.colors = Matrix<int>(app.grid.Width(), app.grid.Height(), 0);
-#if 0
+#if 1
 	auto pos = app.grid.Positions()[app.self];
 	app.colors = StupidFloodFill(app.grid, pos, app.extra);
 #endif

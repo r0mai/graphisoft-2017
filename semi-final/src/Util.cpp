@@ -128,6 +128,38 @@ std::vector<PushVariation> GetPushVariations(
 	return variations;
 }
 
+std::vector<PushVariation> GetPushVariations(
+	int row_bits, int col_bits, const Point& field_size, Field extra)
+{
+	int w = field_size.x;
+	int h = field_size.y;
+	std::vector<PushVariation> variations;
+
+	auto rotations = GetRotations(extra);
+
+	for (int x = 0; x < w; ++x) {
+		if ((col_bits & (1 << x)) == 0) {
+			continue;
+		}
+		for (Field f : rotations) {
+			variations.emplace_back(Point{x, -1}, Point{x, h}, f);
+			variations.emplace_back(Point{x, h}, Point{x, -1}, f);
+		}
+	}
+	for (int y = 0; y < h; ++y) {
+		if ((row_bits & (1 << y)) == 0) {
+			continue;
+		}
+		for (Field f : rotations) {
+			variations.emplace_back(Point{-1, y}, Point{w, y}, f);
+			variations.emplace_back(Point{w, y}, Point{-1, y}, f);
+		}
+	}
+
+	return variations;
+}
+
+
 std::ostream& operator<<(std::ostream& os, const PushVariation& push) {
 	os << "(" << push.edge << ", " << push.tile << ")";
 	return os;
