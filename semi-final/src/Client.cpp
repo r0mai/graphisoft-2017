@@ -78,7 +78,12 @@ boost::optional<std::vector<std::string>> Client::CheckForMessage() {
 	std::stringstream consumer(received_buffer_);
 	while(std::getline(consumer, buffer)) {
 		if(buffer == ".") {
-			received_buffer_ = consumer.str().substr(consumer.tellg());
+			auto position = consumer.tellg();
+			if (position != std::stringstream::pos_type{-1}) {
+				received_buffer_ = consumer.str().substr(position);
+			} else {
+				received_buffer_.clear();
+			}
 			return result;
 		} else if(!buffer.empty()) {
 			result.push_back(buffer);
