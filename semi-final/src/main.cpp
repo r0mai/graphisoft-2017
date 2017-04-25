@@ -60,6 +60,9 @@ int main(int argc, char** argv) {
 
 	if (vm.count("output")) {
 		filename = vm["output"].as<std::string>();
+	} else {
+		std::cerr << "error: no output file was specified" << std::endl;
+		return 1;
 	}
 
 	try {
