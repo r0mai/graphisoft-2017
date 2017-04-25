@@ -65,20 +65,16 @@ int main(int argc, char** argv) {
 		return 1;
 	}
 
-	try {
-		platform_dep::enable_socket _;
+	platform_dep::enable_socket _;
 #if 0
-		UpwindSailer solver;
+	UpwindSailer solver;
 #else
 #if 0
-		EagerTaxicab solver;
+	EagerTaxicab solver;
 #else
-		SuperSolver solver;
+	SuperSolver solver;
 #endif
 #endif
-		Client(host_name, port, team_name, password, filename, level).Run(solver);
+	Client(host_name, port, team_name, password, filename, level).Run(solver);
 
-	} catch(std::exception& e) {
-		std::cerr << "Exception throwed. what(): " << e.what() << std::endl;
-	}
 }
