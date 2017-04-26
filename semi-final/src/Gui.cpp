@@ -778,6 +778,7 @@ void UndoMove(Game& game, App& app) {
 	if (undo.display >= 0) {
 		auto pos = game.grid.Positions()[undo.player];
 		game.grid.UpdateDisplay(undo.display, pos);
+		app.target = undo.display;
 		++game.remain;
 		--game.scores[undo.player];
 	}
