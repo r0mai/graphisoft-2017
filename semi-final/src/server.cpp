@@ -183,7 +183,7 @@ public:
 	Game(int maxPlayers, int maxTicks, int width, int height) :
 		maxPlayers(maxPlayers), maxTicks(maxTicks)
 	{
-		grid.Init(width, height, 4, maxPlayers);
+		grid.Init(width, height, width * height / 4, maxPlayers);
 		grid.Randomize();
 	}
 
@@ -420,15 +420,22 @@ int main(int argc, const char** argv) {
 	namespace po = boost::program_options;
 	po::options_description desc{"Allowed Options"};
 	desc.add_options()
-			("help", "this help message")
-			("players", po::value<int>(), "players to wait for before starting, defaults to 4")
-			("ticks", po::value<int>(), "ticks to run the game for, defaults to 10")
-			("width", po::value<int>(), "width of maps, defaults to 6")
-			("height", po::value<int>(), "height of maps, defaults to 6")
+			("help,h", "this help message")
+			("players,p", po::value<int>(), "players to wait for before starting, defaults to 4")
+			("ticks,t", po::value<int>(), "ticks to run the game for, defaults to 10")
+			("width,W", po::value<int>(), "width of maps, defaults to 6")
+			("height,H", po::value<int>(), "height of maps, defaults to 6")
 			;
+
 	po::variables_map vm;
-	po::store(po::parse_command_line(argc, argv, desc), vm);
-	po::notify(vm);
+	try {
+		po::store(po::parse_command_line(argc, argv, desc), vm);
+		po::notify(vm);
+	} catch(std::exception& e) {
+		std::cerr << "error: " << e.what() << std::endl;
+		return 1;
+	}
+
 	int playersToWaitFor = 4;
 	if (vm.count("help")) {
 		std::cout << desc << std::endl;
