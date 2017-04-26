@@ -360,7 +360,11 @@ bool IsInside(const App& app, const Point& pos) {
 	return x_in && y_in;
 }
 
-int NextDisplay(const Grid& grid) {
+int NextDisplay(const Grid& grid, int prev_target) {
+	if (prev_target >= 0 && IsValid(grid.Displays()[prev_target])) {
+		return prev_target;
+	}
+
 	int index = 0;
 	for (const auto& pos : grid.Displays()) {
 		if (IsValid(pos)) {
@@ -746,7 +750,7 @@ void Draw(App& app) {
 void ResetAppState(const Game& game, App& app) {
 	app.grid = game.grid;
 	app.self = game.player;
-	app.target = NextDisplay(app.grid);
+	app.target = NextDisplay(app.grid, app.target);
 	app.state = State::kPush;
 	app.extra = game.extras[game.player];
 	app.response.push.edge = {};
