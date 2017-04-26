@@ -308,11 +308,17 @@ int ConvergeDistance(const Grid& grid, const Point& p, const Point& q, int penal
 			auto top_dst = std::min(p.y, q.y);
 			auto bottom_dst = size.y - 1 - std::max(p.y, q.y);
 			dst += std::min(top_dst, bottom_dst);
+			if (top_dst == bottom_dst) {
+				dst += 1;
+			}
 		} else if (p.y == q.y) {
 			// row
 			auto left_dst = std::min(p.x, q.x);
 			auto right_dst = size.x - 1 - std::max(p.x, q.x);
 			dst += std::min(left_dst, right_dst);
+			if (left_dst == right_dst) {
+				dst += 1;
+			}
 		} else {
 			// huh?
 		}
