@@ -362,15 +362,17 @@ int NextDisplay(const Grid& grid) {
 	return -1;
 }
 
-void UpdateTitle(const std::vector<int>& scores, int player, int current, sf::RenderWindow& window) {
+void UpdateTitle(const std::vector<int>& scores, int player, int current,
+	int tick, sf::RenderWindow& window)
+{
 	std::stringstream ss;
 
 	ss << "Player " << player << " |";
 	for (int i = 0, ie = scores.size(); i < ie; ++i) {
 		ss << " " << g_player_names[i] << ": " << scores[i];
 	}
-	ss << " | ";
-	ss << " Player " << current << " turn";
+	ss << " | Player " << current << " turn";
+	ss << " | Tick " << tick;
 
 	window.setTitle(ss.str());
 }
@@ -869,7 +871,7 @@ void AdvanceReplay(Game& game, App& app, int advance) {
 	app.self = game.player;
 	app.target = info.target;
 	app.extra = info.extra;
-	UpdateTitle(info.scores, 0, info.player, app.window);
+	UpdateTitle(info.scores, 0, info.player, info.tick, app.window);
 
 	ResetColors(app);
 }
