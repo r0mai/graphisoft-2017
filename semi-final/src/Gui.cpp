@@ -309,6 +309,11 @@ void HandleKeypress(App& app, const sf::Event::KeyEvent& ev) {
 				app.state = State::kReplayNext;
 			}
 			break;
+		case sf::Keyboard::M:
+			if (app.state == State::kReplay) {
+				app.state = State::kReplayDone;
+			}
+			break;
 
 		default:
 			break;
