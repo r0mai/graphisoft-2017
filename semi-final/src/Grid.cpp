@@ -82,6 +82,15 @@ const std::vector<Point>& Grid::Displays() const {
 	return displays_;
 }
 
+bool Grid::IsNeighbor(const Point& p, const Point& q) const {
+	auto dx = std::abs(p.x - q.x);
+	auto dy = std::abs(p.y - q.y);
+
+	return
+		(dx == 0 && (dy == 1 || dy == Height() - 1)) ||
+		(dy == 0 && (dx == 1 || dx == Width() - 1));
+}
+
 bool Grid::IsNeighbor(int player, int display) const {
 	if (!IsValid(displays_[display])) {
 		return false;
@@ -89,12 +98,7 @@ bool Grid::IsNeighbor(int player, int display) const {
 
 	auto p = positions_[player];
 	auto q = displays_[display];
-	auto dx = std::abs(p.x - q.x);
-	auto dy = std::abs(p.y - q.y);
-
-	return
-		(dx == 0 && (dy == 1 || dy == Height() - 1)) ||
-		(dy == 0 && (dx == 1 || dx == Width() - 1));
+	return IsNeighbor(p, q);
 }
 
 void Grid::Init(int width, int height, int displays, int players) {

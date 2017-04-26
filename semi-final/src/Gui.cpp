@@ -667,7 +667,6 @@ void DrawPrincesses(App& app) {
 	}
 }
 
-
 void DrawDisplays(App& app) {
 	int index = 0;
 	for (const auto& pos : app.grid.Displays()) {
