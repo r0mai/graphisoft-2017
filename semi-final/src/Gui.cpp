@@ -298,7 +298,11 @@ void HandleKeypress(App& app, const sf::Event::KeyEvent& ev) {
 				app.state = State::kUndo;
 			}
 			break;
-
+		case sf::Keyboard::X:
+			if (app.state == State::kReplay) {
+				app.state = State::kPush;
+			}
+			break;
 		case sf::Keyboard::B:
 			if (app.state == State::kReplay) {
 				app.state = State::kReplayBack;
