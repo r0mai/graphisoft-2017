@@ -457,6 +457,7 @@ int main(int argc, const char** argv) {
 		height = vm["height"].as<int>();
 	}
 	for (;;) {
+		::srand(time(nullptr));
 		std::cerr << "Starting new game" << std::endl;
 		server::Game game{playersToWaitFor, maxTicks, width, height};
 		game.run();
