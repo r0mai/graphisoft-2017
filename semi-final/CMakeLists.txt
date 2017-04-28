@@ -29,8 +29,8 @@ add_executable(labyrinth
 )
 
 add_executable(glabyrinth
-    src/Gui.cpp
-    src/Hsv2rgb.cpp
+    src/gui/Gui.cpp
+    src/gui/Hsv2rgb.cpp
 )
 
 add_executable(test-labyrinth
@@ -38,16 +38,16 @@ add_executable(test-labyrinth
 )
 
 add_executable(server
-    src/server.cpp
     src/Grid.cpp
     src/Util.cpp
+    src/server/server.cpp
     src/server/Command.cpp
 )
-
 
 target_include_directories(glabyrinth PRIVATE
     ${SFML_INCLUDE_DIR}
     ${BOOST_INCLUDEDIR}
+    src
 )
 target_link_libraries(glabyrinth
     liblabyrinth
@@ -65,7 +65,10 @@ target_link_libraries(labyrinth
     ${Boost_PROGRAM_OPTIONS_LIBRARY}
 )
 
-target_include_directories(server PRIVATE ${BOOST_INCLUDEDIR})
+target_include_directories(server PRIVATE
+    ${BOOST_INCLUDEDIR}
+    src
+)
 target_link_libraries(server
     ${Boost_SYSTEM_LIBRARY}
     ${Boost_CONTEXT_LIBRARY}

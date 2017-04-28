@@ -55,9 +55,13 @@ struct Action {
 struct Game {
 	Grid grid;
 	std::vector<Field> extras;
+	std::vector<std::vector<int>> targets;
+
 	std::vector<int> scores;
 	std::vector<Action> undo_stack;
 	std::vector<TurnInfo> replay_stack;
+
+
 	int replay_index = -1;
 
 	int tick = -1;
