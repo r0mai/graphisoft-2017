@@ -22,6 +22,7 @@ add_library(liblabyrinth STATIC
     src/SuperFill.cpp
     src/Bounds.cpp
     src/InputParser.cpp
+    src/Solver.cpp
 )
 
 add_executable(labyrinth
@@ -29,7 +30,11 @@ add_executable(labyrinth
 )
 
 add_executable(glabyrinth
-    src/gui/Gui.cpp
+    src/gui/main.cpp
+    src/gui/Game.cpp
+    src/gui/GameWindow.cpp
+    # src/gui/Gui.cpp
+    # src/gui/Interactive.cpp
     src/gui/Hsv2rgb.cpp
 )
 
