@@ -108,7 +108,7 @@ void Grid::Init(int width, int height, int displays, int players) {
 }
 
 void Grid::Randomize() {
-	int fx[] = {1, 3, 3, 3, 1};		// frequencies of different tiles
+	int fx[] = {7, 13, 10, 1, 1};		// frequencies of different tiles
 	int kx[] = {1, 3, 7, 5, 15};	// tiles
 
 	int ftotal = 0;
@@ -359,6 +359,24 @@ bool Grid::ScoreDiff(const Grid& grid) const {
 	return false;
 }
 
+bool Grid::IsEdge(const Point& pos) const {
+	auto size = Size();
+	bool x_edge = pos.x == -1 || pos.x == size.x;
+	bool y_edge = pos.y == -1 || pos.y == size.y;
+
+	bool x_in = pos.x >= 0 && pos.x < size.x;
+	bool y_in = pos.y >= 0 && pos.y < size.y;
+
+	return (x_edge && y_in) || (y_edge && x_in);
+}
+
+bool Grid::IsInside(const Point& pos) const {
+	auto size = Size();
+	bool x_in = pos.x >= 0 && pos.x < size.x;
+	bool y_in = pos.y >= 0 && pos.y < size.y;
+
+	return x_in && y_in;
+}
 
 
 namespace {
