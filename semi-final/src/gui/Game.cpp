@@ -1,6 +1,9 @@
 #include "Game.h"
 #include "FloodFill.h"
+#include "Util.h"
 #include <fstream>
+#include <algorithm>
+#include <numeric>
 
 namespace {
 
@@ -75,7 +78,6 @@ private:
 	std::function<void()> finish_;
 };
 
-
 } // namespace
 
 
@@ -95,13 +97,47 @@ void Game::InitReplay(const std::string& filename) {
 		}
 
 		grid_.Init(info.width, info.height, info.displays, player_count);
-		players_.resize(player_count);
+		scores_.resize(player_count, 0);
+		extras_.resize(player_count, Field(15));
+		player_count_ = player_count;
+
 		InitInternal(Mode::kReplay, State::kReady);
 		SetReplay(0);
 	} catch (std::ifstream::failure ex) {
 		std::cerr << "error: cannot read file: " << filename << std::endl;
 		exit(1);
 	}
+}
+
+void Game::RandomizeTargets() {
+	auto displays = grid_.Displays().size();
+	targets_.resize(player_count_);
+	for (int i = 0; i < player_count_; ++i) {
+		auto& vec = targets_[i];
+		vec.resize(displays);
+		std::iota(vec.begin(), vec.end(), 0);
+		std::random_shuffle(vec.begin(), vec.end());
+	}
+}
+
+void Game::InitFreeplay(int player_count) {
+	srand(10372);
+
+	int width = 14;
+	int height = 8;
+	int max_d = width * height / 4;
+	int displays = std::min(20, max_d);
+
+	grid_.Init(width, height, displays, player_count);
+	grid_.Randomize();
+	scores_.resize(player_count, 0);
+	extras_.resize(player_count, Field(15));
+	player_count_ = player_count;
+
+	RandomizeTargets();
+	InitInternal(Mode::kFree, State::kReady);
+	SetPlayer(0);
+	undo_.push_back(SaveState());
 }
 
 void Game::ResetColors() {
@@ -123,6 +159,18 @@ void Game::InitInternal(Mode mode, State state) {
 	player_delta_ = {};
 }
 
+void Game::SetPlayer(int player) {
+	player_ = player;
+	target_ = -1;
+
+	for (auto x : targets_[player]) {
+		if (IsValid(grid_.Displays()[x])) {
+			target_ = x;
+			break;
+		}
+	}
+}
+
 void Game::SetReplay(int n) {
 	auto& info = replay_.turns[n];
 	replay_.current = n;
@@ -131,11 +179,12 @@ void Game::SetReplay(int n) {
 	tick_ = info.tick;
 	grid_ = info.grid;
 	target_ = info.target;
-	players_[player_].extra = info.extra;
+	extras_[player_] = info.extra;
+	scores_ = info.scores;
 }
 
 Field Game::GetExtra() const {
-	return players_[player_].extra;
+	return extras_[player_];
 }
 
 State Game::GetState() const {
@@ -158,6 +207,10 @@ int Game::GetPlayer() const {
 	return player_;
 }
 
+int Game::GetTick() const {
+	return tick_;
+}
+
 int Game::GetTarget() const {
 	return target_;
 }
@@ -166,22 +219,81 @@ int Game::GetColor(int x, int y) const {
 	return colors_.At(x, y);
 }
 
+const std::vector<int>& Game::GetScores() const {
+	return scores_;
+}
+
 const Grid& Game::GetGrid() const {
 	return grid_;
 }
 
-void Game::RequestSkip() {}
-void Game::RequestRotate(int n) {}
+void Game::RequestSkip() {
+	if (CanMove()) {
+		state_ = State::kReady;
+		Commit();
+		ResetColors();
+	}
+}
+
+void Game::RequestRotate(int n) {
+	auto& field = extras_[player_];
+	if (n >= 0) {
+		while (n-- > 0) {
+			field = RotateLeft(field);
+		}
+	} else {
+		while (n++ < 0) {
+			field = RotateRight(field);
+		}
+	}
+}
 
 void Game::RequestShowMoves() {
 	auto pos = grid_.Positions()[player_];
 	colors_ = StupidFloodFill(grid_, pos, GetExtra(), false);
 }
 
-void Game::RequestStep(Solver& solver) {}
-void Game::RequestFreePlay() {}
+void Game::RequestStep(Solver& solver) {
+	if (mode_ != Mode::kFree || state_ != State::kReady || target_ < 0) {
+		return;
+	}
 
-void Game::RequestUndo() {}
+	solver.Init(player_);
+	auto result = solver.SyncTurn(grid_, player_, target_, extras_[player_]);
+
+	if (result.push.edge == Point{}) {
+		std::cerr << "Invalid push" << std::endl;
+		return;
+	}
+
+	state_ = State::kAnimatePush;
+	AnimatePush(result.push.edge, result.push.field, State::kAnimateMove);
+	AnimateMove(result.move, State::kReady);
+	anim_.finish = [=]() {
+		Commit();
+	};
+}
+
+void Game::RequestFreePlay() {
+	if (mode_ == Mode::kReplay && state_ == State::kReady) {
+		mode_ = Mode::kFree;
+		undo_.push_back(SaveState());
+
+		RandomizeTargets();
+		if (target_ >= 0) {
+			auto& vec = targets_[player_];
+			vec.insert(vec.begin(), target_);
+		}
+		SetPlayer(player_);
+	}
+}
+
+void Game::RequestUndo() {
+	if (mode_ == Mode::kFree && state_ == State::kReady && undo_.size() > 1) {
+		undo_.pop_back();
+		RestoreState(undo_.back());
+	}
+}
 
 void Game::RequestNext(bool animate, int n) {
 	if (mode_ != Mode::kReplay) {
@@ -215,7 +327,8 @@ void Game::AnimatePush(Point edge, Field field, State end_state) {
 	anim_.push.reset(new PushAnimation(*value, dst, sf::milliseconds(150),
 		[=]() {
 			*value = 0.f;
-			players_[player_].extra = grid_.Push(edge, field);
+			auto new_extra = grid_.Push(edge, field);
+			extras_[player_] = new_extra;
 			state_ = end_state;
 			RouteColors();
 		}));
@@ -227,32 +340,34 @@ void Game::AnimateMove(Point move, State end_state) {
 		*this, move, sf::milliseconds(150),
 		[=]() {
 			player_delta_ = {};
-			grid_.UpdatePosition(player_, move);
+			if (IsValid(move)) {
+				grid_.UpdatePosition(player_, move);
+			}
 			state_ = end_state;
 			ResetColors();
 		}));
 }
 
 void Game::ProcessAnimations() {
-	auto elapsed = anim_.clock.getElapsedTime();
+	auto& timer = anim_.clock;
 	auto& push = anim_.push;
 	auto& move = anim_.move;
 
 	if (push) {
-		if (!push->Animate(elapsed)) {
-			push->Finish();
-			push.reset();
-			anim_.clock.restart();
+		if (push->Animate(timer.getElapsedTime())) {
+			return;
 		}
-		return;
+		push->Finish();
+		push.reset();
+		timer.restart();
 	}
 	if (move) {
-		if (!move->Animate(elapsed)) {
-			move->Finish();
-			move.reset();
-			anim_.clock.restart();
+		if (move->Animate(timer.getElapsedTime())) {
+			return;
 		}
-		return;
+		move->Finish();
+		move.reset();
+		timer.restart();
 	}
 	if (anim_.finish) {
 		anim_.finish();
@@ -274,4 +389,77 @@ void Game::AnimateReplay() {
 	anim_.finish = [=]() {
 		SetReplay(next);
 	};
+}
+
+bool Game::CanPush() const {
+	return mode_ == Mode::kFree && state_ == State::kReady;
+}
+
+bool Game::CanMove() const {
+	return state_ == State::kRequireMove;
+}
+
+void Game::RequestPush(const Point& edge) {
+	if (CanPush() && grid_.IsEdge(edge)) {
+		state_ = State::kAnimatePush;
+		AnimatePush(edge, extras_[player_], State::kRequireMove);
+	}
+}
+
+void Game::RequestMove(const Point& move) {
+	if (CanMove() && grid_.IsInside(move) && IsReachable(move)) {
+		state_ = State::kAnimateMove;
+		AnimateMove(move, State::kReady);
+		anim_.finish = [=]() {
+			Commit();
+		};
+	}
+}
+
+bool Game::IsReachable(const Point& pos) const {
+	auto colors = FloodFill(grid_.Fields(), grid_.Positions()[player_]);
+	return colors.At(pos);
+}
+
+void Game::Commit() {
+	if (target_ >= 0) {
+		auto player_pos = grid_.Positions()[player_];
+		auto display_pos = grid_.Displays()[target_];
+		if (player_pos == display_pos) {
+			grid_.UpdateDisplay(target_, {});
+			scores_[player_] += 1;
+		}
+	}
+
+	NextPlayer();
+	undo_.push_back(SaveState());
+}
+
+void Game::NextPlayer() {
+	auto next = player_ + 1;
+	if (next == player_count_) {
+		next = 0;
+		tick_ += 1;
+	}
+	SetPlayer(next);
+}
+
+GameState Game::SaveState() {
+	GameState gs;
+	gs.grid = grid_;
+	gs.scores = scores_;
+	gs.extras = extras_;
+	gs.player = player_;
+	gs.tick = tick_;
+	gs.target = target_;
+	return gs;
+}
+
+void Game::RestoreState(const GameState& gs) {
+	grid_ = gs.grid;
+	scores_ = gs.scores;
+	extras_ = gs.extras;
+	player_ = gs.player;
+	tick_ = gs.tick;
+	target_ = gs.target;
 }

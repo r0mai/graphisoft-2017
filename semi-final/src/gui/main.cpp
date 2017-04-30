@@ -56,18 +56,16 @@ int main(int argc, char* argv[]) {
 	}
 
 	if (is_hotseat) {
-		// int players = vm["hotseat"].as<int>();
-		// HotSeat(players);
+		int players = vm["hotseat"].as<int>();
+		Game game;
+		GameWindow game_window(game);
+		game.InitFreeplay(players);
+		game_window.Run();
 	} else if (is_replay) {
 		Game game;
 		GameWindow game_window(game);
 		game.InitReplay(filename);
-
-		while (game_window.IsOpen()) {
-			game_window.ProcessEvents();
-			game.Update();
-			game_window.Draw();
-		}
+		game_window.Run();
 	} else {
 	// 	try {
 	// 		platform_dep::enable_socket _;

@@ -4,6 +4,7 @@
 #include "UpwindSailer.h"
 #include "SuperFill.h"
 #include <cmath>
+#include <sstream>
 #include <thread>
 #include <chrono>
 
@@ -18,6 +19,16 @@ sf::Color PlayerColor(int n) {
 	};
 
 	return color[n];
+}
+
+std::string PlayerName(int n) {
+	static std::string names[] = {
+		"Red",
+		"Green",
+		"Yellow",
+		"Blue"
+	};
+	return names[n];
 }
 
 sf::CircleShape CreateDot(const sf::Vector2f& pos, float r=0.05f) {
@@ -306,7 +317,7 @@ void GameWindow::Draw() {
 	}
 
 	auto size = game_.GetGrid().Size();
-	auto is_push = game_.GetState() == State::kPush;
+	auto is_push = game_.CanPush();
 
 	window_.clear(sf::Color(0x33, 0x33, 0x33));
 
@@ -361,26 +372,15 @@ void GameWindow::HandleMouseMove(const sf::Event::MouseMoveEvent& ev) {
 	hover_ = RoundToTile(WindowToView(window_, {ev.x, ev.y}));
 }
 
-// void HandleMousePressed(App& app, const sf::Event::MouseButtonEvent& ev) {
-// 	auto pos = RoundToTile(WindowToView(app, {ev.x, ev.y}));
-// 	if (app.state == State::kPush && IsEdge(app, pos)) {
-// 		app.response.push.edge = pos;
-// 		app.response.push.field = app.extra;
-// 		app.state = State::kAnimatePush;
-// 		app.anim.push.reset(new AnimatePush(
-// 			app, pos, app.extra, kPushDuration, State::kMove));
-// 		app.anim.start_t = Clock::now();
-// 	} else if (app.state == State::kMove && IsInside(app, pos) &&
-// 		app.colors.At(pos) == 1)
-// 	{
-// 		ResetColors(app);
-// 		app.response.move = pos;
-// 		app.state = State::kAnimateMove;
-// 		app.anim.move.reset(new AnimateMove(
-// 			app, pos, kMoveDuration, State::kDone));
-// 		app.anim.start_t = Clock::now();
-// 	}
-// }
+void GameWindow::HandleMousePress(const sf::Event::MouseButtonEvent& ev) {
+	auto pos = RoundToTile(WindowToView(window_, {ev.x, ev.y}));
+	const auto& grid = game_.GetGrid();
+	if (grid.IsEdge(pos)) {
+		game_.RequestPush(pos);
+	} else if (grid.IsInside(pos)) {
+		game_.RequestMove(pos);
+	}
+}
 
 void GameWindow::ProcessEvents() {
 	sf::Event event;
@@ -400,7 +400,7 @@ void GameWindow::ProcessEvents() {
 				HandleMouseMove(event.mouseMove);
 				break;
 			case sf::Event::MouseButtonPressed:
-				// HandleMousePress(event.mouseButton);
+				HandleMousePress(event.mouseButton);
 				break;
 			default:
 				break;
@@ -455,7 +455,35 @@ void GameWindow::HandleKeypress(const sf::Event::KeyEvent& ev) {
 		case sf::Keyboard::M:
 			game_.RequestNext(false, 1);
 			break;
+		case sf::Keyboard::Num3:
+			game_.RequestNext(false, 3);
+			break;
 		default:
 			break;
 	}
+}
+
+void GameWindow::Run() {
+	while (IsOpen()) {
+		ProcessEvents();
+		game_.Update();
+		Draw();
+		UpdateTitle();
+	}
+}
+
+void GameWindow::UpdateTitle() {
+	std::stringstream ss;
+
+	ss << "Player " << game_.GetPlayer();
+	ss << " |";
+
+	int i = -1;
+	for (auto score : game_.GetScores()) {
+		++i;
+		ss << " " << PlayerName(i) << ": " << score;
+	}
+
+	ss << " | Tick " << game_.GetTick();
+	window_.setTitle(ss.str());
 }

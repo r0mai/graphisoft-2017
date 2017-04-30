@@ -21,6 +21,8 @@ public:
 	const std::vector<Point>& Positions() const;
 	bool IsNeighbor(int player, int display) const;
 	bool IsNeighbor(const Point& p, const Point& q) const;
+	bool IsEdge(const Point& pos) const;
+	bool IsInside(const Point& pos) const;
 
 	void Init(int width, int height, int displays, int players);
 	void Randomize();
@@ -32,7 +34,6 @@ public:
 	Field At(const Point& pos) const;
 	Field Push(const Point& pos, Field t);
 	Field Push(int c, int p, int k, Field t);
-
 
 	struct Delta {
 		Point edge;
