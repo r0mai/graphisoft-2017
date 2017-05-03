@@ -18,7 +18,8 @@ int main(int argc, char** argv) {
 		("teamname,t", po::value<std::string>(), "teamname to use during login")
 		("password,p", po::value<std::string>(), "password to use for authentication")
 		("level,l", po::value<int>(), "request level (defaults to random)")
-		("output,o", po::value<std::string>(), "file to save server messages");
+		("output,o", po::value<std::string>(), "file to save server messages")
+		("verbose,v", "verbose output to console");
 
 	po::variables_map vm;
 	try {
@@ -35,6 +36,7 @@ int main(int argc, char** argv) {
 	std::string team_name = "the_hypnotoad";
 	std::string password = "******";
 	std::string filename;
+	bool verbose = false;
 	int level = 0;
 
 	if (vm.count("help")) {
@@ -58,6 +60,10 @@ int main(int argc, char** argv) {
 		level = vm["level"].as<int>();
 	}
 
+	if (vm.count("verbose")) {
+		verbose = true;
+	}
+
 	if (vm.count("output")) {
 		filename = vm["output"].as<std::string>();
 	} else {
@@ -75,6 +81,6 @@ int main(int argc, char** argv) {
 	SuperSolver solver;
 #endif
 #endif
-	Client(host_name, port, team_name, password, filename, level).Run(solver);
-
+	Client(host_name, port, team_name, password, filename, level,
+		verbose).Run(solver);
 }

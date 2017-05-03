@@ -14,7 +14,7 @@ public:
 	Client(
 		const std::string& host_name, int port,
 		const std::string& team_name, const std::string& password,
-		const std::string& filename = {}, int level = 0);
+		const std::string& filename = {}, int level = 0, bool verbose=false);
 
 	void Run(Solver& solver);
 
@@ -39,6 +39,7 @@ private:
 	int player_index_ = -1;
 	bool wait_ = false;
 	bool opponent_ = false;
+	bool verbose_ = false;
 	Response response_;
 	std::ofstream output_;
 };

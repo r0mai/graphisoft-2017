@@ -5,13 +5,13 @@
 #include "fcntl.h"
 #include "string.h"
 
-#define VERBOSE 0
 
 Client::Client(
 	const std::string& host_name, int port,
 	const std::string& team_name, const std::string& password,
-	const std::string& filename, int level) {
+	const std::string& filename, int level, bool verbose) {
 
+	verbose_ = verbose;
 	if(!socket_handler_.valid()) {
 		throw std::runtime_error("Error: Cannot open a socket!");
 	}
@@ -59,13 +59,15 @@ void Client::SendMessages(const std::vector<std::string>& messages) {
 	}
 	message += ".\n";
 
-#if VERBOSE
-	std::cerr << "Will try to send: " << message << std::endl;
-#endif
+	if (verbose_) {
+		std::cerr << "Will try to send: " << message << std::endl;
+	}
 	BlockUntilMessageCanBeSent();
-#if VERBOSE
-	std::cerr << "Sending message now" << std::endl;
-#endif
+
+	if (verbose_) {
+		std::cerr << "Sending message now" << std::endl;
+	}
+
 	int sent_bytes = send(socket_handler_.get_handler(), message.c_str(), message.size(), 0);
 
 	if(sent_bytes != (int)message.size()) {
@@ -158,12 +160,12 @@ void Client::BlockUntilMessageCanBeSent() {
 }
 
 void Client::Init(const std::vector<std::string>& info_lines, Solver& solver) {
-#if VERBOSE
-	std::cerr << "We got these field informations:" << std::endl;
-	for (auto& line : info_lines) {
-		std::cerr << line << std::endl;
+	if (verbose_) {
+		std::cerr << "We got these field informations:" << std::endl;
+		for (auto& line : info_lines) {
+			std::cerr << line << std::endl;
+		}
 	}
-#endif
 
 	SaveInput(info_lines);
 
@@ -181,12 +183,12 @@ bool Client::Process(const std::vector<std::string>& info_lines, Solver& solver)
 		solver.Shutdown();
 		return false;
 	}
-#if VERBOSE
-	std::cerr << "We got these tick informations:" << std::endl;
-	for (auto& line : info_lines) {
-		std::cerr << line << std::endl;
+	if (verbose_) {
+		std::cerr << "We got these tick informations:" << std::endl;
+		for (auto& line : info_lines) {
+			std::cerr << line << std::endl;
+		}
 	}
-#endif
 	grid_ = info.grid;
 	opponent_ = info.opponent;
 
