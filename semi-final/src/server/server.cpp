@@ -5,6 +5,7 @@
 #include <iostream>
 #include <string>
 #include <algorithm>
+#include <numeric>
 #include <sstream>
 #include <cassert>
 
