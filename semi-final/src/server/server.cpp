@@ -388,12 +388,17 @@ private:
 			Point target = grid.Displays()[client.getTarget()];
 			if (client.getPosition(grid) == target) {
 				client.onHitTarget();
-				removeDisplay(target);
-				for (auto& player : players) {
+				std::vector<int> playersDefeated;
+				for (const auto& player: players) {
 					if (grid.Displays()[player.second.getTarget()]
 							== client.getPosition(grid)) {
-						player.second.onTargetInvalidated(grid);
+						playersDefeated.push_back(player.first);
 					}
+				}
+				removeDisplay(target);
+				for (int playerIndex: playersDefeated) {
+					auto& player = players.at(playerIndex);
+					player.onTargetInvalidated(grid);
 				}
 			}
 		}
