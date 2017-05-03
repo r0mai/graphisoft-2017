@@ -53,12 +53,15 @@ private:
 
 class Client {
 public:
-	Client(asio::ip::tcp::socket socket, int id) :
+	Client(asio::ip::tcp::socket socket, int id, const Grid& grid) :
 		id(id), socket(std::move(socket)) {
 		std::cerr << "Client logged in from: "
 				<< this->socket.remote_endpoint() << std::endl;
 		asio::ip::tcp::no_delay option{true};
 		this->socket.set_option(option);
+		targets.resize(grid.Displays().size());
+		std::iota(targets.begin(), targets.end(), 0);
+		std::random_shuffle(targets.begin(), targets.end());
 	}
 
 	void setTeamName(std::string teamName) {
@@ -78,8 +81,8 @@ public:
 		++score;
 	}
 
-	void onTargetInvalidated() {
-		++target;
+	void onTargetInvalidated(const Grid& grid) {
+		while (!IsValid(grid.Displays()[targets[target]])) ++target;
 	}
 
 	Point getPosition(Grid& grid) const {
@@ -91,8 +94,7 @@ public:
 	}
 
 	int getTarget() const {
-		// TODO: coordinate with other players, or just use a random int
-		return target;
+		return targets[target];
 	}
 
 	int getId() const {
@@ -173,6 +175,7 @@ private:
 	std::string teamName;
 	int score = 0;
 	int target = 0;
+	std::vector<int> targets;
 	std::string previousRead;
 	std::string outBuffer;
 };
@@ -198,7 +201,7 @@ private:
 	void handleNewClient(asio::ip::tcp::socket socket, asio::yield_context yield) {
 		auto newPlayerId = playerCount++;
 		auto p = players.emplace(
-				newPlayerId, Client{std::move(socket), newPlayerId});
+				newPlayerId, Client{std::move(socket), newPlayerId, grid});
 		auto& client = p.first->second;
 		processLogin(client, yield);
 		std::cerr << "After login" << std::endl;
@@ -384,13 +387,13 @@ private:
 			Point target = grid.Displays()[client.getTarget()];
 			if (client.getPosition(grid) == target) {
 				client.onHitTarget();
+				removeDisplay(target);
 				for (auto& player : players) {
 					if (grid.Displays()[player.second.getTarget()]
 							== client.getPosition(grid)) {
-						player.second.onTargetInvalidated();
+						player.second.onTargetInvalidated(grid);
 					}
 				}
-				removeDisplay(target);
 			}
 		}
 	}
