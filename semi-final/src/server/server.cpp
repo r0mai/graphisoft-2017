@@ -83,7 +83,8 @@ public:
 	}
 
 	void onTargetInvalidated(const Grid& grid) {
-		while (!IsValid(grid.Displays()[targets[target]])) ++target;
+		while (target < targets.size() &&
+				!IsValid(grid.Displays()[targets.at(target)])) ++target;
 	}
 
 	Point getPosition(Grid& grid) const {
