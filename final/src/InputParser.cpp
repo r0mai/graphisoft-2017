@@ -66,6 +66,10 @@ TurnInfo InputParser::ParseTurn(const std::vector<std::string>& info_lines) {
 		field_info_.width, field_info_.height,
 		field_info_.displays, kMaxPlayers);
 
+	for (const auto& pos : field_info_.blocked_fields) {
+		info.grid.AddBlocked(pos.x, pos.y);
+	}
+
 	for (auto& line : info_lines) {
 		std::stringstream ss(line);
 		std::string command;
