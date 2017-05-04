@@ -24,6 +24,20 @@ FieldInfo InputParser::ParseInit(const std::vector<std::string>& info_lines) {
 			ss >> info.displays;
 		} else if (command == "PLAYER") {
 			ss >> info.player;
+		} else if (command == "PLAYERS") {
+			std::string player;
+			while (ss >> player) {
+				info.player_names.push_back(player);
+			}
+		} else if (command == "BLOCKED") {
+			Point p;
+			ss >> p.x >> p.y;
+			info.blocked_fields.push_back(p);
+		} else if (command == "TARGETS") {
+			info.target_order.resize(info.displays);
+			for (int i = 0; i < info.displays; ++i) {
+				ss >> info.target_order[i];
+			}
 		} else if (command == "MAXTICK") {
 			ss >> info.max_tick;
 		} else {

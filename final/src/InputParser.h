@@ -12,6 +12,9 @@ struct FieldInfo {
 	int level = -1;
 	int max_tick = -1;
 	int player = -1;
+	std::vector<Point> blocked_fields;
+	std::vector<std::string> player_names;
+	std::vector<int> target_order;
 };
 
 
