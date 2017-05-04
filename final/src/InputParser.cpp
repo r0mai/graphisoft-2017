@@ -79,7 +79,9 @@ TurnInfo InputParser::ParseTurn(const std::vector<std::string>& info_lines) {
 		std::string command;
 		ss >> command;
 		if (command == "MESSAGE") {
-			// nothing to do with this
+			if (line != "MESSAGE OK") {
+				std::cerr << line << std::endl;
+			}
 		} else if (command == "TICK") {
 			ss >> info.tick;
 		} else if (command == "FIELDS") {
