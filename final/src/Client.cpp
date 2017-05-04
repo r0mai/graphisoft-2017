@@ -309,6 +309,7 @@ bool Client::Run(Solver& solver) {
 				if (input) {
 					// response_ only set if we read something and processed it
 					msg = FromResponse(response_);
+					std::cout << "Sending response = " << response_ << std::endl;
 					SendMessages(msg);
 				}
 			}

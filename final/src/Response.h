@@ -10,3 +10,9 @@ struct Response {
 
 	Point move;
 };
+
+inline
+std::ostream& operator<<(std::ostream& os, const Response& r) {
+	os << "Push = " << r.push.edge << " (" << r.push.field << "), Move = " << r.move;
+	return os;
+}
