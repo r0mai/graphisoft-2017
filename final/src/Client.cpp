@@ -191,7 +191,7 @@ State Client::Process(
 	}
 	auto info = parser_.ParseTurn(info_lines);
 
-	if (info.tick == fieldInfo.max_tick) {
+	if (info.tick == fieldInfo.max_tick - 1) {
 		std::cerr << "In last tick" << std::endl;
 	}
 	if (info.end) {
