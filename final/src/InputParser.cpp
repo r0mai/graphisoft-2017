@@ -121,6 +121,7 @@ TurnInfo InputParser::ParseTurn(const std::vector<std::string>& info_lines) {
 		assert(info.extra > 0);
 	}
 
+#if 0
 	if (prev_turn_.tick >= 0) {
 		auto& prev_extra = extras_[prev_turn_.player];
 		prev_extra = info.grid.TileDiff(prev_turn_.grid, prev_extra);
@@ -130,7 +131,7 @@ TurnInfo InputParser::ParseTurn(const std::vector<std::string>& info_lines) {
 		}
 	}
 	info.scores = scores_;
-
+#endif
 	prev_turn_ = info;
 	return info;
 }
