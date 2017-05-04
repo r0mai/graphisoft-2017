@@ -36,7 +36,9 @@ private:
 	std::string received_buffer_;
 
 	InputParser parser_;
+
 	Grid grid_;
+	FieldInfo fieldInfo;
 	int player_index_ = -1;
 	std::vector<int> targets;
 	bool wait_ = false;

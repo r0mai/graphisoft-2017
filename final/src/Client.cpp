@@ -175,9 +175,9 @@ void Client::Init(const std::vector<std::string>& info_lines, Solver& solver) {
 
 	SaveInput(info_lines);
 
-	auto info = parser_.ParseInit(info_lines);
-	targets = info.target_order;
-	solver.Init(info.player);
+	fieldInfo = parser_.ParseInit(info_lines);
+	targets = fieldInfo.target_order;
+	solver.Init(fieldInfo.player);
 }
 
 State Client::Process(
@@ -191,6 +191,9 @@ State Client::Process(
 	}
 	auto info = parser_.ParseTurn(info_lines);
 
+	if (info.tick == fieldInfo.max_tick) {
+		std::cerr << "In last tick" << std::endl;
+	}
 	if (info.end) {
 		std::cerr << "We got the end message: " << info_lines[0] << std::endl;
 		solver.Shutdown();
