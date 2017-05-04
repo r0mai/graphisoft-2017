@@ -304,4 +304,5 @@ bool Client::Run(Solver& solver) {
 		}
 	}
 	std::cerr << "Game over" << std::endl;
+    return true;
 }
