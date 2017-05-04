@@ -392,6 +392,8 @@ void Game::AnimateReplay() {
 
 	const auto& src = replay_.turns[current];
 	const auto& dst = replay_.turns[next];
+
+#if 0
 	auto delta = dst.grid.Diff(src.grid, src.extra, src.player);
 
 	state_ = State::kAnimatePush;
@@ -400,6 +402,9 @@ void Game::AnimateReplay() {
 	anim_.finish = [=]() {
 		SetReplay(next);
 	};
+#else
+	SetReplay(next);
+#endif
 }
 
 bool Game::CanPush() const {

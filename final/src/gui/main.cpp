@@ -65,7 +65,12 @@ int main(int argc, char* argv[]) {
 		Game game;
 		GameWindow game_window(game);
 		game.InitReplay(filename);
-		game_window.Run();
+		try {
+			game_window.Run();
+		} catch (const char* err) {
+			std::cerr << err <<std::endl;
+			return 1;
+		}
 	} else {
 	// 	try {
 	// 		platform_dep::enable_socket _;

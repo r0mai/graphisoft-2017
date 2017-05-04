@@ -209,8 +209,10 @@ const std::vector<Point>& Grid::Positions() const {
 
 Field Grid::Push(const Point& pos, Field t) {
 	if (blocked_cols_.count(pos.x)) {
+		std::cerr << pos << " " << Size() << std::endl;
 		throw "Pushed invalid column";
 	} else if (blocked_rows_.count(pos.y)) {
+		std::cerr << pos << " " << Size() << std::endl;
 		throw "Pushed invalid row";
 	}
 
