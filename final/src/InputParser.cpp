@@ -100,6 +100,8 @@ TurnInfo InputParser::ParseTurn(const std::vector<std::string>& info_lines) {
 			ss >> info.target;
 		} else if (command == "EXTRAFIELD") {
 			ss >> info.extra;
+		} else if (command == "GAMESCORE") {
+			// TODO if we need it at all
 		}
 	}
 
