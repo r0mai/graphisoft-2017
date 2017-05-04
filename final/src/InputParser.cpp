@@ -16,6 +16,10 @@ FieldInfo InputParser::ParseInit(const std::vector<std::string>& info_lines) {
 		ss >> command;
 		if (command == "MESSAGE") {
 			// nothing to do with this
+		} else if (command == "ID") {
+			int id;
+			ss >> id;
+			std::cerr << "Game id is: " << id << std::endl;
 		} else if (command == "LEVEL") {
 			ss >> info.level;
 		} else if (command == "SIZE") {
