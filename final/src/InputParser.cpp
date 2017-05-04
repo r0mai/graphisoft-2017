@@ -3,8 +3,8 @@
 #include <sstream>
 
 InputParser::InputParser()
-	: extras_(4, Field(15))
-	, scores_(4, 0)
+	: extras_(kMaxPlayers, Field(15))
+	, scores_(kMaxPlayers, 0)
 {}
 
 FieldInfo InputParser::ParseInit(const std::vector<std::string>& info_lines) {
@@ -64,7 +64,7 @@ TurnInfo InputParser::ParseTurn(const std::vector<std::string>& info_lines) {
 
 	info.grid.Init(
 		field_info_.width, field_info_.height,
-		field_info_.displays, 4);
+		field_info_.displays, kMaxPlayers);
 
 	for (auto& line : info_lines) {
 		std::stringstream ss(line);

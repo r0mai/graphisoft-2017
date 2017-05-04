@@ -34,6 +34,8 @@ struct TurnInfo {
 
 class InputParser {
 public:
+	static const int kMaxPlayers = 10;
+
 	InputParser();
 	std::vector<std::string> FromStream(std::istream& stream);
 
