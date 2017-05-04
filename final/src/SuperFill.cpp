@@ -348,7 +348,7 @@ int ConvergeDistance(const Grid& grid, const Point& p, const Point& q, int penal
 		}
 	}
 
-	if ((dx == 0 && dy > 0) || (dy == 0 && dx > 0)) {
+	if ((dx == 0 && dy > 1) || (dy == 0 && dx > 1)) {
 		dst += penalty;
 	}
 
