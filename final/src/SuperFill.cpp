@@ -122,7 +122,7 @@ using SuperMatrix = Matrix<SuperMove>;
 using SuperOrigin = std::pair<Point, SuperMove>;
 
 
-int Fitness(Grid& grid, int player, Field extra) {
+int Fitness(Grid& grid, int player, Field extra, int next_target) {
 	auto size = grid.Size();
 	int best_fitness = 0;
 
@@ -134,9 +134,15 @@ int Fitness(Grid& grid, int player, Field extra) {
 
 		int display_count = 0;
 		int filled_count = 0;
+		int display = -1;
+		int next_count = 0;
 		for (const auto& display_pos : grid.Displays()) {
+			++display;
 			if (IsValid(display_pos) && reachable.At(display_pos)) {
 				++display_count;
+				if (display == next_target) {
+					next_count += 1;
+				}
 			}
 		}
 
@@ -144,7 +150,7 @@ int Fitness(Grid& grid, int player, Field extra) {
 			filled_count += !!x;
 		}
 
-		int current_fitness = display_count + filled_count;
+		int current_fitness = display_count + filled_count + next_count * 10;
 		best_fitness = std::max(best_fitness, current_fitness);
 		grid.Push(v.opposite_edge, field);
 	}
@@ -170,7 +176,7 @@ boost::optional<Response> SingleMove(
 			grid.UpdatePosition(player, target_pos);
 			grid.UpdateDisplay(target, {});
 
-			auto fitness = Fitness(grid, player, field);
+			auto fitness = Fitness(grid, player, field, nextTarget);
 			if (fitness > best_fitness) {
 				best_fitness = fitness;
 				response = {{v.edge, v.tile}, target_pos};
