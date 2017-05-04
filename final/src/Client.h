@@ -38,6 +38,7 @@ private:
 	InputParser parser_;
 	Grid grid_;
 	int player_index_ = -1;
+	std::vector<int> targets;
 	bool wait_ = false;
 	bool opponent_ = false;
 	bool verbose_ = false;

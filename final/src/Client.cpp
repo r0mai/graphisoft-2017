@@ -176,6 +176,7 @@ void Client::Init(const std::vector<std::string>& info_lines, Solver& solver) {
 	SaveInput(info_lines);
 
 	auto info = parser_.ParseInit(info_lines);
+	targets = info.target_order;
 	solver.Init(info.player);
 }
 
@@ -208,7 +209,15 @@ State Client::Process(
 		solver.Update(grid_, info.player);
 	} else {
 		wait_ = true;
-		solver.Turn(grid_, info.player, info.target, info.extra, -1,
+		auto targetIt = std::find(targets.begin(), targets.end(), info.target);
+		assert(targetIt != targets.end());
+		++targetIt;
+		while (targetIt != targets.end() && !IsValid(grid_.Displays().at(*targetIt))) { ++targetIt; }
+		int nextTarget = -1;
+		if (targetIt != targets.end()) {
+			nextTarget = *targetIt;
+		}
+		solver.Turn(grid_, info.player, info.target, info.extra, nextTarget,
 			[&](const Response& response) {
 				wait_ = false;
 				response_ = response;
