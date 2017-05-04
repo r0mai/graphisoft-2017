@@ -132,6 +132,28 @@ TurnInfo InputParser::ParseTurn(const std::vector<std::string>& info_lines) {
 }
 
 
+AfterInfo InputParser::ParseAfter(const std::vector<std::string>& lines) {
+	AfterInfo info;
+	for (auto& line : lines) {
+		std::stringstream ss(line);
+		std::string command;
+		ss >> command;
+		if (command == "SCORE") {
+			ss >> info.map_score >> info.test_score_sum >> info.final_score_sum;
+		} else if (command == "ID") {
+			ss >> info.game_id;
+		} else if  (command == "NEXTSTART") {
+			ss >> info.next_map_index;
+			ss >> info.time_until_next_map;
+			int b;
+			ss >> b;
+			info.next_is_test = (b == 0);
+		}
+
+	}
+	return info;
+}
+
 
 std::vector<std::string> InputParser::FromStream(std::istream& stream) {
 	std::vector<std::string> lines;

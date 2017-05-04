@@ -33,6 +33,19 @@ struct TurnInfo {
 };
 
 
+struct AfterInfo {
+	int map_score = -1;
+	int	test_score_sum = -1;
+	int final_score_sum = -1;
+
+	int game_id = -1;
+
+	int next_map_index = -1;
+	int time_until_next_map = -2; // -1 means no next game
+	bool next_is_test = true;
+};
+
+
 class InputParser {
 public:
 	static const int kMaxPlayers = 10;
@@ -42,6 +55,7 @@ public:
 
 	FieldInfo ParseInit(const std::vector<std::string>& lines);
 	TurnInfo ParseTurn(const std::vector<std::string>& lines);
+	AfterInfo ParseAfter(const std::vector<std::string>& lines);
 
 private:
 	FieldInfo field_info_;
