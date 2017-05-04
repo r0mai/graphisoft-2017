@@ -5,7 +5,7 @@
 #include <string>
 
 class solver {
-	
+
 public:
 	void start(const std::vector<std::string>& start_infos);
 

@@ -25,11 +25,11 @@ std::vector<std::string> solver::process(const std::vector<std::string>& tick_in
 	for(std::size_t i = 0; i < tick_infos.size(); ++i) {
 		std::cerr << tick_infos[i] << std::endl;
 	}
-	
+
 	std::vector<std::string> result;
 	// TODO ...
-	// send an empty vector if not your turns 
-	return result; 
+	// send an empty vector if not your turns
+	return result;
 }
 
 bool solver::after(const std::vector<std::string>& score_infos) {
