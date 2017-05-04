@@ -314,6 +314,7 @@ int ConvergeDistance(const Grid& grid, const Point& p, const Point& q, int penal
 	auto size = grid.Size();
 	auto dx = std::abs(p.x - q.x);
 	auto dy = std::abs(p.y - q.y);
+	auto over_edge = (dx > size.x - dx || dy > size.y - dy);
 
 	dx = std::min(dx, size.x - dx);
 	dy = std::min(dy, size.y - dy);
@@ -342,9 +343,12 @@ int ConvergeDistance(const Grid& grid, const Point& p, const Point& q, int penal
 	} else {
 		// penalize other positions
 		dst += 10;
+		if (over_edge) {
+			dst += 2;
+		}
 	}
 
-	if ((dx == 0 && dy > 0) || (dy == 0 && dx > 1)) {
+	if ((dx == 0 && dy > 0) || (dy == 0 && dx > 0)) {
 		dst += penalty;
 	}
 
