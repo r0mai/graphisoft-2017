@@ -236,6 +236,7 @@ boost::optional<Response> DoubleMove(
 	auto size = grid.Size();
 	boost::optional<Response> response;
 	int best_fitness = 0;
+	int best_number_of_good_pushes = 0;
 	int best_distance = std::numeric_limits<int>::max();
 
 	for (const auto& v : GetPushVariations(grid, extra)) {
@@ -290,6 +291,8 @@ boost::optional<Response> DoubleMove(
 			if (fitness > best_fitness) {
 				auto opt_move = (move == player_pos ? Point{} : move);
 				best_fitness = fitness;
+				best_distance = distance;
+				best_number_of_good_pushes = number_of_good_pushes;
 				response = {{v.edge, v.tile}, opt_move};
 			}
 
@@ -298,6 +301,11 @@ boost::optional<Response> DoubleMove(
 #endif
 
 		grid.Push(v.opposite_edge, field);
+	}
+	if (response) {
+		std::cerr << "Double Move: best_distance = " << best_distance
+				<< ", best_number_of_good_pushes = " << best_number_of_good_pushes
+				<< std::endl;
 	}
 	return response;
 }
