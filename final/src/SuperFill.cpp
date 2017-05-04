@@ -373,9 +373,9 @@ boost::optional<Response> ConvergeMove(
 		reachable.ForeachField([&](const Point& pos, int& cell) {
 			if (cell) {
 				auto distance = ConvergeDistance(grid, pos, target_pos, 3);
-				auto fitness = -distance;
+				auto fitness = -distance * 4;
 				if (player_pos == pos) {
-					fitness -= 2;
+					fitness -= 1;
 				}
 				if (grid.IsBlockedX(pos.x)) {
 					fitness += 1;
