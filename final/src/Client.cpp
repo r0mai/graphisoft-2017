@@ -49,6 +49,12 @@ Client::Client(
 	}
 
 	SendMessages(login_messages);
+	auto login_response = ReceiveMessage();
+
+
+	for (auto x : login_response) {
+		std::cerr << "LOGIN RESPONSE:" <<  x << std::endl;
+	}
 }
 
 void Client::SendMessages(const std::vector<std::string>& messages) {
