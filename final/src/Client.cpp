@@ -179,11 +179,13 @@ void Client::Init(const std::vector<std::string>& info_lines, Solver& solver) {
 	solver.Init(info.player);
 }
 
-State Client::Process(const std::vector<std::string>& info_lines, Solver& solver) {
+State Client::Process(
+		const std::vector<std::string>& info_lines, Solver& solver) {
 	SaveInput(info_lines);
 
 	if (!info_lines.empty() && info_lines[0].find("SCORE") == 0) {
 		auto after_info = parser_.ParseAfter(info_lines);
+		(void)after_info;
 		return State::matchover;
 	}
 	auto info = parser_.ParseTurn(info_lines);
@@ -206,7 +208,7 @@ State Client::Process(const std::vector<std::string>& info_lines, Solver& solver
 		solver.Update(grid_, info.player);
 	} else {
 		wait_ = true;
-		solver.Turn(grid_, info.player, info.target, info.extra,
+		solver.Turn(grid_, info.player, info.target, info.extra, -1,
 			[&](const Response& response) {
 				wait_ = false;
 				response_ = response;

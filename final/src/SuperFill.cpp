@@ -153,7 +153,7 @@ int Fitness(Grid& grid, int player, Field extra) {
 }
 
 boost::optional<Response> SingleMove(
-	Grid& grid, int player, int target, Field extra)
+	Grid& grid, int player, int target, Field extra, int nextTarget)
 {
 	auto size = grid.Size();
 	int best_fitness = 0;
@@ -225,7 +225,7 @@ int BasicFitness(const Grid& grid, const Point& pos) {
 }
 
 boost::optional<Response> DoubleMove(
-	Grid& grid, int player, int target, Field extra)
+	Grid& grid, int player, int target, Field extra, int nextTarget)
 {
 	auto size = grid.Size();
 	boost::optional<Response> response;
@@ -335,7 +335,7 @@ int ConvergeDistance(const Grid& grid, const Point& p, const Point& q, int penal
 }
 
 boost::optional<Response> ConvergeMove(
-	Grid& grid, int player, int target, Field extra)
+	Grid& grid, int player, int target, Field extra, int nextTarget)
 {
 	auto size = grid.Size();
 	boost::optional<Response> response;
@@ -375,7 +375,8 @@ void TimeStat(const std::string& info, Clock::time_point start_t) {
 	std::cerr << " ms" << std::endl;
 }
 
-Response SuperFill(Grid grid, int player, int target, Field extra) {
+Response SuperFill(
+		Grid grid, int player, int target, Field extra, int nextTarget) {
 	auto start_t = Clock::now();
 	const int max_depth = 2;
 
@@ -387,19 +388,19 @@ Response SuperFill(Grid grid, int player, int target, Field extra) {
 	auto display_pos = grid.Displays()[target];
 	auto size = grid.Size();
 
-	auto single_move = SingleMove(grid, player, target, extra);
+	auto single_move = SingleMove(grid, player, target, extra, nextTarget);
 	if (single_move) {
 		TimeStat("SINGLEMOVE", start_t);
 		return *single_move;
 	}
 
-	auto double_move = DoubleMove(grid, player, target, extra);
+	auto double_move = DoubleMove(grid, player, target, extra, nextTarget);
 	if (double_move) {
 		TimeStat("DOUBLEMOVE", start_t);
 		return *double_move;
 	}
 
-	auto converge_move = ConvergeMove(grid, player, target, extra);
+	auto converge_move = ConvergeMove(grid, player, target, extra, nextTarget);
 	if (converge_move) {
 		TimeStat("CONVERGE", start_t);
 		return *converge_move;
@@ -413,8 +414,8 @@ Response SuperFill(Grid grid, int player, int target, Field extra) {
 
 
 void SuperSolver::Turn(const Grid& grid, int player, int target, Field field,
-	Callback fn)
+		int nextTarget, Callback fn)
 {
-	Response response = SuperFill(grid, player, target, field);
+	Response response = SuperFill(grid, player, target, field, nextTarget);
 	fn(response);
 }

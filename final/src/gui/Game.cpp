@@ -261,7 +261,16 @@ void Game::RequestStep(Solver& solver) {
 	}
 
 	solver.Init(player_);
-	auto result = solver.SyncTurn(grid_, player_, target_, extras_[player_]);
+	const auto& targets = targets_[player_];
+	auto targetIt = std::find(targets.begin(), targets.end(), target_);
+	assert(targetIt != targets.end());
+	auto nextTargetIt = ++targetIt;
+	int nextTarget = -1;
+	if (nextTargetIt != targets.end()) {
+		nextTarget = *nextTargetIt;
+	}
+	auto result = solver.SyncTurn(grid_, player_, target_, extras_[player_],
+			nextTarget);
 
 	if (result.push.edge == Point{}) {
 		std::cerr << "Invalid push" << std::endl;

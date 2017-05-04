@@ -5,7 +5,8 @@
 #include <limits>
 
 
-void EagerTaxicab::Turn(const Grid& grid, int player, int target, Field field, Callback fn) {
+void EagerTaxicab::Turn(const Grid& grid, int player, int target, Field field,
+		int nextTarget, Callback fn) {
 	grid_ = grid;
 	player_ = player;
 	target_ = target;

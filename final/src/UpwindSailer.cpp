@@ -210,7 +210,8 @@ void UpwindSailer::Update(const Grid&, int) {
 }
 
 void UpwindSailer::Turn(
-		const Grid& newGrid, int player, int target, Field field, Callback fn) {
+		const Grid& newGrid, int player, int target, Field field,
+		int nextTarget, Callback fn) {
 	auto response = UpwindSailerStep(newGrid, player, target, field);
 	fn(response);
 }
