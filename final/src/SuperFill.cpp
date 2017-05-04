@@ -253,6 +253,7 @@ boost::optional<Response> DoubleMove(
 			}
 		});
 
+		int number_of_good_pushes = 0;
 		for (const auto& v2 : GetPushVariations(grid, field)) {
 			auto field2 = grid.Push(v2.edge, v2.tile);
 			auto target_pos2 = grid.Displays()[target];
@@ -262,7 +263,7 @@ boost::optional<Response> DoubleMove(
 
 			auto cell = reachable2.At(target_pos2);
 			if (cell) {
-				#if 0
+#if 0
 				auto fitness = BasicFitness(grid, target_pos2);
 				if (fitness > best_fitness) {
 					const auto& move = cell.move;
@@ -270,29 +271,31 @@ boost::optional<Response> DoubleMove(
 					best_fitness = fitness;
 					response = {{v.edge, v.tile}, opt_move};
 				}
-				#else
+#else
 				move_candidates.insert(cell.move);
-				#endif
+#endif
+				++number_of_good_pushes;
 			}
 
 			RotateOrigins(v2.opposite_edge, size, origins);
 			grid.Push(v2.opposite_edge, field2);
 		}
 
-		#if 1
+#if 1
 		for (const auto& move : move_candidates) {
 			grid.UpdatePosition(player, move);
 
 			auto distance = Proximity(grid, move, target_pos);
-			if (distance < best_distance) {
+			auto fitness = 40 - distance + number_of_good_pushes * 5;
+			if (fitness > best_fitness) {
 				auto opt_move = (move == player_pos ? Point{} : move);
-				best_distance = distance;
+				best_fitness = fitness;
 				response = {{v.edge, v.tile}, opt_move};
 			}
 
 			grid.UpdatePosition(player, player_pos);
 		}
-		#endif
+#endif
 
 		grid.Push(v.opposite_edge, field);
 	}
