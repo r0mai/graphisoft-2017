@@ -145,12 +145,17 @@ sf::ConvexShape CreateRoute(const sf::Vector2f& pos, Field tile) {
 	return shape;
 }
 
-void DrawTile(sf::RenderTarget& rt, const sf::Vector2f& pos, Field tile, int color_id=0) {
+void DrawTile(sf::RenderTarget& rt, const sf::Vector2f& pos, Field tile,
+	int color_id=0, bool blocked=false)
+{
 	auto base = CreateTile(pos);
 	auto route = CreateRoute(pos, tile);
 	base.setOutlineThickness(0.01f);
 	base.setOutlineColor(sf::Color(0x40, 0x30, 0x40));
-	base.setFillColor(sf::Color(0x66, 0x50, 0x66));
+
+	base.setFillColor(blocked
+		? sf::Color(0x80, 0x80, 0x80)
+		: sf::Color(0x66, 0x50, 0x66));
 
 	sf::Color color;
 	if (color_id == 0) {
@@ -321,18 +326,20 @@ void GameWindow::Draw() {
 
 	window_.clear(sf::Color(0x33, 0x33, 0x33));
 
+	const auto& grid = game_.GetGrid();
 	for (int y = 0; y < size.y; ++y) {
 		for (int x = 0; x < size.x; ++x) {
 			auto color_id = game_.GetColor(x, y);
 			sf::Vector2f pos(game_.RowDelta(y) + x, game_.ColDelta(x) + y);
-			DrawTile(window_, pos, game_.GetGrid().At(x, y), color_id);
+			auto blocked = grid.IsBlockedX(x) && grid.IsBlockedY(y);
+			DrawTile(window_, pos, grid.At(x, y), color_id, blocked);
 		}
 	}
 
 	for (int y = 0; y < size.y; ++y) {
 		bool active0 = false;
 		bool active1 = false;
-		if (is_push && hover_.y == y) {
+		if (is_push && hover_.y == y && !grid.IsBlockedY(y)) {
 			active0 = hover_.x == -1;
 			active1 = hover_.x == size.x;
 		}
@@ -344,7 +351,7 @@ void GameWindow::Draw() {
 	for (int x = 0; x < size.x; ++x) {
 		bool active0 = false;
 		bool active1 = false;
-		if (is_push && hover_.x == x) {
+		if (is_push && hover_.x == x && !grid.IsBlockedX(x)) {
 			active0 = hover_.y == -1;
 			active1 = hover_.y == size.y;
 		}
@@ -375,7 +382,7 @@ void GameWindow::HandleMouseMove(const sf::Event::MouseMoveEvent& ev) {
 void GameWindow::HandleMousePress(const sf::Event::MouseButtonEvent& ev) {
 	auto pos = RoundToTile(WindowToView(window_, {ev.x, ev.y}));
 	const auto& grid = game_.GetGrid();
-	if (grid.IsEdge(pos)) {
+	if (grid.IsEdge(pos) && grid.CanPush(pos)) {
 		game_.RequestPush(pos);
 	} else if (grid.IsInside(pos)) {
 		game_.RequestMove(pos);

@@ -107,6 +107,28 @@ void Grid::Init(int width, int height, int displays, int players) {
 	positions_.resize(players, {-1, -1});
 }
 
+void Grid::RandomizeBlocked(int n) {
+	auto size = Size();
+	n = std::min((std::min(size.x, size.y) - 1) / 2, n);
+
+	std::set<int> xs, ys;
+
+	while (n > 0) {
+		int x = rand() % (size.x - 2) + 1;
+		int y = rand() % (size.y - 2) + 1;
+		if (xs.count(x) || xs.count(x - 1) || xs.count(x + 1)) {
+			continue;
+		}
+		if (ys.count(y) || ys.count(y - 1) || ys.count(y + 1)) {
+			continue;
+		}
+		AddBlocked(x, y);
+		xs.insert(x);
+		ys.insert(y);
+		n -= 1;
+	}
+}
+
 void Grid::Randomize() {
 	int fx[] = {7, 13, 10, 1, 1};		// frequencies of different tiles
 	int kx[] = {1, 3, 7, 5, 15};	// tiles
@@ -390,14 +412,25 @@ void Grid::AddBlocked(int x, int y) {
 	blocked_rows_.insert(y);
 }
 
-bool Grid::IsBlockedRow(int x) const {
-	return blocked_rows_.count(x);
+bool Grid::IsBlockedX(int x) const {
+	return blocked_cols_.count(x);
 }
 
-bool Grid::IsBlockedCol(int y) const {
-	return blocked_cols_.count(y);
+bool Grid::IsBlockedY(int y) const {
+	return blocked_rows_.count(y);
 }
 
+bool Grid::CanPush(const Point& pos) const {
+	auto size = Size();
+
+	bool x_edge = pos.x == -1 || pos.x == size.x;
+	bool y_edge = pos.y == -1 || pos.y == size.y;
+
+	bool x_in = pos.x >= 0 && pos.x < size.x;
+	bool y_in = pos.y >= 0 && pos.y < size.y;
+
+	return (x_in && !IsBlockedX(pos.x)) || (y_in && !IsBlockedY(pos.y));
+}
 
 namespace {
 

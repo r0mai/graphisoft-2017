@@ -24,16 +24,18 @@ public:
 	bool IsNeighbor(const Point& p, const Point& q) const;
 	bool IsEdge(const Point& pos) const;
 	bool IsInside(const Point& pos) const;
+	bool CanPush(const Point& pos) const;
 
 	void Init(int width, int height, int displays, int players);
 	void Randomize();
+	void RandomizeBlocked(int n);
 	void ResetDisplays();
 	void UpdateFields(std::vector<Field> fields);
 	void UpdateDisplay(int index, const Point& pos);
 	void UpdatePosition(int player, const Point& pos);
 	void AddBlocked(int x, int y);
-	bool IsBlockedRow(int x) const;
-	bool IsBlockedCol(int y) const;
+	bool IsBlockedX(int x) const;
+	bool IsBlockedY(int y) const;
 
 	Field At(int x, int y) const;
 	Field At(const Point& pos) const;

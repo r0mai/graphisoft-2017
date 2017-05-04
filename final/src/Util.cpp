@@ -104,7 +104,7 @@ std::vector<PushVariation> GetPushVariations(
 	auto rotations = GetRotations(extra);
 
 	for (int x = bounds.mins.x; x < bounds.maxs.x; ++x) {
-		if (grid.IsBlockedCol(x)) {
+		if (grid.IsBlockedX(x)) {
 			continue;
 		}
 		for (Field f : rotations) {
@@ -123,7 +123,7 @@ std::vector<PushVariation> GetPushVariations(
 		}
 	}
 	for (int y = bounds.mins.y; y < bounds.maxs.y; ++y) {
-		if (grid.IsBlockedRow(y)) {
+		if (grid.IsBlockedY(y)) {
 			continue;
 		}
 		for (Field f : rotations) {

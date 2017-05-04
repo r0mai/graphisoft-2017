@@ -130,6 +130,8 @@ void Game::InitFreeplay(int player_count) {
 
 	grid_.Init(width, height, displays, player_count);
 	grid_.Randomize();
+	grid_.RandomizeBlocked(20); // will be restricted anyway
+
 	scores_.resize(player_count, 0);
 	extras_.resize(player_count, Field(15));
 	player_count_ = player_count;
