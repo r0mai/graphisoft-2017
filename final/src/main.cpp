@@ -71,7 +71,6 @@ int main(int argc, char** argv) {
 		return 1;
 	}
 
-	platform_dep::enable_socket _;
 #if 0
 	UpwindSailer solver;
 #else
@@ -81,6 +80,12 @@ int main(int argc, char** argv) {
 	SuperSolver solver;
 #endif
 #endif
-	Client(host_name, port, team_name, password, filename, level,
-		verbose).Run(solver);
+	auto&& client = Client{host_name, port, team_name, password, filename, level,
+			verbose};
+	for(;;) {
+		bool end = client.Run(solver);
+		if (end) {
+			break;
+		}
+	}
 }

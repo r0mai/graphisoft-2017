@@ -8,6 +8,7 @@
 #include <vector>
 #include <boost/optional.hpp>
 
+enum class State { ongoing, matchover, gameover };
 
 class Client {
 public:
@@ -16,11 +17,11 @@ public:
 		const std::string& team_name, const std::string& password,
 		const std::string& filename = {}, int level = 0, bool verbose=false);
 
-	void Run(Solver& solver);
+	bool Run(Solver& solver);
 
 private:
 	void Init(const std::vector<std::string>& field_infos, Solver& solver);
-	bool Process(const std::vector<std::string>& tick_infos, Solver& solver);
+	State Process(const std::vector<std::string>& tick_infos, Solver& solver);
 
 	void SendMessages(const std::vector<std::string>& messages);
 	std::vector<std::string> FromResponse(const Response& response) const;

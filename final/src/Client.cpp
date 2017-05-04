@@ -173,7 +173,7 @@ void Client::Init(const std::vector<std::string>& info_lines, Solver& solver) {
 	solver.Init(info.player);
 }
 
-bool Client::Process(const std::vector<std::string>& info_lines, Solver& solver) {
+State Client::Process(const std::vector<std::string>& info_lines, Solver& solver) {
 	SaveInput(info_lines);
 
 	auto info = parser_.ParseTurn(info_lines);
@@ -181,7 +181,12 @@ bool Client::Process(const std::vector<std::string>& info_lines, Solver& solver)
 	if (info.end) {
 		std::cerr << "We got the end message: " << info_lines[0] << std::endl;
 		solver.Shutdown();
-		return false;
+		return State::gameover;
+	}
+	if (info.score) {
+		std::cerr << "We got the score message: " << info_lines[0] << std::endl;
+		solver.Shutdown();
+		return State::matchover;
 	}
 	if (verbose_) {
 		std::cerr << "We got these tick informations:" << std::endl;
@@ -202,7 +207,7 @@ bool Client::Process(const std::vector<std::string>& info_lines, Solver& solver)
 				response_ = response;
 			});
 	}
-	return true;
+	return State::ongoing;
 }
 
 void Client::SaveInput(const std::vector<std::string>& lines) {
@@ -253,23 +258,27 @@ std::vector<std::string> Client::FromResponse(const Response& response) const {
 	return strings;
 }
 
-void Client::Run(Solver& solver) {
+bool Client::Run(Solver& solver) {
 	std::vector<std::string> msg = ReceiveMessage();
 
 	if (socket_handler_.valid()) {
 		Init(msg, solver);
 	}
 
-	bool firstUpdateReady = false;
 
 	while (socket_handler_.valid()) {
+		bool firstUpdateReady = false;
 		boost::optional<std::vector<std::string>> input = CheckForMessage();
 		if (!input && firstUpdateReady) {
 			solver.Idle();
 		} else if (input && socket_handler_.valid()) {
 			firstUpdateReady = true;
-			if (!Process(*input, solver)) {
-				break;
+			auto state = Process(*input, solver);
+			if (state == State::matchover) {
+				return false;
+			}
+			if (state == State::gameover) {
+				return true;
 			}
 
 			if (opponent_) {

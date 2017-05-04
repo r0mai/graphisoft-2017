@@ -20,6 +20,7 @@ struct FieldInfo {
 
 struct TurnInfo {
 	bool end = false;
+	bool score = false;
 	bool opponent = false;
 	int tick = -1;
 	int player = -1;
