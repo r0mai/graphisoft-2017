@@ -135,6 +135,7 @@ TurnInfo InputParser::ParseTurn(const std::vector<std::string>& info_lines) {
 AfterInfo InputParser::ParseAfter(const std::vector<std::string>& lines) {
 	AfterInfo info;
 	for (auto& line : lines) {
+		std::cerr << "PARSEAFTER : " << line << std::endl;
 		std::stringstream ss(line);
 		std::string command;
 		ss >> command;

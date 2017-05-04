@@ -182,17 +182,16 @@ void Client::Init(const std::vector<std::string>& info_lines, Solver& solver) {
 State Client::Process(const std::vector<std::string>& info_lines, Solver& solver) {
 	SaveInput(info_lines);
 
+	if (!info_lines.empty() && info_lines[0].find("SCORE") == 0) {
+		auto after_info = parser_.ParseAfter(info_lines);
+		return State::matchover;
+	}
 	auto info = parser_.ParseTurn(info_lines);
 
 	if (info.end) {
 		std::cerr << "We got the end message: " << info_lines[0] << std::endl;
 		solver.Shutdown();
 		return State::gameover;
-	}
-	if (info.score) {
-		std::cerr << "We got the score message: " << info_lines[0] << std::endl;
-		solver.Shutdown();
-		return State::matchover;
 	}
 	if (verbose_) {
 		std::cerr << "We got these tick informations:" << std::endl;
