@@ -357,6 +357,7 @@ boost::optional<Response> ConvergeMove(
 	auto size = grid.Size();
 	boost::optional<Response> response;
 	int best_distance = std::numeric_limits<int>::max();
+	int best_fitness = std::numeric_limits<int>::min();
 
 	for (const auto& v : GetPushVariations(grid, extra)) {
 		auto field = grid.Push(v.edge, v.tile);
@@ -368,9 +369,19 @@ boost::optional<Response> ConvergeMove(
 		reachable.ForeachField([&](const Point& pos, int& cell) {
 			if (cell) {
 				auto distance = ConvergeDistance(grid, pos, target_pos, 3);
-				if (distance < best_distance) {
+				auto fitness = -distance;
+				if (player_pos == pos) {
+					fitness -= 2;
+				}
+				if (grid.IsBlockedX(pos.x)) {
+					fitness += 1;
+				}
+				if (grid.IsBlockedY(pos.y)) {
+					fitness += 1;
+				}
+				if (fitness > best_fitness) {
 					auto opt_move = (pos == player_pos ? Point{} : pos);
-					best_distance = distance;
+					best_fitness = fitness;
 					response = {{v.edge, v.tile}, opt_move};
 				}
 			}
