@@ -37,11 +37,13 @@ struct PushVariation {
 	Field tile;
 };
 
+class Grid;
+
 std::vector<PushVariation> GetPushVariations(
-	const Bounds& bounds, const Point& field_size, Field extra);
-std::vector<PushVariation> GetPushVariations(
-	int row_bits, int col_bits, const Point& field_size, Field extra);
-std::vector<PushVariation> GetPushVariations(const Point& field_size, Field extra);
+	const Bounds& bounds, const Grid& grid, Field extra);
+// std::vector<PushVariation> GetPushVariations(
+// 	int row_bits, int col_bits, const Point& field_size, Field extra);
+std::vector<PushVariation> GetPushVariations(const Grid& grid, Field extra);
 
 std::ostream& operator<<(std::ostream& os, const PushVariation& push);
 

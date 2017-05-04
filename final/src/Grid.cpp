@@ -186,6 +186,12 @@ const std::vector<Point>& Grid::Positions() const {
 }
 
 Field Grid::Push(const Point& pos, Field t) {
+	if (blocked_cols_.count(pos.x)) {
+		throw "Pushed invalid column";
+	} else if (blocked_rows_.count(pos.y)) {
+		throw "Pushed invalid row";
+	}
+
 	auto size = Size();
 
 	if (pos.x == -1) {
@@ -376,6 +382,20 @@ bool Grid::IsInside(const Point& pos) const {
 	bool y_in = pos.y >= 0 && pos.y < size.y;
 
 	return x_in && y_in;
+}
+
+void Grid::AddBlocked(int x, int y) {
+	blocked_.push_back({x, y});
+	blocked_cols_.insert(x);
+	blocked_rows_.insert(y);
+}
+
+bool Grid::IsBlockedRow(int x) const {
+	return blocked_rows_.count(x);
+}
+
+bool Grid::IsBlockedCol(int y) const {
+	return blocked_cols_.count(y);
 }
 
 

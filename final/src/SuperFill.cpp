@@ -126,7 +126,7 @@ int Fitness(Grid& grid, int player, Field extra) {
 	auto size = grid.Size();
 	int best_fitness = 0;
 
-	for (const auto& v : GetPushVariations(size, extra)) {
+	for (const auto& v : GetPushVariations(grid, extra)) {
 		auto field = grid.Push(v.edge, v.tile);
 		auto player_pos = grid.Positions()[player];
 		Matrix<int> reachable(size.x, size.y, 0);
@@ -159,7 +159,7 @@ boost::optional<Response> SingleMove(
 	int best_fitness = 0;
 	boost::optional<Response> response;
 
-	for (const auto& v : GetPushVariations(size, extra)) {
+	for (const auto& v : GetPushVariations(grid, extra)) {
 		auto field = grid.Push(v.edge, v.tile);
 		auto player_pos = grid.Positions()[player];
 		auto target_pos = grid.Displays()[target];
@@ -232,7 +232,7 @@ boost::optional<Response> DoubleMove(
 	int best_fitness = 0;
 	int best_distance = std::numeric_limits<int>::max();
 
-	for (const auto& v : GetPushVariations(size, extra)) {
+	for (const auto& v : GetPushVariations(grid, extra)) {
 		auto field = grid.Push(v.edge, v.tile);
 		auto player_pos = grid.Positions()[player];
 		auto target_pos = grid.Displays()[target];
@@ -247,7 +247,7 @@ boost::optional<Response> DoubleMove(
 			}
 		});
 
-		for (const auto& v2 : GetPushVariations(size, field)) {
+		for (const auto& v2 : GetPushVariations(grid, field)) {
 			auto field2 = grid.Push(v2.edge, v2.tile);
 			auto target_pos2 = grid.Displays()[target];
 			Matrix<SuperMove> reachable2(size.x, size.y, {});
@@ -341,7 +341,7 @@ boost::optional<Response> ConvergeMove(
 	boost::optional<Response> response;
 	int best_distance = std::numeric_limits<int>::max();
 
-	for (const auto& v : GetPushVariations(size, extra)) {
+	for (const auto& v : GetPushVariations(grid, extra)) {
 		auto field = grid.Push(v.edge, v.tile);
 		auto player_pos = grid.Positions()[player];
 		auto target_pos = grid.Displays()[target];

@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <set>
 #include <cstdlib>
 #include <cassert>
 #include <iostream>
@@ -30,6 +31,10 @@ public:
 	void UpdateFields(std::vector<Field> fields);
 	void UpdateDisplay(int index, const Point& pos);
 	void UpdatePosition(int player, const Point& pos);
+	void AddBlocked(int x, int y);
+	bool IsBlockedRow(int x) const;
+	bool IsBlockedCol(int y) const;
+
 	Field At(int x, int y) const;
 	Field At(const Point& pos) const;
 	Field Push(const Point& pos, Field t);
@@ -54,6 +59,9 @@ public:
 private:
 	std::vector<Point> displays_;
 	std::vector<Point> positions_;
+	std::vector<Point> blocked_;
+	std::set<int> blocked_cols_;
+	std::set<int> blocked_rows_;
 	Matrix<Field> fields_;
 };
 

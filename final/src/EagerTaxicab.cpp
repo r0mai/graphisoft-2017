@@ -20,7 +20,7 @@ Response EagerTaxicab::GetResponse() {
 
 	Response best_response{};
 
-	for (auto& variation : GetPushVariations(grid_.Size(), extra_)) {
+	for (auto& variation : GetPushVariations(grid_, extra_)) {
 		Field new_extra = grid_.Push(variation.edge, variation.tile);
 
 		int distance;

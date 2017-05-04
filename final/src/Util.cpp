@@ -1,5 +1,5 @@
 #include "Util.h"
-
+#include "Grid.h"
 #include <cassert>
 
 bool IsEastOpen(Field type) {
@@ -86,16 +86,17 @@ std::vector<Field> GetRotations(Field tile) {
 }
 
 std::vector<PushVariation> GetPushVariations(
-	const Point& field_size, Field extra)
+	const Grid& grid, Field extra)
 {
-	return GetPushVariations({{0, 0}, field_size}, field_size, extra);
+	return GetPushVariations({{0, 0}, grid.Size()}, grid, extra);
 }
 
 std::vector<PushVariation> GetPushVariations(
-	const Bounds& bounds, const Point& field_size, Field extra)
+	const Bounds& bounds, const Grid& grid, Field extra)
 {
-	int w = field_size.x;
-	int h = field_size.y;
+	auto size = grid.Size();
+	int w = size.x;
+	int h = size.y;
 
 	std::vector<PushVariation> variations;
 	PushVariation v;
@@ -103,6 +104,9 @@ std::vector<PushVariation> GetPushVariations(
 	auto rotations = GetRotations(extra);
 
 	for (int x = bounds.mins.x; x < bounds.maxs.x; ++x) {
+		if (grid.IsBlockedCol(x)) {
+			continue;
+		}
 		for (Field f : rotations) {
 			{
 				v.tile = f;
@@ -119,6 +123,9 @@ std::vector<PushVariation> GetPushVariations(
 		}
 	}
 	for (int y = bounds.mins.y; y < bounds.maxs.y; ++y) {
+		if (grid.IsBlockedRow(y)) {
+			continue;
+		}
 		for (Field f : rotations) {
 			{
 				v.tile = f;

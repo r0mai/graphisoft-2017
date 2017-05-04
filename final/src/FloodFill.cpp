@@ -144,7 +144,7 @@ void StupidFloodFillInternal(
 	}
 
 	auto bounds = Grow(GetBounds(colors), grid.Size());
-	auto varitions = GetPushVariations(grid.Size(), extra);
+	auto varitions = GetPushVariations(grid, extra);
 	auto original_colors = colors;
 
 	for (auto& variation : varitions) {
