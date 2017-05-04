@@ -465,6 +465,24 @@ void GameWindow::HandleKeypress(const sf::Event::KeyEvent& ev) {
 		case sf::Keyboard::Num3:
 			game_.RequestNext(false, 3);
 			break;
+		case sf::Keyboard::Num4:
+			game_.RequestNext(false, 4);
+			break;
+		case sf::Keyboard::Num5:
+			game_.RequestNext(false, 5);
+			break;
+		case sf::Keyboard::Num6:
+			game_.RequestNext(false, 6);
+			break;
+		case sf::Keyboard::Num7:
+			game_.RequestNext(false, 7);
+			break;
+		case sf::Keyboard::Num8:
+			game_.RequestNext(false, 8);
+			break;
+		case sf::Keyboard::Num9:
+			game_.RequestNext(false, 9);
+			break;
 		default:
 			break;
 	}
