@@ -49,15 +49,29 @@ add_executable(server
     src/server/Command.cpp
 )
 
+add_executable(scores
+    src/scores.cpp
+)
+
 target_include_directories(glabyrinth PRIVATE
     ${SFML_INCLUDE_DIR}
     ${BOOST_INCLUDEDIR}
     src
 )
+
 target_link_libraries(glabyrinth
     liblabyrinth
     ${SFML_LIBRARIES}
     ${Boost_PROGRAM_OPTIONS_LIBRARY}
+)
+
+
+target_include_directories(scores PRIVATE
+    src
+)
+
+target_link_libraries(scores
+    liblabyrinth
 )
 
 target_link_libraries(test-labyrinth

@@ -19,7 +19,7 @@ FieldInfo InputParser::ParseInit(const std::vector<std::string>& info_lines) {
 		} else if (command == "ID") {
 			int id;
 			ss >> id;
-			std::cerr << "Game id is: " << id << std::endl;
+			// std::cerr << "Game id is: " << id << std::endl;
 		} else if (command == "LEVEL") {
 			ss >> info.level;
 		} else if (command == "SIZE") {
@@ -63,6 +63,13 @@ TurnInfo InputParser::ParseTurn(const std::vector<std::string>& info_lines) {
 
 	if (info_lines.size() == 1 && info_lines[0].find("END") == 0) {
 		info.end = true;
+		return info;
+	}
+
+	if (!info_lines.empty() && info_lines[0].find("SCORE") == 0) {
+		info.score = true;
+		info.scores = prev_turn_.scores;
+		info.player = prev_turn_.player;
 		return info;
 	}
 
@@ -123,10 +130,12 @@ TurnInfo InputParser::ParseTurn(const std::vector<std::string>& info_lines) {
 		assert(info.extra > 0);
 	}
 
-#if 0
+#if 1
 	if (prev_turn_.tick >= 0) {
+		#if 0
 		auto& prev_extra = extras_[prev_turn_.player];
 		prev_extra = info.grid.TileDiff(prev_turn_.grid, prev_extra);
+		#endif
 		auto scored = info.grid.ScoreDiff(prev_turn_.grid);
 		if (scored) {
 			++scores_[prev_turn_.player];
